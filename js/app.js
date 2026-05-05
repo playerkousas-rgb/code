@@ -580,10 +580,7 @@ function playSemaphoreAnim(){
 }
 
 function downloadSemaphoreSVG(){
-  const text = $('inputText').value.toUpperCase();
-  if(!text) return;
-  let svgContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 300" style="background:#001a33">';
-  let x = 30;
+  // ... 前面代碼不變 ...
   for(const c of text){
     if(x > 1250) break;
     if(c===' ') { x+=60; continue; }
@@ -593,8 +590,11 @@ function downloadSemaphoreSVG(){
     } else {
       svgContent += '<text x="'+(x+50)+'" y="90" text-anchor="middle" fill="#ffcc00" font-size="48" font-weight="bold">'+c+'</text>';
     }
-    const label = c==='!'?'Error':c==='@'?'End':c==='#'?'Answering':c==='$'?'Attention':c==='%'?'Numbers':c;
-    svgContent += '<text x="'+(x+50)+'" y="155" text-anchor="middle" fill="#64748b" font-size="14" font-family="sans-serif">'+label+'</text>';
+
+    // 【修改處】刪除或註解掉下面這兩行，生成的 SVG 就不會帶字
+    // const label = c==='!'?'Error':c==='@'?'End':c==='#'?'Answering':c==='$'?'Attention':c==='%'?'Numbers':c;
+    // svgContent += '<text x="'+(x+50)+'" y="155" text-anchor="middle" fill="#64748b" font-size="14" font-family="sans-serif">'+label+'</text>';
+    
     x += 130;
   }
   svgContent += '</svg>';
