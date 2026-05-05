@@ -295,53 +295,57 @@ body {
 
 .pigpen-svg { width: 48px; height: 48px; display: inline-block; }
 
-/* --- 終極全螢幕修復 --- */
+/* Fullscreen */
 .cipher-card:fullscreen {
-    background: var(--skw-navy-dark) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important; /* 強制垂直置中 */
-    align-items: center !important;     /* 強制水平置中 */
-    padding: 0 !important;
-    gap: 40px !important;               /* 讓題目與對照表有固定間隔 */
+  background: var(--skw-navy-dark) !important;
+  padding: 3vh 4vw !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
 }
-
-/* 隱藏全螢幕時不需要的雜物 (標題列、輸入框、按鈕) */
-.cipher-card:fullscreen .card-title-bar,
-.cipher-card:fullscreen .skw-input,
-.cipher-card:fullscreen .btn-primary,
-.cipher-card:fullscreen .btn-fs,
-.cipher-card:fullscreen .mt-6:not(.output-box) { 
-    /* 這裡的選擇器要看你 HTML 結構，如果標題還在，就註解掉這行 */
-    /* display: none !important; */
-}
-
-/* 題目盒 (圖 4 上半部) */
+.cipher-card:fullscreen::before { display: none; }
 .cipher-card:fullscreen .output-box {
-    width: 90% !important;
-    max-width: 1400px !important;
-    font-size: 4rem !important;        /* 字體直接給大 */
-    min-height: 25vh !important;
-    margin: 0 !important;              /* 清除原本的 margin */
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+  font-size: clamp(1.8rem, 5vw, 3.5rem) !important;
+  min-height: 15vh !important;
+  padding: 2.5vh 3vw !important;
+  width: 92% !important;
+  margin: 2vh 0 !important;
 }
-
-/* 對照表 (圖 4 下半部) */
+.cipher-card:fullscreen .semaphore-img {
+  width: clamp(120px, 16vw, 220px) !important;
+  height: clamp(120px, 16vw, 220px) !important;
+}
+.cipher-card:fullscreen .semaphore-char {
+  font-size: clamp(1rem, 2vw, 1.5rem) !important;
+  color: #cbd5e1 !important;
+}
+.cipher-card:fullscreen .pigpen-svg {
+  width: clamp(55px, 7vw, 90px) !important;
+  height: clamp(55px, 7vw, 90px) !important;
+}
+.cipher-card:fullscreen .card-title-bar h3 {
+  font-size: clamp(1.2rem, 2.5vw, 1.8rem) !important;
+}
 .cipher-card:fullscreen .ref-table-container {
-    width: auto !important;            /* 讓它根據內容自動寬度 */
-    max-width: 95% !important;
-    transform: scale(1.5) !important;  /* 統一放大倍率 */
-    transform-origin: center !important; /* 必須是正中心 */
-    border: none !important;
-    background: transparent !important;
-    margin: 0 !important;
+  max-width: 1000px !important;
+  width: 92% !important;
+  transform: scale(1.15);
+  transform-origin: top center;
+}
+.cipher-card:fullscreen .phone-grid {
+  transform: scale(1.3);
+  transform-origin: top center;
+}
+.cipher-card:fullscreen .keyboard-layout {
+  transform: scale(1.3);
+  transform-origin: top center;
 }
 
-/* 旗號或朱高 SVG 在全螢幕下的基礎大小 */
-.cipher-card:fullscreen .semaphore-img { width: 150px !important; height: 150px !important; }
-.cipher-card:fullscreen .pigpen-svg { width: 80px !important; height: 80px !important; }
 .radio-group input[type="radio"] { display: none; }
 .radio-group input[type="radio"]:checked + label {
   background: #fff;
