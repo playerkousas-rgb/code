@@ -648,86 +648,67 @@ function playSemaphoreAnim(){
   }
   showFrame();
 }
-// ===================== SVG 下載專用 (不影響網頁顯示) =====================
-// ===================== SVG 下載專用 (補齊特殊符號角度) =====================
+// 此函數僅在按下「下載 SVG」按鈕時執行
 function downloadSemaphoreSVG() {
-    const raw = document.getElementById('inputText').value;
-    const upper = raw.toUpperCase();
-    // 允許字母、空格以及特殊功能符號
-    const chars = upper.split('').filter(c => /^[A-Z\s!@#$%]$/.test(c));
+    const input = document.getElementById('inputText').value.toUpperCase();
+    const chars = input.split('').filter(c => semaphoreAngles[c] || c === ' ');
     
     if (chars.length === 0) {
-        showToast("請先輸入文字再下載");
+        if(typeof showToast === "function") showToast("請輸入內容再下載");
         return;
     }
-    showToast('正在生成向量 SVG...');
 
-    // 定義特殊符號的角度 (原本 semaphoreAngles 沒有的)
-    const specialAngles = {
-        '!': [135, 180], // Error / Attention (與 A 類似但位置略異，此處以標準 Error 訊號模擬)
-        '@': [225, 315], // End of message (AR 訊號)
-        '#': [90, 0],    // Answering (同 J 訊號)
-        '$': [225, 270], // Attention (同 H 訊號)
-        '%': [315, 45]   // Numerical Sign (數字號)
-    };
+    // 設定下載檔案的佈局
+    const size = 120;       // 每一格的大小
+    const charsPerRow = 8;  // 每行顯示 8 個旗語
+    const rows = Math.ceil(chars.length / charsPerRow);
+    const padding = 40;     // 邊框留白
 
-    const imgSize = 120;
-    const padding = 40;
-    const maxCharsPerRow = 8; 
-    const rowCount = Math.ceil(chars.length / maxCharsPerRow);
+    // 建立 SVG 畫布
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${charsPerRow * size + padding * 2}" height="${rows * size + padding * 2}">`;
+    // 加入深藍色背景，方便列印時對照白色小人
+    svg += `<rect width="100%" height="100%" fill="#001a33" />`;
 
-    const svgWidth = (maxCharsPerRow * imgSize) + (padding * 2);
-    const svgHeight = (rowCount * imgSize) + (padding * 2);
+    chars.forEach((char, i) => {
+        const col = i % charsPerRow;
+        const row = Math.floor(i / charsPerRow);
+        const x = padding + col * size + size / 2;
+        const y = padding + row * size + size / 2;
 
-    let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">`;
-    svgContent += `<rect width="100%" height="100%" fill="#001a33" />`;
-
-    chars.forEach((c, i) => {
-        const col = i % maxCharsPerRow;
-        const row = Math.floor(i / maxCharsPerRow);
-        const xPos = padding + col * imgSize;
-        const yPos = padding + row * imgSize;
-        const centerX = xPos + imgSize / 2;
-        const centerY = yPos + imgSize / 2;
-
-        if (c === ' ') {
-            svgContent += `<text x="${centerX}" y="${centerY + 15}" font-family="Arial" font-size="60" font-weight="bold" fill="#64748b" text-anchor="middle">/</text>`;
+        if (char === ' ') {
+            // 畫出空格符號 (灰斜線)
+            svg += `<line x1="${x-15}" y1="${y+15}" x2="${x+15}" y2="${y-15}" stroke="#64748b" stroke-width="4"/>`;
         } else {
-            // 優先找字母角度，找不到就找特殊符號角度
-            const angles = semaphoreAngles[c] || specialAngles[c];
-            
-            if (angles) {
-                const [a1, a2] = angles;
-                const getPos = ang => {
-                    const rad = (ang - 90) * Math.PI / 180;
-                    return {
-                        x: centerX + 40 * Math.cos(rad),
-                        y: centerY + 40 * Math.sin(rad)
-                    };
-                };
-                const p1 = getPos(a1), p2 = getPos(a2);
+            const [a1, a2] = semaphoreAngles[char];
+            // 計算旗桿末端座標
+            const p1x = x + 42 * Math.cos((a1 - 90) * Math.PI / 180);
+            const p1y = y + 42 * Math.sin((a1 - 90) * Math.PI / 180);
+            const p2x = x + 42 * Math.cos((a2 - 90) * Math.PI / 180);
+            const p2y = y + 42 * Math.sin((a2 - 90) * Math.PI / 180);
 
-                svgContent += `
-                    <g>
-                        <circle cx="${centerX}" cy="${centerY - 25}" r="12" fill="none" stroke="#fff" stroke-width="5"/>
-                        <line x1="${centerX}" y1="${centerY - 13}" x2="${centerX}" y2="${centerY + 30}" stroke="#fff" stroke-width="5"/>
-                        <line x1="${centerX}" y1="${centerY - 5}" x2="${p1.x}" y2="${p1.y}" stroke="#ffcc00" stroke-width="10" stroke-linecap="round"/>
-                        <line x1="${centerX}" y1="${centerY - 5}" x2="${p2.x}" y2="${p2.y}" stroke="#00d2ff" stroke-width="10" stroke-linecap="round"/>
-                    </g>`;
-            }
+            // 繪製旗語小人 (仿照向量風格)
+            svg += `
+                <g stroke-linecap="round">
+                    <circle cx="${x}" cy="${y-25}" r="12" fill="none" stroke="#ffffff" stroke-width="5"/>
+                    <line x1="${x}" y1="${y-13}" x2="${x}" y2="${y+30}" stroke="#ffffff" stroke-width="5"/>
+                    <line x1="${x}" y1="${y-5}" x2="${p1x}" y2="${p1y}" stroke="#ffcc00" stroke-width="10"/>
+                    <line x1="${x}" y1="${y-5}" x2="${p2x}" y2="${p2y}" stroke="#00d2ff" stroke-width="10"/>
+                </g>`;
         }
     });
 
-    svgContent += `</svg>`;
+    svg += `</svg>`;
 
-    const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+    // 觸發瀏覽器下載行為
+    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'scout_semaphore_complete.svg';
+    link.download = 'scout-semaphore-print.svg';
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    showToast('✅ SVG 已成功下載 (含特殊符號)');
 }
 // ===================== PNG DOWNLOAD (固定 8 格換行版) =====================
 function downloadSemaphorePNG() {
