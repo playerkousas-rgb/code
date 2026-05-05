@@ -755,7 +755,10 @@ function buildNatoTable(){
 }
 
 function encodeNato(text){
-  return text.toUpperCase().split('').map(c=>NATO_MAP[c]||c).join(' ');
+  return text.toUpperCase().split('').map(c => {
+    if (c === ' ') return '/'; // 讓空格顯示為斜線
+    return NATO_MAP[c] || c;
+  }).join(' ');
 }
 
 let natoPlaying = false;
