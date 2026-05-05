@@ -686,42 +686,49 @@ function downloadSemaphoreSVG(){
   // 6. 執行下載
   downloadFile('semaphore.svg', svgContent, 'image/svg+xml');
 }
-// ===================== PNG DOWNLOAD (取代原本的 GIF) =====================
+/ ===================== PNG DOWNLOAD (支援自動換行) =====================
 function downloadSemaphorePNG() {
-  // 1. 取得文字並保留空格 (\s)
   const text = $('inputText').value.toUpperCase().replace(/[^A-Z!@#$%\s]/g, '');
   if (!text) return;
-  showToast('正在生成長條 PNG...');
+  showToast('正在生成 PNG...');
 
-  const canvas = document.createElement('canvas'); // 這裡用動態建立的 canvas 即可
+  const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   
   const chars = text.split('');
-  const imgSize = 120; // 每一格旗號的大小
-  const padding = 20;  // 左右留白
+  const imgSize = 120; // 每個旗號格子的大小
+  const padding = 40;  // 邊距
   
-  // 2. 自動計算畫布寬度：字數愈多，圖就愈長
-  canvas.width = chars.length * imgSize + padding * 2;
-  canvas.height = 160; // 固定高度
+  // --- 換行設定 ---
+  const maxCharsPerRow = 8; // 設定每行最多顯示 8 個旗號
+  const rowCount = Math.ceil(chars.length / maxCharsPerRow); // 計算總共有幾行
+  const charsInFirstRow = Math.min(chars.length, maxCharsPerRow);
 
-  // 3. 繪製深藍色背景 (保持全站風格一致)
+  // 計算畫布最終大小
+  canvas.width = charsInFirstRow * imgSize + padding * 2;
+  canvas.height = rowCount * imgSize + padding * 2;
+
+  // 1. 繪製背景
   ctx.fillStyle = '#001a33';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   let loadedCount = 0;
   
-  // 4. 開始逐個繪製
   chars.forEach((c, i) => {
-    const xPos = padding + i * imgSize;
+    // 2. 計算目前字元應該在哪一列 (col) 和哪一行 (row)
+    const col = i % maxCharsPerRow;
+    const row = Math.floor(i / maxCharsPerRow);
+    
+    const xPos = padding + col * imgSize;
+    const yPos = padding + row * imgSize;
     
     if (c === ' ') {
-      // 如果是空格，畫一個灰色的分隔斜線 /
+      // 畫斜線分隔
       ctx.font = 'bold 60px sans-serif';
       ctx.fillStyle = '#64748b';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('/', xPos + imgSize / 2, 85);
-      
+      ctx.fillText('/', xPos + imgSize / 2, yPos + imgSize / 2);
       checkDone();
     } else {
       const src = getSemaphoreImage(c);
@@ -729,42 +736,38 @@ function downloadSemaphorePNG() {
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = function() {
-          // 繪製旗號圖片 (置中)
-          ctx.drawImage(img, xPos + 10, 20, 100, 100);
+          // 繪製旗號
+          ctx.drawImage(img, xPos + 10, yPos + 10, 100, 100);
           checkDone();
         };
         img.onerror = function() {
-          // 圖片載入失敗時，用文字代替
-          drawFallbackText(ctx, c, xPos);
+          drawFallbackText(ctx, c, xPos, yPos);
           checkDone();
         };
         img.src = src;
       } else {
-        drawFallbackText(ctx, c, xPos);
+        drawFallbackText(ctx, c, xPos, yPos);
         checkDone();
       }
     }
   });
 
-  // 輔助函數：畫文字（當沒圖片時）
-  function drawFallbackText(ctx, char, x) {
+  function drawFallbackText(ctx, char, x, y) {
     ctx.font = 'bold 40px sans-serif';
     ctx.fillStyle = '#ffcc00';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(char, x + imgSize / 2, 85);
+    ctx.fillText(char, x + imgSize / 2, y + imgSize / 2);
   }
 
-  // 檢查是否所有字元都處理完了
   function checkDone() {
     loadedCount++;
     if (loadedCount === chars.length) {
-      // 全部畫完，執行下載
       const link = document.createElement('a');
-      link.download = 'semaphore_exercise.png';
+      link.download = 'semaphore_message.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
-      showToast('PNG 下載成功');
+      showToast('PNG 已完成換行並下載');
     }
   }
 }
