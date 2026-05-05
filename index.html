@@ -30,7 +30,7 @@ function loadRrweb(){if(rrwebStarted)return;rrwebStarted=true;var s=document.cre
 window.addEventListener("message",function(e){if(!e.data||typeof e.data.type!=="string")return;if(e.data.type==="arena:init"){if(!meta)startTime=Date.now();meta={generationId:e.data.generationId||e.data.modelId,tournamentId:e.data.tournamentId};persist();loadRrweb();if(e.source)e.source.postMessage({type:"arena:init-ack",generationId:meta.generationId},"*");}if(e.data.type==="arena:flush"){var resp={type:"arena:recording-data",generationId:meta?meta.generationId:null,rrwebEvents:rrwebEvents,analytics:buildAnalytics()};try{sessionStorage.removeItem(SK);}catch(ex){}if(e.source)e.source.postMessage(resp,"*");}});
 loadRrweb();
 })();</script>
-  <script data-arena-views="true">(function(){var isTop=false;try{isTop=window.self===window.top;}catch(e){}if(!isTop)return;window.__ARENA_META={generationId:"kimi-k2.6",tournamentId:"3d684c92-3747-452b-87c8-da2547f10ca0"};var payload={tournamentId:"3d684c92-3747-452b-87c8-da2547f10ca0",modelId:"kimi-k2.6"};try{var r=document.referrer;if(r){var u=new URL(r);payload.referrerDomain=u.hostname;}}catch(e){}try{var vid=null;try{vid=localStorage.getItem('arena_vid');}catch(e){}if(!vid){vid=typeof crypto!=="undefined"&&crypto.randomUUID?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2)).slice(0,32);try{localStorage.setItem('arena_vid',vid);}catch(e){}}if(vid)payload.viewerId=vid;}catch(e){}try{fetch("https://www.designarena.ai/api/agon/page-views",{"method":"POST","headers":{"Content-Type":"application/json"},"body":JSON.stringify(payload),"keepalive":true});}catch(e){}})();</script>
+  <script data-arena-views="true">(function(){var isTop=false;try{isTop=window.self===window.top;}catch(e){}if(!isTop)return;window.__ARENA_META={generationId:"kimi-k2.6",tournamentId:"3d684c92-3747-452b-87c8-da2547f10ca0"};var payload={tournamentId:"3d684c92-3747-452b-87c8-da2547f10ca0",modelId:"kimi-k2.6"};try{var r=document.referrer;if(r){var u=new URL(r);payload.referrerDomain=u.hostname;}}catch(e){}try{var vid=null;try{vid=localStorage.getItem('arena_vid');}catch(e){}if(!vid){vid=typeof crypto!=="undefined"&&crypto.randomUUID?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2)).slice(0,32);try{localStorage.setItem('arena_vid',vid);}catch(e){}}if(vid)payload.viewerId=vid;}catch(e){}try{fetch("https://www.designarena.ai/api/agon/page-views",{"method":"POST","headers":{"Content-Type":"application/json"},"body":JSON.striny(payload),"keepalive":true});}catch(e){}})();</script>
 </head>
 <body class="pb-12">
   <header class="app-header py-4 mb-8">
@@ -286,7 +286,7 @@ loadRrweb();
             <option value="400">快 (0.4s)</option>
           </select>
           <button id="btnDlSemaphore" class="btn-action px-3 py-1.5 text-xs rounded-lg flex items-center gap-1">📥 SVG</button>
-          <button id="btnDlSemGif" class="btn-action px-3 py-1.5 text-xs rounded-lg flex items-center gap-1">🎨 GIF</button>
+          <button id="btnDlSemGif" onclick="downloadSemaphorePNG()" class="btn-action px-3 py-1.5 text-xs rounded-lg flex items-center gap-1">🖼️ PNG</button>
         </div>
       </div>
       <div id="outSemaphore" class="output-box flex-wrap gap-4 justify-center items-center min-h-[140px]"></div>
