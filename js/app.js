@@ -319,68 +319,23 @@ function encodeCaesar(text){
 }
 
 // ===================== PHONE KEYPAD =====================
-function buildPigpenGrid() {
-  const container = $('pigpenGrid');
-  if (!container) return; // 安全檢查
-
-  const grids = [
-    { name: "Grid 1", chars: ["A","B","C","D","E","F","G","H","I"], hasDot: false, type: "tic-tac-toe" },
-    { name: "Grid 2", chars: ["J","K","L","M","N","O","P","Q","R"], hasDot: true,  type: "tic-tac-toe" },
-    { name: "X 1",     chars: ["S","T","U","V"],                 hasDot: false, type: "x-shape" },
-    { name: "X 2",     chars: ["W","X","Y","Z"],                 hasDot: true,  type: "x-shape" }
+function buildPhoneTable(){
+  const wrap = $('phoneTableWrap');
+  let html = '<div class="phone-grid">';
+  const layout = [
+    {k:'1',l:''},{k:'2',l:'ABC'},{k:'3',l:'DEF'},
+    {k:'4',l:'GHI'},{k:'5',l:'JKL'},{k:'6',l:'MNO'},
+    {k:'7',l:'PQRS'},{k:'8',l:'TUV'},{k:'9',l:'WXYZ'},
+    {k:'*',l:''},{k:'0',l:'空格'},{k:'#',l:''}
   ];
-
-  let html = '<div class="flex flex-wrap gap-8 justify-center p-6 bg-black/10 rounded-2xl">';
-
-  grids.forEach(g => {
-    html += '<div class="flex flex-col items-center gap-4">';
-    
-    if (g.type === "tic-tac-toe") {
-      // 生成 3x3 井字格
-      html += '<div class="grid grid-cols-3 w-[150px] h-[150px]">';
-      g.chars.forEach((c, idx) => {
-        let borderStyle = "border-slate-500 ";
-        if (idx < 6) borderStyle += "border-b-2 "; // 下邊框
-        if (idx % 3 !== 2) borderStyle += "border-r-2 "; // 右邊框
-        
-        html += '<div class="relative flex items-center justify-center ' + borderStyle + ' w-[50px] h-[50px] text-amber-500 font-bold text-xl">';
-        html += c;
-        if (g.hasDot) {
-          html += '<span class="absolute bottom-1 right-1 w-1.5 h-1.5 bg-amber-500 rounded-full"></span>';
-        }
-        html += '</div>';
-      });
-      html += '</div>';
-    } else {
-      // 生成 叉字格 (使用 CSS 模擬 X 形狀)
-      html += '<div class="relative w-[150px] h-[150px]">';
-      // 兩條交叉線
-      html += '<div class="absolute inset-0 border-t-2 border-slate-500" style="transform: translateY(75px) rotate(45deg);"></div>';
-      html += '<div class="absolute inset-0 border-t-2 border-slate-500" style="transform: translateY(75px) rotate(-45deg);"></div>';
-      
-      const pos = [
-        "top-2 left-1/2 -translate-x-1/2",    // 上
-        "left-2 top-1/2 -translate-y-1/2",    // 左
-        "right-2 top-1/2 -translate-y-1/2",   // 右
-        "bottom-2 left-1/2 -translate-x-1/2"  // 下
-      ];
-      g.chars.forEach((c, idx) => {
-        html += '<div class="absolute ' + pos[idx] + ' text-amber-500 font-bold text-xl flex flex-col items-center">';
-        html += c;
-        if (g.hasDot) {
-          html += '<span class="w-1.5 h-1.5 bg-amber-500 rounded-full mt-0.5"></span>';
-        }
-        html += '</div>';
-      });
-      html += '</div>';
-    }
-    
-    html += '<span class="text-[10px] font-bold text-slate-600 uppercase">' + g.name + '</span>';
+  for(const item of layout){
+    html += '<div class="phone-key'+(item.l?'':' phone-key-empty')+'">';
+    html += '<div class="phone-key-num">'+item.k+'</div>';
+    if(item.l) html += '<div class="phone-key-letters">'+item.l+'</div>';
     html += '</div>';
-  });
-
+  }
   html += '</div>';
-  container.innerHTML = html;
+  wrap.innerHTML = html;
 }
 
 function encodePhone(text){
@@ -460,37 +415,68 @@ function drawPigpenSVG(char){
 
 function buildPigpenGrid() {
   const container = $('pigpenGrid');
-  // 定義朱高密碼的四個物理分組
-  const groups = [
-    { name: "Grid 1", chars: "ABCDEFGHI", cols: "grid-cols-3" },
-    { name: "Grid 2", chars: "JKLMNOPQR", cols: "grid-cols-3" },
-    { name: "X 1",     chars: "STUV",      cols: "grid-cols-2" },
-    { name: "X 2",     chars: "WXYZ",      cols: "grid-cols-2" }
+  if (!container) return; // 安全檢查
+
+  const grids = [
+    { name: "Grid 1", chars: ["A","B","C","D","E","F","G","H","I"], hasDot: false, type: "tic-tac-toe" },
+    { name: "Grid 2", chars: ["J","K","L","M","N","O","P","Q","R"], hasDot: true,  type: "tic-tac-toe" },
+    { name: "X 1",     chars: ["S","T","U","V"],                 hasDot: false, type: "x-shape" },
+    { name: "X 2",     chars: ["W","X","Y","Z"],                 hasDot: true,  type: "x-shape" }
   ];
 
-  let html = '<div class="flex flex-wrap gap-4 justify-center">'; // 外層容器
+  let html = '<div class="flex flex-wrap gap-8 justify-center p-6 bg-black/10 rounded-2xl">';
 
-  groups.forEach(group => {
-    // 建立一個帶有邊框的小分組，視覺上就像圖 2 的按鍵群
-    html += `<div class="flex flex-col items-center p-2 rounded-xl bg-black/30 border border-white/5 shadow-inner">`;
-    html += `<span class="text-[9px] text-slate-600 font-bold mb-2 uppercase tracking-tighter">${group.name}</span>`;
+  grids.forEach(g => {
+    html += '<div class="flex flex-col items-center gap-4">';
     
-    // 根據 cols 設定（3欄或2欄）來排列字母
-    html += `<div class="grid ${group.cols} gap-2">`;
-    
-    for (const c of group.chars) {
-      html += '<div class="flex flex-col items-center gap-1 p-1">';
-      html += '<span class="text-[10px] font-bold text-slate-500">'+c+'</span>';
-      html += drawPigpenSVG(c); // 調用你原本畫 SVG 的函數
+    if (g.type === "tic-tac-toe") {
+      // 生成 3x3 井字格
+      html += '<div class="grid grid-cols-3 w-[150px] h-[150px]">';
+      g.chars.forEach((c, idx) => {
+        let borderStyle = "border-slate-500 ";
+        if (idx < 6) borderStyle += "border-b-2 "; // 下邊框
+        if (idx % 3 !== 2) borderStyle += "border-r-2 "; // 右邊框
+        
+        html += '<div class="relative flex items-center justify-center ' + borderStyle + ' w-[50px] h-[50px] text-amber-500 font-bold text-xl">';
+        html += c;
+        if (g.hasDot) {
+          html += '<span class="absolute bottom-1 right-1 w-1.5 h-1.5 bg-amber-500 rounded-full"></span>';
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+    } else {
+      // 生成 叉字格 (使用 CSS 模擬 X 形狀)
+      html += '<div class="relative w-[150px] h-[150px]">';
+      // 兩條交叉線
+      html += '<div class="absolute inset-0 border-t-2 border-slate-500" style="transform: translateY(75px) rotate(45deg);"></div>';
+      html += '<div class="absolute inset-0 border-t-2 border-slate-500" style="transform: translateY(75px) rotate(-45deg);"></div>';
+      
+      const pos = [
+        "top-2 left-1/2 -translate-x-1/2",    // 上
+        "left-2 top-1/2 -translate-y-1/2",    // 左
+        "right-2 top-1/2 -translate-y-1/2",   // 右
+        "bottom-2 left-1/2 -translate-x-1/2"  // 下
+      ];
+      g.chars.forEach((c, idx) => {
+        html += '<div class="absolute ' + pos[idx] + ' text-amber-500 font-bold text-xl flex flex-col items-center">';
+        html += c;
+        if (g.hasDot) {
+          html += '<span class="w-1.5 h-1.5 bg-amber-500 rounded-full mt-0.5"></span>';
+        }
+        html += '</div>';
+      });
       html += '</div>';
     }
     
-    html += '</div></div>';
+    html += '<span class="text-[10px] font-bold text-slate-600 uppercase">' + g.name + '</span>';
+    html += '</div>';
   });
 
   html += '</div>';
   container.innerHTML = html;
 }
+
 function encodePigpen(text){
   return text.toUpperCase().split('').map(c=>{
     if(/^[A-Z]$/.test(c)) return drawPigpenSVG(c);
