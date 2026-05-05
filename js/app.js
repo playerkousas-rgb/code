@@ -221,7 +221,6 @@ function encodeGrid(text, alphabet, key){
   return out.trim();
 }
 // ===================== MORSE =====================
-// ===================== MORSE =====================
 function buildMorseTable(){
   const tbl = $('morseTable');
   const rows = [
@@ -522,14 +521,20 @@ function encodeSemaphore(text){
   for(const c of t){
     if(c===' ') { html += '<span class="w-6"></span>'; continue; }
     const src = getSemaphoreImage(c);
+    // 這裡的 label 定義可以保留（不影響顯示），但下方的 HTML 標籤必須拿掉
     const label = c==='!'?'Error':c==='@'?'End':c==='#'?'Answering':c==='$'?'Attention':c==='%'?'Numbers':c;
+    
     if(src){
       html += '<div class="flex flex-col items-center">';
       html += '<img src="'+src+'" alt="'+c+'" class="semaphore-img" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">';
       html += '<div class="hidden semaphore-img items-center justify-center text-3xl font-bold text-slate-600">'+c+'</div>';
-      html += '<span class="semaphore-char">'+label+'</span></div>';
+      
+      // 【修改處】刪除或註解掉下面這一行，就不會顯示 A, B, C, D
+      // html += '<span class="semaphore-char">'+label+'</span></div>'; 
+      html += '</div>'; // 直接閉合 div
     } else {
-      html += '<div class="flex flex-col items-center"><div class="semaphore-img flex items-center justify-center text-3xl font-bold text-slate-600">'+c+'</div><span class="semaphore-char">'+c+'</span></div>';
+      // 這裡處理的是沒圖片時顯示文字，如果你也想隱藏，可以把中間的 {c} 刪掉或隱藏
+      html += '<div class="flex flex-col items-center"><div class="semaphore-img flex items-center justify-center text-3xl font-bold text-slate-600">'+c+'</div></div>';
     }
   }
   return html;
