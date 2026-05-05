@@ -165,50 +165,63 @@ function adjustShift(delta){
   updateAll();
 }
 
-// ===================== GRID CIPHER =====================
+// ===================== GRID CIPHER (座標式密碼) =====================
 function buildGridTable(){
-  const key = ($('gridKey').value || 'SCOUT').toUpperCase().replace(/[^A-Z]/g,'').slice(0,5);
-  const used = new Set(key.split(''));
-  const rest = [];
-  for(let i=65;i<=90;i++){
+  // 1. 取得用戶輸入的 5 位金鑰 (例如 SCOUT 或 MATCH)
+  let keyStr = ($('gridKey').value || 'SCOUT').toUpperCase().replace(/[^A-Z]/g,'');
+  if(keyStr.length < 5) keyStr = (keyStr + 'SCOUT').slice(0, 5); 
+  const key = keyStr.slice(0, 5).split(''); // 這是座標標籤 (Labels)
+
+  // 2. 建立 5x5 的矩陣內容 (排除 Z，共 25 個字母)
+  // 依照 A, B, C, D...Y 的順序排列
+  const alphabet = [];
+  for(let i=65; i<=90; i++){
     const c = String.fromCharCode(i);
-    if(!used.has(c)) rest.push(c);
+    if(c !== 'Z') alphabet.push(c);
   }
-  // Only 25 cells, drop last one if 26 letters
-  const alphabet = key.split('').concat(rest).slice(0,25);
+
+  // 3. 繪製 HTML 表格
   const tbl = $('gridTable');
   let html = '<tr><th></th>';
-  for(let i=0;i<5;i++) html += '<th>'+key[i]+'</th>';
+  for(let i=0; i<5; i++) html += '<th>' + key[i] + '</th>'; // 頂部列標
   html += '</tr>';
-  for(let row=0;row<5;row++){
-    html += '<tr><th>'+key[row]+'</th>';
-    for(let col=0;col<5;col++){
-      const c = alphabet[row*5+col];
-      html += '<td data-ch="'+c+'">'+c+'</td>';
+
+  for(let row=0; row<5; row++){
+    html += '<tr><th>' + key[row] + '</th>'; // 左側行標
+    for(let col=0; col<5; col++){
+      const c = alphabet[row*5 + col];
+      html += '<td data-ch="'+c+'">' + c + '</td>';
     }
     html += '</tr>';
   }
   tbl.innerHTML = html;
-  return {alphabet, key};
+
+  return { alphabet, keyLabels: key };
 }
 
-function encodeGrid(text, alphabet, key){
+function encodeGrid(text, gridData){
   let out = '';
   const t = text.toUpperCase();
+  const { alphabet, keyLabels } = gridData;
+
   for(const ch of t){
-    if(ch===' ') { out += '  '; continue; }
+    if(ch === ' ') { out += '  '; continue; }
+    if(ch === 'Z') { out += 'Z '; continue; } // 依照要求 Z 輸出為 Z
+
     const idx = alphabet.indexOf(ch);
-    if(idx>=0){
-      const row = key[Math.floor(idx/5)];
-      const col = key[idx%5];
-      out += row+col+' ';
+    if(idx >= 0){
+      const rowIdx = Math.floor(idx / 5);
+      const colIdx = idx % 5;
+      
+      // 重要修改：列標在前 keyLabels[colIdx]，行標在後 keyLabels[rowIdx]
+      // 範例：B 在第0行, 第1列 -> keyLabels[1] + keyLabels[0] -> C + S -> CS
+      out += keyLabels[colIdx] + keyLabels[rowIdx] + ' ';
     } else {
-      out += ch+' ';
+      out += ch + ' ';
     }
   }
   return out.trim();
 }
-
 // ===================== MORSE =====================
 function buildMorseTable(){
   const tbl = $('morseTable');
