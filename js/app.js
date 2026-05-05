@@ -649,27 +649,43 @@ function playSemaphoreAnim(){
   showFrame();
 }
 function downloadSemaphoreSVG(){
-  // ... 前面代碼不變 ...
+  // 1. 取得輸入文字並轉換為大寫
+  const text = $('inputText').value.toUpperCase();
+  if(!text) return;
+
+  // 2. 初始化 SVG 畫布
+  let svgContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 200" style="background:#001a33">';
+  let x = 20;
+
   for(const c of text){
-    if(x > 1250) break;
-    if(c===' ') { x+=60; continue; }
-    const src = getSemaphoreImage(c);
-    if(src){
-      svgContent += '<image href="'+src+'" x="'+x+'" y="30" width="100" height="100"/>';
-    } else {
-      svgContent += '<text x="'+(x+50)+'" y="90" text-anchor="middle" fill="#ffcc00" font-size="48" font-weight="bold">'+c+'</text>';
+    if(x > 1400) break; // 防止超出畫布寬度
+
+    // 3. 處理空格：顯示為斜線 /
+    if(c === ' ') { 
+      svgContent += `<text x="${x + 30}" y="95" text-anchor="middle" fill="#64748b" font-size="60" font-weight="bold" font-family="sans-serif">/</text>`;
+      x += 80; 
+      continue; 
     }
 
-    // 【修改處】刪除或註解掉下面這兩行，生成的 SVG 就不會帶字
-    // const label = c==='!'?'Error':c==='@'?'End':c==='#'?'Answering':c==='$'?'Attention':c==='%'?'Numbers':c;
-    // svgContent += '<text x="'+(x+50)+'" y="155" text-anchor="middle" fill="#64748b" font-size="14" font-family="sans-serif">'+label+'</text>';
+    const src = getSemaphoreImage(c);
+    if(src){
+      // 4. 繪製旗號圖片 (注意：href 必須是完整路徑或 Base64，如果是本地相對路徑，下載後的 SVG 可能無法顯示圖片)
+      svgContent += '<image href="'+src+'" x="'+x+'" y="30" width="100" height="100"/>';
+      x += 120;
+    } else {
+      // 5. 處理符號（如 !@#$%）
+      svgContent += '<text x="'+(x+50)+'" y="95" text-anchor="middle" fill="#ffcc00" font-size="48" font-weight="bold" font-family="sans-serif">'+c+'</text>';
+      x += 120;
+    }
     
-    x += 130;
+    // 已刪除 Label 答案部分，確保下載的圖片也是「無答案版本」
   }
+
   svgContent += '</svg>';
+  
+  // 6. 執行下載
   downloadFile('semaphore.svg', svgContent, 'image/svg+xml');
 }
-
 // ===================== GIF DOWNLOAD =====================
 function downloadSemaphoreGIF(){
   const text = $('inputText').value.toUpperCase().replace(/[^A-Z!@#$%]/g,'');
