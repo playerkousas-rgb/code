@@ -648,43 +648,85 @@ function playSemaphoreAnim(){
   }
   showFrame();
 }
-function downloadSemaphoreSVG(){
-  // 1. 取得輸入文字並轉換為大寫
-  const text = $('inputText').value.toUpperCase();
-  if(!text) return;
-
-  // 2. 初始化 SVG 畫布
-  let svgContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 200" style="background:#001a33">';
-  let x = 20;
-
-  for(const c of text){
-    if(x > 1400) break; // 防止超出畫布寬度
-
-    // 3. 處理空格：顯示為斜線 /
-    if(c === ' ') { 
-      svgContent += `<text x="${x + 30}" y="95" text-anchor="middle" fill="#64748b" font-size="60" font-weight="bold" font-family="sans-serif">/</text>`;
-      x += 80; 
-      continue; 
-    }
-
-    const src = getSemaphoreImage(c);
-    if(src){
-      // 4. 繪製旗號圖片 (注意：href 必須是完整路徑或 Base64，如果是本地相對路徑，下載後的 SVG 可能無法顯示圖片)
-      svgContent += '<image href="'+src+'" x="'+x+'" y="30" width="100" height="100"/>';
-      x += 120;
-    } else {
-      // 5. 處理符號（如 !@#$%）
-      svgContent += '<text x="'+(x+50)+'" y="95" text-anchor="middle" fill="#ffcc00" font-size="48" font-weight="bold" font-family="sans-serif">'+c+'</text>';
-      x += 120;
-    }
+// ===================== SVG 下載專用 (不影響網頁顯示) =====================
+function downloadSemaphoreSVG() {
+    // 1. 取得輸入框文字並過濾非法字元
+    const raw = document.getElementById('inputText').value;
+    const upper = raw.toUpperCase();
+    const chars = upper.split('').filter(c => /^[A-Z\s!@#$%]$/.test(c));
     
-    // 已刪除 Label 答案部分，確保下載的圖片也是「無答案版本」
-  }
+    if (chars.length === 0) {
+        showToast("請先輸入文字再下載");
+        return;
+    }
+    showToast('正在生成向量 SVG...');
 
-  svgContent += '</svg>';
-  
-  // 6. 執行下載
-  downloadFile('semaphore.svg', svgContent, 'image/svg+xml');
+    const imgSize = 120;  // 每一格的大小 (設定大一點方便列印)
+    const padding = 40;   // 邊距
+    const maxCharsPerRow = 8; // 每行固定 8 個，達成自動換行
+    const rowCount = Math.ceil(chars.length / maxCharsPerRow);
+
+    // 計算畫布總寬高
+    const svgWidth = (maxCharsPerRow * imgSize) + (padding * 2);
+    const svgHeight = (rowCount * imgSize) + (padding * 2);
+
+    // 2. 建立 SVG 標籤與背景
+    let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">`;
+    svgContent += `<rect width="100%" height="100%" fill="#001a33" />`; // 保持深藍色背景
+
+    // 3. 逐個字元繪製
+    chars.forEach((c, i) => {
+        const col = i % maxCharsPerRow; // 第幾列
+        const row = Math.floor(i / maxCharsPerRow); // 第幾行
+        const xPos = padding + col * imgSize;
+        const yPos = padding + row * imgSize;
+        const centerX = xPos + imgSize / 2;
+        const centerY = yPos + imgSize / 2;
+
+        if (c === ' ') {
+            // 如果是空格，畫一個斜線
+            svgContent += `<text x="${centerX}" y="${centerY + 15}" font-family="Arial" font-size="60" font-weight="bold" fill="#64748b" text-anchor="middle">/</text>`;
+        } else if (semaphoreAngles[c]) {
+            // 使用你現有的角度數據繪製
+            const [a1, a2] = semaphoreAngles[c];
+            const getPos = ang => {
+                const rad = (ang - 90) * Math.PI / 180;
+                return {
+                    x: centerX + 40 * Math.cos(rad),
+                    y: centerY + 40 * Math.sin(rad)
+                };
+            };
+            const p1 = getPos(a1), p2 = getPos(a2);
+
+            // 繪製旗號小人線條
+            svgContent += `
+                <g>
+                    <!-- 頭部 -->
+                    <circle cx="${centerX}" cy="${centerY - 25}" r="12" fill="none" stroke="#fff" stroke-width="5"/>
+                    <!-- 身體 -->
+                    <line x1="${centerX}" y1="${centerY - 13}" x2="${centerX}" y2="${centerY + 30}" stroke="#fff" stroke-width="5"/>
+                    <!-- 旗桿 1 (金色) -->
+                    <line x1="${centerX}" y1="${centerY - 5}" x2="${p1.x}" y2="${p1.y}" stroke="#ffcc00" stroke-width="10" stroke-linecap="round"/>
+                    <!-- 旗桿 2 (藍色) -->
+                    <line x1="${centerX}" y1="${centerY - 5}" x2="${p2.x}" y2="${p2.y}" stroke="#00d2ff" stroke-width="10" stroke-linecap="round"/>
+                </g>`;
+        } else {
+            // 特殊符號 (!@#$%) 若無角度數據，則用文字代表
+            svgContent += `<text x="${centerX}" y="${centerY + 15}" font-family="Arial" font-size="40" font-weight="bold" fill="#ffcc00" text-anchor="middle">${c}</text>`;
+        }
+    });
+
+    svgContent += `</svg>`;
+
+    // 4. 觸發瀏覽器下載
+    const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'scout_semaphore_print.svg';
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ SVG 已成功下載');
 }
 // ===================== PNG DOWNLOAD (固定 8 格換行版) =====================
 function downloadSemaphorePNG() {
