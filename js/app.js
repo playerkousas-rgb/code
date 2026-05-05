@@ -319,23 +319,64 @@ function encodeCaesar(text){
 }
 
 // ===================== PHONE KEYPAD =====================
-function buildPhoneTable(){
-  const wrap = $('phoneTableWrap');
-  let html = '<div class="phone-grid">';
-  const layout = [
-    {k:'1',l:''},{k:'2',l:'ABC'},{k:'3',l:'DEF'},
-    {k:'4',l:'GHI'},{k:'5',l:'JKL'},{k:'6',l:'MNO'},
-    {k:'7',l:'PQRS'},{k:'8',l:'TUV'},{k:'9',l:'WXYZ'},
-    {k:'*',l:''},{k:'0',l:'空格'},{k:'#',l:''}
+function buildPigpenGrid() {
+  const container = $('pigpenGrid');
+  
+  // 定義幾何佈局
+  const grids = [
+    { name: "Grid 1", chars: ["A","B","C","D","E","F","G","H","I"], hasDot: false, type: "tic-tac-toe" },
+    { name: "Grid 2", chars: ["J","K","L","M","N","O","P","Q","R"], hasDot: true,  type: "tic-tac-toe" },
+    { name: "X 1",     chars: ["S","T","U","V"],                 hasDot: false, type: "x-shape" },
+    { name: "X 2",     chars: ["W","X","Y","Z"],                 hasDot: true,  type: "x-shape" }
   ];
-  for(const item of layout){
-    html += '<div class="phone-key'+(item.l?'':' phone-key-empty')+'">';
-    html += '<div class="phone-key-num">'+item.k+'</div>';
-    if(item.l) html += '<div class="phone-key-letters">'+item.l+'</div>';
-    html += '</div>';
-  }
+
+  let html = '<div class="flex flex-wrap gap-12 justify-center p-6 bg-black/10 rounded-2xl">';
+
+  grids.forEach(g => {
+    html += `<div class="flex flex-col items-center gap-4">`;
+    
+    if (g.type === "tic-tac-toe") {
+      // 生成 3x3 井字
+      html += `<div class="grid grid-cols-3 w-[150px] h-[150px] relative border-collapse">`;
+      g.chars.forEach((c, idx) => {
+        // 利用 border 組合出井字效果
+        let borderStyle = "border-slate-500 ";
+        if (idx < 6) borderStyle += "border-bottom-2 ";
+        if (idx % 3 !== 2) borderStyle += "border-right-2 ";
+        
+        html += `<div class="relative flex items-center justify-center ${borderStyle} w-[50px] h-[50px] text-amber-500 font-bold text-xl">`;
+        html += c + (g.hasDot ? '<span class="absolute bottom-2 right-2 w-1.5 h-1.5 bg-amber-500 rounded-full"></span>' : '');
+        html += `</div>`;
+      });
+      html += `</div>`;
+    } else {
+      // 生成 叉字 (使用自定義 CSS 繪製)
+      html += `<div class="relative w-[150px] h-[150px] border-2 border-transparent">`;
+      // 繪製 X 的兩條線
+      html += `<div class="absolute inset-0 border-t-2 border-slate-500 origin-top-left rotate-[45deg] scale-x-[1.41]"></div>`;
+      html += `<div class="absolute inset-0 border-t-2 border-slate-500 origin-top-right -rotate-[45deg] scale-x-[1.41]"></div>`;
+      
+      // 放置字母 (S=上, T=左, U=右, V=下 / W,X,Y,Z 同理)
+      const positions = [
+        "top-2 left-1/2 -translate-x-1/2",    // 上
+        "left-2 top-1/2 -translate-y-1/2",    // 左
+        "right-2 top-1/2 -translate-y-1/2",   // 右
+        "bottom-2 left-1/2 -translate-x-1/2"  // 下
+      ];
+      g.chars.forEach((c, idx) => {
+        html += `<div class="absolute ${positions[idx]} text-amber-500 font-bold text-xl flex flex-col items-center">`;
+        html += c + (g.hasDot ? '<span class="w-1.5 h-1.5 bg-amber-500 rounded-full mt-1"></span>' : '');
+        html += `</div>`;
+      });
+      html += `</div>`;
+    }
+    
+    html += `<span class="text-xs font-mono text-slate-500 font-bold">${g.name}</span>`;
+    html += `</div>`;
+  });
+
   html += '</div>';
-  wrap.innerHTML = html;
+  container.innerHTML = html;
 }
 
 function encodePhone(text){
