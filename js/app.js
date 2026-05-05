@@ -413,19 +413,39 @@ function drawPigpenSVG(char){
   </svg>`;
 }
 
-function buildPigpenGrid(){
+function buildPigpenGrid() {
   const container = $('pigpenGrid');
-  let html = '';
-  for(let i=65;i<=90;i++){
-    const c = String.fromCharCode(i);
-    html += '<div class="flex flex-col items-center gap-1 p-2 rounded-lg bg-black/20">';
-    html += '<span class="text-[10px] font-bold text-slate-500">'+c+'</span>';
-    html += drawPigpenSVG(c);
-    html += '</div>';
-  }
+  // 定義朱高密碼的四個物理分組
+  const groups = [
+    { name: "Grid 1", chars: "ABCDEFGHI", cols: "grid-cols-3" },
+    { name: "Grid 2", chars: "JKLMNOPQR", cols: "grid-cols-3" },
+    { name: "X 1",     chars: "STUV",      cols: "grid-cols-2" },
+    { name: "X 2",     chars: "WXYZ",      cols: "grid-cols-2" }
+  ];
+
+  let html = '<div class="flex flex-wrap gap-4 justify-center">'; // 外層容器
+
+  groups.forEach(group => {
+    // 建立一個帶有邊框的小分組，視覺上就像圖 2 的按鍵群
+    html += `<div class="flex flex-col items-center p-2 rounded-xl bg-black/30 border border-white/5 shadow-inner">`;
+    html += `<span class="text-[9px] text-slate-600 font-bold mb-2 uppercase tracking-tighter">${group.name}</span>`;
+    
+    // 根據 cols 設定（3欄或2欄）來排列字母
+    html += `<div class="grid ${group.cols} gap-2">`;
+    
+    for (const c of group.chars) {
+      html += '<div class="flex flex-col items-center gap-1 p-1">';
+      html += '<span class="text-[10px] font-bold text-slate-500">'+c+'</span>';
+      html += drawPigpenSVG(c); // 調用你原本畫 SVG 的函數
+      html += '</div>';
+    }
+    
+    html += '</div></div>';
+  });
+
+  html += '</div>';
   container.innerHTML = html;
 }
-
 function encodePigpen(text){
   return text.toUpperCase().split('').map(c=>{
     if(/^[A-Z]$/.test(c)) return drawPigpenSVG(c);
