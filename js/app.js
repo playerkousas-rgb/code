@@ -686,90 +686,87 @@ function downloadSemaphoreSVG(){
   // 6. 執行下載
   downloadFile('semaphore.svg', svgContent, 'image/svg+xml');
 }
-/ ===================== PNG DOWNLOAD (支援自動換行) =====================
+// ===================== PNG DOWNLOAD (支援自動換行) =====================
 function downloadSemaphorePNG() {
-  const text = $('inputText').value.toUpperCase().replace(/[^A-Z!@#$%\s]/g, '');
-  if (!text) return;
-  showToast('正在生成 PNG...');
+    const text = $('inputText').value.toUpperCase().replace(/[^A-Z!@#$%\s]/g, '');
+    if (!text) return;
+    showToast('正在生成 PNG...');
 
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  
-  const chars = text.split('');
-  const imgSize = 120; // 每個旗號格子的大小
-  const padding = 40;  // 邊距
-  
-  // --- 換行設定 ---
-  const maxCharsPerRow = 8; // 設定每行最多顯示 8 個旗號
-  const rowCount = Math.ceil(chars.length / maxCharsPerRow); // 計算總共有幾行
-  const charsInFirstRow = Math.min(chars.length, maxCharsPerRow);
-
-  // 計算畫布最終大小
-  canvas.width = charsInFirstRow * imgSize + padding * 2;
-  canvas.height = rowCount * imgSize + padding * 2;
-
-  // 1. 繪製背景
-  ctx.fillStyle = '#001a33';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  let loadedCount = 0;
-  
-  chars.forEach((c, i) => {
-    // 2. 計算目前字元應該在哪一列 (col) 和哪一行 (row)
-    const col = i % maxCharsPerRow;
-    const row = Math.floor(i / maxCharsPerRow);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
     
-    const xPos = padding + col * imgSize;
-    const yPos = padding + row * imgSize;
+    const chars = text.split('');
+    const imgSize = 120; // 格子大小
+    const padding = 40;  // 邊距
     
-    if (c === ' ') {
-      // 畫斜線分隔
-      ctx.font = 'bold 60px sans-serif';
-      ctx.fillStyle = '#64748b';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('/', xPos + imgSize / 2, yPos + imgSize / 2);
-      checkDone();
-    } else {
-      const src = getSemaphoreImage(c);
-      if (src) {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = function() {
-          // 繪製旗號
-          ctx.drawImage(img, xPos + 10, yPos + 10, 100, 100);
-          checkDone();
-        };
-        img.onerror = function() {
-          drawFallbackText(ctx, c, xPos, yPos);
-          checkDone();
-        };
-        img.src = src;
-      } else {
-        drawFallbackText(ctx, c, xPos, yPos);
-        checkDone();
-      }
-    }
-  });
+    const maxCharsPerRow = 8; 
+    const rowCount = Math.ceil(chars.length / maxCharsPerRow);
+    // 確保寬度至少能放幾個字，不會太縮
+    const displayCols = Math.min(chars.length, maxCharsPerRow);
 
-  function drawFallbackText(ctx, char, x, y) {
-    ctx.font = 'bold 40px sans-serif';
-    ctx.fillStyle = '#ffcc00';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(char, x + imgSize / 2, y + imgSize / 2);
-  }
+    canvas.width = (displayCols * imgSize) + (padding * 2);
+    canvas.height = (rowCount * imgSize) + (padding * 2);
 
-  function checkDone() {
-    loadedCount++;
-    if (loadedCount === chars.length) {
-      const link = document.createElement('a');
-      link.download = 'semaphore_message.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-      showToast('PNG 已完成換行並下載');
+    // 1. 背景
+    ctx.fillStyle = '#001a33';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    let loadedCount = 0;
+
+    // --- 關鍵的檢查函數 ---
+    function checkDone() {
+        loadedCount++;
+        if (loadedCount === chars.length) {
+            const link = document.createElement('a');
+            link.download = 'semaphore_message.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('PNG 已完成下載');
+        }
     }
-  }
+
+    function drawFallbackText(ctx, char, x, y) {
+        ctx.font = 'bold 40px sans-serif';
+        ctx.fillStyle = '#ffcc00';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(char, x + imgSize / 2, y + imgSize / 2);
+    }
+
+    // 2. 開始繪製
+    chars.forEach((c, i) => {
+        const col = i % maxCharsPerRow;
+        const row = Math.floor(i / maxCharsPerRow);
+        const xPos = padding + col * imgSize;
+        const yPos = padding + row * imgSize;
+        
+        if (c === ' ') {
+            ctx.font = 'bold 60px sans-serif';
+            ctx.fillStyle = '#64748b';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('/', xPos + imgSize / 2, yPos + imgSize / 2);
+            checkDone();
+        } else {
+            const src = getSemaphoreImage(c);
+            if (src) {
+                const img = new Image();
+                img.crossOrigin = 'anonymous'; // 避免跨域問題
+                img.onload = function() {
+                    ctx.drawImage(img, xPos + 10, yPos + 10, 100, 100);
+                    checkDone();
+                };
+                img.onerror = function() {
+                    drawFallbackText(ctx, c, xPos, yPos);
+                    checkDone();
+                };
+                img.src = src;
+            } else {
+                drawFallbackText(ctx, c, xPos, yPos);
+                checkDone();
+            }
+        }
+    });
 }
 
 // ===================== NATO =====================
