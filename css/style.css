@@ -298,15 +298,21 @@ body {
 /* Fullscreen */
 .cipher-card:fullscreen {
   background: var(--skw-navy-dark) !important;
-  padding: 3vh 4vw !important;
+  padding: 5vh 4vw !important; /* 增加一點邊距 */
   overflow-y: auto !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  justify-content: flex-start !important;
+  /* --- 關鍵修改：將 flex-start 改為 center --- */
+  justify-content: center !important; 
   width: 100vw !important;
   height: 100vh !important;
   border-radius: 0 !important;
+}
+
+/* 為了防止內容太多超出螢幕頂部，可以加一個微調 */
+.cipher-card:fullscreen > * {
+  max-width: 1200px; /* 限制最大寬度防止在大螢幕上拉得太開 */
 }
 .cipher-card:fullscreen::before { display: none; }
 .cipher-card:fullscreen .output-box {
