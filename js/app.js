@@ -592,7 +592,8 @@ function encodeSemaphore(text){
 let semAnimTimer = null;
 let semAnimPlaying = false;
 function playSemaphoreAnim(){
-  const text = $('inputText').value.toUpperCase().replace(/[^A-Z!@#$%]/g,'');
+  // 1. 修改這裡：在正則表達式中加入 \s 以保留空格 (SPACE)
+  const text = $('inputText').value.toUpperCase().replace(/[^A-Z!@#$%\s]/g,'');
   if(!text || semAnimPlaying) return;
   semAnimPlaying = true;
   $('semPlayText').textContent = '播放中...';
@@ -611,17 +612,29 @@ function playSemaphoreAnim(){
       updateAll();
       return;
     }
+    
     const c = chars[idx];
-    const src = getSemaphoreImage(c);
-    const label = c==='!'?'Error':c==='@'?'End':c==='#'?'Answering':c==='$'?'Attention':c==='%'?'Numbers':c;
-    let html = '<div class="flex flex-col items-center">';
-    if(src){
-      html += '<img src="'+src+'" alt="'+c+'" class="semaphore-img" style="width:120px;height:120px">';
+    
+    // 2. 處理空格的情況：如果是空格，顯示斜線 /
+    if (c === ' ') {
+      out.innerHTML = `
+        <div class="flex flex-col items-center">
+          <div class="semaphore-img flex items-center justify-center text-6xl font-bold text-slate-500" style="width:120px;height:120px">/</div>
+        </div>`;
     } else {
-      html += '<div class="semaphore-img flex items-center justify-center text-5xl font-bold text-slate-600" style="width:120px;height:120px">'+c+'</div>';
+      const src = getSemaphoreImage(c);
+      let html = '<div class="flex flex-col items-center">';
+      if(src){
+        html += '<img src="'+src+'" alt="'+c+'" class="semaphore-img" style="width:120px;height:120px">';
+      } else {
+        html += '<div class="semaphore-img flex items-center justify-center text-5xl font-bold text-slate-600" style="width:120px;height:120px">'+c+'</div>';
+      }
+      
+      // 3. 關鍵修改：刪除了原本顯示 label (答案) 的 <span> 行
+      html += '</div>';
+      out.innerHTML = html;
     }
-    html += '<span class="semaphore-char" style="font-size:16px">'+label+'</span></div>';
-    out.innerHTML = html;
+
     idx++;
     semAnimTimer = setTimeout(showFrame, speed);
   }
