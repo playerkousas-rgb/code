@@ -687,21 +687,63 @@ function downloadSemaphoreSVG(){
   downloadFile('semaphore.svg', svgContent, 'image/svg+xml');
 }
 // ===================== GIF DOWNLOAD =====================
-function downloadSemaphoreGIF(){
-  const text = $('inputText').value.toUpperCase().replace(/[^A-Z!@#$%]/g,'');
-  if(!text) return;
-  showToast('正在生成 GIF...');
+function downloadSemaphorePNG() {
+  const text = $('inputText').value.toUpperCase();
+  if (!text) return;
+  showToast('正在生成 PNG...');
 
-  const canvas = $('gifCanvas');
+  const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
-  const size = 200;
-  canvas.width = size;
-  canvas.height = size;
+  
+  const charArray = text.split('');
+  const imgSize = 120;
+  const padding = 20;
+  
+  canvas.width = charArray.length * imgSize + padding * 2;
+  canvas.height = 180;
 
-  const speed = parseInt($('semSpeed').value);
-  const frames = [];
-  const chars = text.split('');
+  // 繪製深藍色背景
+  ctx.fillStyle = '#001a33';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  let loadedCount = 0;
+  charArray.forEach((c, i) => {
+    const x = padding + i * imgSize;
+    
+    if (c === ' ') {
+      ctx.font = 'bold 60px sans-serif';
+      ctx.fillStyle = '#64748b';
+      ctx.textAlign = 'center';
+      ctx.fillText('/', x + imgSize/2, 110);
+      loadedCount++;
+      if (loadedCount === charArray.length) finalize();
+    } else {
+      const img = new Image();
+      img.onload = function() {
+        ctx.drawImage(img, x, 30, 100, 100);
+        loadedCount++;
+        if (loadedCount === charArray.length) finalize();
+      };
+      img.onerror = function() {
+        ctx.font = 'bold 48px sans-serif';
+        ctx.fillStyle = '#ffcc00';
+        ctx.textAlign = 'center';
+        ctx.fillText(c, x + imgSize/2, 110);
+        loadedCount++;
+        if (loadedCount === charArray.length) finalize();
+      };
+      img.src = getSemaphoreImage(c);
+    }
+  });
+
+  function finalize() {
+    const link = document.createElement('a');
+    link.download = 'semaphore_message.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('PNG 下載成功');
+  }
+}
   // Pre-load images
   const loadedImages = {};
   let loadCount = 0;
