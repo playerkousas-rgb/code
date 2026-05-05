@@ -220,62 +220,74 @@ function encodeGrid(text, alphabet, key){
   }
   return out.trim();
 }
-// 只替換這個函數，其他地方（包括 buildMorseTable）請保持你原本的樣子
-function playMorse(){
-  const text = $('inputText').value.toUpperCase();
-  if(!text || morsePlaying) return;
-  morsePlaying = true;
-  $('playText').textContent = '播放中...';
-  $('playIcon').textContent = '⏸';
-
-  const wpm = parseInt($('morseSpeed').value) || 20;
-  const dot = 1.2 / wpm; 
-
-  if(!morseAudioCtx) morseAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  const ctx = morseAudioCtx;
-  
-  const dash = dot * 3;
-  const gap = dot;            
-  const letterGap = dot * 3;  
-  const wordGap = dot * 7;    
-
-  let t = ctx.currentTime + 0.1;
-
-  for(let i = 0; i < text.length; i++){
-    const c = text[i];
-    const code = MORSE_CODE[c];
-    
-    if(code){
-      for(let j = 0; j < code.length; j++){
-        const sym = code[j];
-        const dur = (sym === '.' ? dot : dash);
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        
-        osc.frequency.value = 700;
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        
-        osc.start(t);
-        gain.gain.setValueAtTime(0.15, t);
-        // 關鍵：讓聲音在結束前稍微淡出，製造清脆的停頓感
-        gain.gain.exponentialRampToValueAtTime(0.001, t + (dur * 0.9));
-        osc.stop(t + dur);
-        
-        t += dur + gap;
-      }
-      t += (letterGap - gap);
-    } else if(c === ' '){
-      t += (wordGap - letterGap);
-    }
-  }
-
-  setTimeout(()=>{
-    morsePlaying = false;
-    $('playText').textContent = '發送音訊';
-    $('playIcon').textContent = '▶';
-  }, (t - ctx.currentTime) * 1000);
+// ===================== MORSE =====================
+function buildMorseTable(){
+  const tbl = $('morseTable');
+  const rows = [
+    ['A','B','C','D','E','F'],['G','H','I','J','K','L'],
+    ['M','N','O','P','Q','R'],['S','T','U','V','W','X'],['Y','Z','0','1','2','3'],['4','5','6','7','8','9']
+  ];
+  let html = '';
+  for(const row of rows){
+    html += '<tr>';
+    for(const c of row){
+      const code = MORSE_CODE[c]||'';
+      html += '<td data-ch="'+c+'"><b>'+c+'</b><br>'+code+'</td>';
+    }
+    html += '</tr>';
+  }
+  tbl.innerHTML = html;
 }
+
+function encodeMorse(text){
+  return text.toUpperCase().split('').map(c=>MORSE_CODE[c]||c).join(' ');
+}
+
+let morseAudioCtx = null;
+let morsePlaying = false;
+function playMorse(){
+  const text = $('inputText').value.toUpperCase();
+  if(!text || morsePlaying) return;
+  morsePlaying = true;
+  $('playText').textContent = '播放中...';
+  $('playIcon').textContent = '⏸';
+
+  const wpm = parseInt($('morseSpeed').value);
+  const dot = 1.2 / wpm; // seconds per dot at given WPM
+
+  if(!morseAudioCtx) morseAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  const ctx = morseAudioCtx;
+  const dash = dot*3, gap = dot, letterGap = dot*3, wordGap = dot*7;
+
+  let t = ctx.currentTime + 0.1;
+  for(const c of text){
+    const code = MORSE_CODE[c];
+    if(code){
+      for(const sym of code){
+        const dur = sym==='.'?dot:dash;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = 700;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        gain.gain.setValueAtTime(0.15, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t+dur);
+        osc.stop(t+dur);
+        t += dur + gap;
+      }
+      t += letterGap - gap;
+    } else if(c===' '){
+      t += wordGap - letterGap;
+    }
+  }
+  setTimeout(()=>{
+    morsePlaying = false;
+    $('playText').textContent = '發送音訊';
+    $('playIcon').textContent = '▶';
+  }, (t - ctx.currentTime)*1000);
+}
+
 // ===================== CAESAR =====================
 function buildCaesarTable(){
   const shift = parseInt($('caesarShift').value)||3;
