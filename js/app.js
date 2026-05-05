@@ -477,7 +477,8 @@ function buildPigpenGrid() {
 function encodePigpen(text){
   return text.toUpperCase().split('').map(c=>{
     if(/^[A-Z]$/.test(c)) return drawPigpenSVG(c);
-    if(c===' ') return '<span class="w-4"></span>';
+    // 修改這裡：讓空白變成一個有間距的斜線
+    if(c===' ') return '<span class="text-amber-500 font-bold mx-4" style="font-size:30px">/</span>';
     return '<span style="color:var(--skw-gold);font-weight:800;font-size:24px">'+c+'</span>';
   }).join('');
 }
