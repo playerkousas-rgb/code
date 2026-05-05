@@ -686,92 +686,88 @@ function downloadSemaphoreSVG(){
   // 6. 執行下載
   downloadFile('semaphore.svg', svgContent, 'image/svg+xml');
 }
-// ===================== GIF DOWNLOAD =====================
-function downloadSemaphoreGIF(){
-  const text = $('inputText').value.toUpperCase().replace(/[^A-Z!@#$%]/g,'');
-  if(!text) return;
-  showToast('正在生成 GIF...');
+// ===================== PNG DOWNLOAD (取代原本的 GIF) =====================
+function downloadSemaphorePNG() {
+  // 1. 取得文字並保留空格 (\s)
+  const text = $('inputText').value.toUpperCase().replace(/[^A-Z!@#$%\s]/g, '');
+  if (!text) return;
+  showToast('正在生成長條 PNG...');
 
-  const canvas = $('gifCanvas');
+  const canvas = document.createElement('canvas'); // 這裡用動態建立的 canvas 即可
   const ctx = canvas.getContext('2d');
-  const size = 200;
-  canvas.width = size;
-  canvas.height = size;
-
-  const speed = parseInt($('semSpeed').value);
-  const frames = [];
+  
   const chars = text.split('');
+  const imgSize = 120; // 每一格旗號的大小
+  const padding = 20;  // 左右留白
+  
+  // 2. 自動計算畫布寬度：字數愈多，圖就愈長
+  canvas.width = chars.length * imgSize + padding * 2;
+  canvas.height = 160; // 固定高度
 
-  // Pre-load images
-  const loadedImages = {};
-  let loadCount = 0;
-  const uniqueChars = [...new Set(chars)];
+  // 3. 繪製深藍色背景 (保持全站風格一致)
+  ctx.fillStyle = '#001a33';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  function captureFrame(img, char){
-    ctx.fillStyle = '#001a33';
-    ctx.fillRect(0, 0, size, size);
-    if(img){
-      ctx.drawImage(img, 50, 20, 100, 100);
-    } else {
-      ctx.fillStyle = '#ffcc00';
+  let loadedCount = 0;
+  
+  // 4. 開始逐個繪製
+  chars.forEach((c, i) => {
+    const xPos = padding + i * imgSize;
+    
+    if (c === ' ') {
+      // 如果是空格，畫一個灰色的分隔斜線 /
       ctx.font = 'bold 60px sans-serif';
+      ctx.fillStyle = '#64748b';
       ctx.textAlign = 'center';
-      ctx.fillText(char, size/2, 90);
-    }
-    const label = char==='!'?'Error':char==='@'?'End':char==='#'?'Answering':char==='$'?'Attention':char==='%'?'Numbers':char;
-    ctx.fillStyle = '#64748b';
-    ctx.font = '16px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(label, size/2, 150);
-    frames.push(canvas.toDataURL('image/png'));
-  }
-
-  function processAll(){
-    for(const c of chars){
-      captureFrame(loadedImages[c] || null, c);
-    }
-    // Create animated WebP/APNG-like using simple approach: download as zip of frames or use a data URI approach
-    // For simplicity, we'll create an animated PNG using canvas approach
-    createAnimatedPNG(frames, speed);
-  }
-
-  if(uniqueChars.length === 0) return;
-
-  uniqueChars.forEach(c=>{
-    const src = getSemaphoreImage(c);
-    if(src){
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = function(){
-        loadedImages[c] = img;
-        loadCount++;
-        if(loadCount === uniqueChars.length) processAll();
-      };
-      img.onerror = function(){
-        loadCount++;
-        if(loadCount === uniqueChars.length) processAll();
-      };
-      img.src = src;
+      ctx.textBaseline = 'middle';
+      ctx.fillText('/', xPos + imgSize / 2, 85);
+      
+      checkDone();
     } else {
-      loadCount++;
-      if(loadCount === uniqueChars.length) processAll();
+      const src = getSemaphoreImage(c);
+      if (src) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() {
+          // 繪製旗號圖片 (置中)
+          ctx.drawImage(img, xPos + 10, 20, 100, 100);
+          checkDone();
+        };
+        img.onerror = function() {
+          // 圖片載入失敗時，用文字代替
+          drawFallbackText(ctx, c, xPos);
+          checkDone();
+        };
+        img.src = src;
+      } else {
+        drawFallbackText(ctx, c, xPos);
+        checkDone();
+      }
     }
   });
-}
 
-function createAnimatedPNG(frames, delayMs){
-  // Use a simple approach: create a download of the first frame with instructions
-  // Real animated PNG/GIF requires complex encoding
-  // Fallback: download first frame as PNG
-  if(frames.length > 0){
-    const a = document.createElement('a');
-    a.href = frames[0];
-    a.download = 'semaphore-frame.png';
-    a.click();
-    showToast('GIF 需要外部工具合成，已下載第一幀');
+  // 輔助函數：畫文字（當沒圖片時）
+  function drawFallbackText(ctx, char, x) {
+    ctx.font = 'bold 40px sans-serif';
+    ctx.fillStyle = '#ffcc00';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(char, x + imgSize / 2, 85);
+  }
+
+  // 檢查是否所有字元都處理完了
+  function checkDone() {
+    loadedCount++;
+    if (loadedCount === chars.length) {
+      // 全部畫完，執行下載
+      const link = document.createElement('a');
+      link.download = 'semaphore_exercise.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      showToast('PNG 下載成功');
+    }
   }
 }
-
 
 // ===================== NATO =====================
 function buildNatoTable(){
