@@ -201,7 +201,7 @@ function encodeGrid(text, alphabet, key){
   let out = '';
   const t = text.toUpperCase();
   for(const ch of t){
-    if(ch === ' ') { out += '  '; continue; }
+    if (ch === ' ') { out += '/ '; continue; }
     if(ch === 'Z') { out += 'Z '; continue; } // 依照要求 Z 輸出為 Z
 
     const idx = alphabet.indexOf(ch);
