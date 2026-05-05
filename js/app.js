@@ -252,42 +252,58 @@ function playMorse(){
   $('playText').textContent = '播放中...';
   $('playIcon').textContent = '⏸';
 
-  const wpm = parseInt($('morseSpeed').value);
-  const dot = 1.2 / wpm; // seconds per dot at given WPM
+  // 獲取 WPM，如果覺得太快，建議介面預設值設為 15-20
+  const wpm = parseInt($('morseSpeed').value) || 20;
+  const dot = 1.2 / wpm; 
 
   if(!morseAudioCtx) morseAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
   const ctx = morseAudioCtx;
-  const dash = dot*3, gap = dot, letterGap = dot*3, wordGap = dot*7;
+  
+  // 標準間隔比例
+  const dash = dot * 3;
+  const gap = dot;            // 符號間 (dot/dash 之間)
+  const letterGap = dot * 3;  // 字母間
+  const wordGap = dot * 7;    // 單詞間 (空格)
 
   let t = ctx.currentTime + 0.1;
-  for(const c of text){
+
+  for(let i = 0; i < text.length; i++){
+    const c = text[i];
     const code = MORSE_CODE[c];
+    
     if(code){
       for(const sym of code){
-        const dur = sym==='.'?dot:dash;
+        const dur = (sym === '.' ? dot : dash);
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
+        
         osc.frequency.value = 700;
         osc.connect(gain);
+        gain.gain.setValueAtTime(0, t); // 確保起始點是靜音，減少爆音
         gain.connect(ctx.destination);
+        
         osc.start(t);
         gain.gain.setValueAtTime(0.15, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t+dur);
-        osc.stop(t+dur);
+        // 稍微縮短一點發聲時間 (dur * 0.9)，讓符號之間斷開得更乾淨
+        gain.gain.exponentialRampToValueAtTime(0.001, t + (dur * 0.9));
+        osc.stop(t + dur);
+        
         t += dur + gap;
       }
-      t += letterGap - gap;
-    } else if(c===' '){
-      t += wordGap - letterGap;
+      // 字母結束後增加停頓 (扣除掉最後一個符號後的 gap)
+      t += (letterGap - gap);
+    } else if(c === ' '){
+      // 空格時增加停頓 (扣除掉上一個字母後的 letterGap)
+      t += (wordGap - letterGap);
     }
   }
+
   setTimeout(()=>{
     morsePlaying = false;
     $('playText').textContent = '發送音訊';
     $('playIcon').textContent = '▶';
-  }, (t - ctx.currentTime)*1000);
+  }, (t - ctx.currentTime) * 1000);
 }
-
 // ===================== CAESAR =====================
 function buildCaesarTable(){
   const shift = parseInt($('caesarShift').value)||3;
