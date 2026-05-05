@@ -220,31 +220,7 @@ function encodeGrid(text, alphabet, key){
   }
   return out.trim();
 }
-// ===================== MORSE =====================
-function buildMorseTable(){
-  const tbl = $('morseTable');
-  const rows = [
-    ['A','B','C','D','E','F'],['G','H','I','J','K','L'],
-    ['M','N','O','P','Q','R'],['S','T','U','V','W','X'],['Y','Z','0','1','2','3'],['4','5','6','7','8','9']
-  ];
-  let html = '';
-  for(const row of rows){
-    html += '<tr>';
-    for(const c of row){
-      const code = MORSE_CODE[c]||'';
-      html += '<td data-ch="'+c+'"><b>'+c+'</b><br>'+code+'</td>';
-    }
-    html += '</tr>';
-  }
-  tbl.innerHTML = html;
-}
-
-function encodeMorse(text){
-  return text.toUpperCase().split('').map(c=>MORSE_CODE[c]||c).join(' ');
-}
-
-let morseAudioCtx = null;
-let morsePlaying = false;
+// 只替換這個函數，其他地方（包括 buildMorseTable）請保持你原本的樣子
 function playMorse(){
   const text = $('inputText').value.toUpperCase();
   if(!text || morsePlaying) return;
@@ -252,18 +228,16 @@ function playMorse(){
   $('playText').textContent = '播放中...';
   $('playIcon').textContent = '⏸';
 
-  // 獲取 WPM，如果覺得太快，建議介面預設值設為 15-20
   const wpm = parseInt($('morseSpeed').value) || 20;
   const dot = 1.2 / wpm; 
 
   if(!morseAudioCtx) morseAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
   const ctx = morseAudioCtx;
   
-  // 標準間隔比例
   const dash = dot * 3;
-  const gap = dot;            // 符號間 (dot/dash 之間)
-  const letterGap = dot * 3;  // 字母間
-  const wordGap = dot * 7;    // 單詞間 (空格)
+  const gap = dot;            
+  const letterGap = dot * 3;  
+  const wordGap = dot * 7;    
 
   let t = ctx.currentTime + 0.1;
 
@@ -272,28 +246,26 @@ function playMorse(){
     const code = MORSE_CODE[c];
     
     if(code){
-      for(const sym of code){
+      for(let j = 0; j < code.length; j++){
+        const sym = code[j];
         const dur = (sym === '.' ? dot : dash);
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         
         osc.frequency.value = 700;
         osc.connect(gain);
-        gain.gain.setValueAtTime(0, t); // 確保起始點是靜音，減少爆音
         gain.connect(ctx.destination);
         
         osc.start(t);
         gain.gain.setValueAtTime(0.15, t);
-        // 稍微縮短一點發聲時間 (dur * 0.9)，讓符號之間斷開得更乾淨
+        // 關鍵：讓聲音在結束前稍微淡出，製造清脆的停頓感
         gain.gain.exponentialRampToValueAtTime(0.001, t + (dur * 0.9));
         osc.stop(t + dur);
         
         t += dur + gap;
       }
-      // 字母結束後增加停頓 (扣除掉最後一個符號後的 gap)
       t += (letterGap - gap);
     } else if(c === ' '){
-      // 空格時增加停頓 (扣除掉上一個字母後的 letterGap)
       t += (wordGap - letterGap);
     }
   }
