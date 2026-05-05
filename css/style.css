@@ -298,58 +298,62 @@ body {
 /* Fullscreen */
 .cipher-card:fullscreen {
   background: var(--skw-navy-dark) !important;
-  padding: 5vh 4vw !important; /* 增加一點邊距 */
-  overflow-y: auto !important;
+  padding: 0 !important; /* 清除 padding 讓內容更好控制 */
+  overflow: hidden !important; /* 全螢幕通常不需要滾動條 */
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  /* --- 關鍵修改：將 flex-start 改為 center --- */
-  justify-content: center !important; 
+  justify-content: center !important; /* 垂直水平絕對置中 */
   width: 100vw !important;
   height: 100vh !important;
   border-radius: 0 !important;
 }
 
-/* 為了防止內容太多超出螢幕頂部，可以加一個微調 */
-.cipher-card:fullscreen > * {
-  max-width: 1200px; /* 限制最大寬度防止在大螢幕上拉得太開 */
-}
 .cipher-card:fullscreen::before { display: none; }
+
+/* 標題列在全螢幕下稍微放大並增加底部間距 */
+.cipher-card:fullscreen .card-title-bar {
+  margin-bottom: 4vh !important;
+}
+
+/* 輸出框：在全螢幕下這應該是視覺焦點 */
 .cipher-card:fullscreen .output-box {
-  font-size: clamp(1.8rem, 5vw, 3.5rem) !important;
-  min-height: 15vh !important;
-  padding: 2.5vh 3vw !important;
-  width: 92% !important;
-  margin: 2vh 0 !important;
+  font-size: clamp(2.5rem, 6vw, 4.5rem) !important; /* 更加大 */
+  min-height: 20vh !important;
+  width: 85% !important;
+  margin-bottom: 5vh !important;
+  background: rgba(255,255,255,0.05) !important;
+  border-color: var(--skw-blue-glow) !important;
 }
-.cipher-card:fullscreen .semaphore-img {
-  width: clamp(120px, 16vw, 220px) !important;
-  height: clamp(120px, 16vw, 220px) !important;
-}
-.cipher-card:fullscreen .semaphore-char {
-  font-size: clamp(1rem, 2vw, 1.5rem) !important;
-  color: #cbd5e1 !important;
-}
-.cipher-card:fullscreen .pigpen-svg {
-  width: clamp(55px, 7vw, 90px) !important;
-  height: clamp(55px, 7vw, 90px) !important;
-}
-.cipher-card:fullscreen .card-title-bar h3 {
-  font-size: clamp(1.2rem, 2.5vw, 1.8rem) !important;
-}
+
+/* 對照表容器：移除 Transform 改用寬度控制 */
 .cipher-card:fullscreen .ref-table-container {
-  max-width: 1000px !important;
-  width: 92% !important;
-  transform: scale(1.15);
-  transform-origin: top center;
+  max-width: 1200px !important;
+  width: 85% !important;
+  transform: none !important; /* 禁用縮放，因為這會弄歪佈局 */
+  background: rgba(0,0,0,0.4) !important;
+  padding: 2rem !important;
 }
-.cipher-card:fullscreen .phone-grid {
-  transform: scale(1.3);
-  transform-origin: top center;
-}
+
+/* 內部的 Grid 在全螢幕下自動放大字體與間距 */
+.cipher-card:fullscreen .ref-table, 
+.cipher-card:fullscreen .phone-grid, 
 .cipher-card:fullscreen .keyboard-layout {
-  transform: scale(1.3);
-  transform-origin: top center;
+  transform: scale(1.3) !important;
+  transform-origin: center center !important; /* 關鍵：必須是 center center */
+  margin: 2rem 0 !important;
+}
+
+/* 旗號圖案放大 */
+.cipher-card:fullscreen .semaphore-img {
+  width: 180px !important;
+  height: 180px !important;
+}
+
+/* 朱高 SVG 放大 */
+.cipher-card:fullscreen .pigpen-svg {
+  width: 100px !important;
+  height: 100px !important;
 }
 
 .radio-group input[type="radio"] { display: none; }
