@@ -844,7 +844,10 @@ function buildJyutpingTable(){
 }
 
 function encodeJyutping(text){
-  return text.toUpperCase().split('').map(c=>JYUTPING_MAP[c]||c).join(' ');
+  return text.toUpperCase().split('').map(c => {
+    if (c === ' ') return '/'; // 空格轉斜線
+    return JYUTPING_MAP[c] || c;
+  }).join(' ');
 }
 
 // ===================== PINYIN =====================
@@ -866,9 +869,11 @@ function buildPinyinTable(){
 }
 
 function encodePinyin(text){
-  return text.toUpperCase().split('').map(c=>PINYIN_MAP[c]||c).join(' ');
+  return text.toUpperCase().split('').map(c => {
+    if (c === ' ') return '/'; // 空格轉斜線
+    return PINYIN_MAP[c] || c;
+  }).join(' ');
 }
-
 // ===================== DOWNLOAD =====================
 function downloadFile(filename, content, mime){
   const blob = new Blob([content], {type:mime});
