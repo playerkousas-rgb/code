@@ -812,11 +812,17 @@ function buildKeyboardTable(containerId, map){
 }
 
 function encodeCangjie(text){
-  return text.toUpperCase().split('').map(c=>CANGJIE_MAP[c]||c).join(' ');
+  return text.toUpperCase().split('').map(c => {
+    if (c === ' ') return '/'; // 空格轉換為斜線
+    return CANGJIE_MAP[c] || c;
+  }).join(' ');
 }
 
 function encodeQuick(text){
-  return text.toUpperCase().split('').map(c=>QUICK_MAP[c]||c).join(' ');
+  return text.toUpperCase().split('').map(c => {
+    if (c === ' ') return '/'; // 空格轉換為斜線
+    return QUICK_MAP[c] || c;
+  }).join(' ');
 }
 
 // ===================== JYUTPING =====================
