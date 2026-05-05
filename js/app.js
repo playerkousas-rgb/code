@@ -592,11 +592,21 @@ function encodeSemaphore(text){
 let semAnimTimer = null;
 let semAnimPlaying = false;
 function playSemaphoreAnim(){
-  // 1. 修改這裡：在正則表達式中加入 \s 以保留空格 (SPACE)
+  // --- 新增暫停邏輯 ---
+  if(semAnimPlaying) {
+    clearTimeout(semAnimTimer); // 停止計時器
+    semAnimPlaying = false;
+    $('semPlayText').textContent = '動畫播放';
+    $('semPlayIcon').textContent = '▶';
+    return; // 結束函數，不往後執行
+  }
+
+  // --- 原有的播放邏輯 ---
   const text = $('inputText').value.toUpperCase().replace(/[^A-Z!@#$%\s]/g,'');
-  if(!text || semAnimPlaying) return;
+  if(!text) return;
+
   semAnimPlaying = true;
-  $('semPlayText').textContent = '播放中...';
+  $('semPlayText').textContent = '停止播放'; // 這裡改為「停止」或「暫停」更直覺
   $('semPlayIcon').textContent = '⏸';
 
   const speed = parseInt($('semSpeed').value);
@@ -615,7 +625,7 @@ function playSemaphoreAnim(){
     
     const c = chars[idx];
     
-    // 2. 處理空格的情況：如果是空格，顯示斜線 /
+    // 空格處理
     if (c === ' ') {
       out.innerHTML = `
         <div class="flex flex-col items-center">
@@ -629,9 +639,7 @@ function playSemaphoreAnim(){
       } else {
         html += '<div class="semaphore-img flex items-center justify-center text-5xl font-bold text-slate-600" style="width:120px;height:120px">'+c+'</div>';
       }
-      
-      // 3. 關鍵修改：刪除了原本顯示 label (答案) 的 <span> 行
-      html += '</div>';
+      html += '</div>'; // 已移除答案 Label
       out.innerHTML = html;
     }
 
@@ -640,7 +648,6 @@ function playSemaphoreAnim(){
   }
   showFrame();
 }
-
 function downloadSemaphoreSVG(){
   // ... 前面代碼不變 ...
   for(const c of text){
