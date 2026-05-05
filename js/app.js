@@ -415,7 +415,7 @@ function drawPigpenSVG(char){
 
 function buildPigpenGrid() {
   const container = $('pigpenGrid');
-  if (!container) return; // 安全檢查
+  if (!container) return;
 
   const grids = [
     { name: "Grid 1", chars: ["A","B","C","D","E","F","G","H","I"], hasDot: false, type: "tic-tac-toe" },
@@ -430,53 +430,50 @@ function buildPigpenGrid() {
     html += '<div class="flex flex-col items-center gap-4">';
     
     if (g.type === "tic-tac-toe") {
-      // 生成 3x3 井字格
+      // --- 井字格 (保持原本完美的寫法) ---
       html += '<div class="grid grid-cols-3 w-[150px] h-[150px]">';
       g.chars.forEach((c, idx) => {
         let borderStyle = "border-slate-500 ";
-        if (idx < 6) borderStyle += "border-b-2 "; // 下邊框
-        if (idx % 3 !== 2) borderStyle += "border-r-2 "; // 右邊框
-        
+        if (idx < 6) borderStyle += "border-b-2 ";
+        if (idx % 3 !== 2) borderStyle += "border-r-2 ";
         html += '<div class="relative flex items-center justify-center ' + borderStyle + ' w-[50px] h-[50px] text-amber-500 font-bold text-xl">';
         html += c;
-        if (g.hasDot) {
-          html += '<span class="absolute bottom-1 right-1 w-1.5 h-1.5 bg-amber-500 rounded-full"></span>';
-        }
+        if (g.hasDot) html += '<span class="absolute bottom-1 right-1 w-1.5 h-1.5 bg-amber-500 rounded-full"></span>';
         html += '</div>';
       });
       html += '</div>';
     } else {
-      // 生成 叉字格 (使用 CSS 模擬 X 形狀)
+      // --- X 叉字格 (改用 SVG 繪製背景線，確保絕對精準) ---
       html += '<div class="relative w-[150px] h-[150px]">';
-      // 兩條交叉線
-      html += '<div class="absolute inset-0 border-t-2 border-slate-500" style="transform: translateY(75px) rotate(45deg);"></div>';
-      html += '<div class="absolute inset-0 border-t-2 border-slate-500" style="transform: translateY(75px) rotate(-45deg);"></div>';
+      // SVG 畫交叉線
+      html += '<svg class="absolute inset-0 w-full h-full" style="pointer-events: none;">';
+      html += '<line x1="0" y1="0" x2="150" y2="150" stroke="#64748b" stroke-width="2" />';
+      html += '<line x1="150" y1="0" x2="0" y2="150" stroke="#64748b" stroke-width="2" />';
+      html += '</svg>';
       
+      // 字母位置計算 (調整過後的坐標)
       const pos = [
-        "top-2 left-1/2 -translate-x-1/2",    // 上
-        "left-2 top-1/2 -translate-y-1/2",    // 左
-        "right-2 top-1/2 -translate-y-1/2",   // 右
-        "bottom-2 left-1/2 -translate-x-1/2"  // 下
+        "top-2 left-1/2 -translate-x-1/2",    // 上 (S/W)
+        "left-4 top-1/2 -translate-y-1/2",    // 左 (T/X)
+        "right-4 top-1/2 -translate-y-1/2",   // 右 (U/Y)
+        "bottom-2 left-1/2 -translate-x-1/2"  // 下 (V/Z)
       ];
       g.chars.forEach((c, idx) => {
-        html += '<div class="absolute ' + pos[idx] + ' text-amber-500 font-bold text-xl flex flex-col items-center">';
+        html += '<div class="absolute ' + pos[idx] + ' text-amber-500 font-bold text-xl flex flex-col items-center z-10">';
         html += c;
-        if (g.hasDot) {
-          html += '<span class="w-1.5 h-1.5 bg-amber-500 rounded-full mt-0.5"></span>';
-        }
+        if (g.hasDot) html += '<span class="w-1.5 h-1.5 bg-amber-500 rounded-full mt-0.5"></span>';
         html += '</div>';
       });
       html += '</div>';
     }
     
-    html += '<span class="text-[10px] font-bold text-slate-600 uppercase">' + g.name + '</span>';
+    html += '<span class="text-[10px] font-bold text-slate-600 uppercase tracking-widest">' + g.name + '</span>';
     html += '</div>';
   });
 
   html += '</div>';
   container.innerHTML = html;
 }
-
 function encodePigpen(text){
   return text.toUpperCase().split('').map(c=>{
     if(/^[A-Z]$/.test(c)) return drawPigpenSVG(c);
