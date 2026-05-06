@@ -565,8 +565,8 @@ function getSemaphoreSVGPath(angles, centerX, centerY) {
     // 根據你的 semaphoreAngles 定義：第一個角度通常是右手，第二個是左手
     angles.forEach((angle, index) => {
         const rad = (angle - 90) * (Math.PI / 180);
-        const x2 = centerX + Math.cos(rad) * 35;
-        const y2 = (centerY - 5) + Math.sin(rad) * 35;
+        const x2 = centerX + Math.cos(rad) * 25;
+        const y2 = (centerY - 5) + Math.sin(rad) * 25;
         
         // index 0 為右手 (黃色 #facc15)，index 1 為左手 (藍色 #0ea5e9)
         const handColor = (index === 0) ? '#facc15' : '#0ea5e9';
