@@ -702,49 +702,49 @@ function downloadSemaphoreSVG() {
     const rows = Math.ceil(chars.length / charsPerRow);
     const padding = 40;
 
+    // 建立完整的 SVG，包含背景
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${charsPerRow * size + padding * 2}" height="${rows * size + padding * 2}">`;
     svg += `<rect width="100%" height="100%" fill="#001a33" />`;
 
     chars.forEach((char, i) => {
         const col = i % charsPerRow;
         const row = Math.floor(i / charsPerRow);
+        // 設定每個小旗號的中心點座標 (x, y)
         const x = padding + col * size + size / 2;
         const y = padding + row * size + size / 2;
+        const shoulderY = y - 5; // 肩膀中心點，對齊原本的 y-5
 
         if (char === ' ') {
+            // 空格繪製斜線
             svg += `<line x1="${x-15}" y1="${y+15}" x2="${x+15}" y2="${y-15}" stroke="#64748b" stroke-width="4"/>`;
         } else {
             const [a1, a2] = semaphoreAngles[char];
-            const armLen = 40;
-
-            /**
-             * 核心修正：
-             * 1. (90 - angle): 90度起點在正右方，減去角度 = 順時針旋轉。
-             * 2. 這樣 0度會剛好在 90度位置(正下方)，45度會順時針轉向左下(對應旗手視角)。
-             */
-            const rad1 = (90 - a1) * Math.PI / 180;
-            const rad2 = (90 - a2) * Math.PI / 180;
-
-            const p1x = x + armLen * Math.cos(rad1);
-            const p1y = y + armLen * Math.sin(rad1);
-            const p2x = x + armLen * Math.cos(rad2);
-            const p2y = y + armLen * Math.sin(rad2);
 
             svg += `
                 <g stroke-linecap="round">
+                    <!-- 文字標籤 -->
                     <text x="${x}" y="${y+55}" fill="#ffffff" font-size="12" text-anchor="middle" font-family="Arial">${char}</text>
+                    
+                    <!-- 身體與頭部 -->
                     <circle cx="${x}" cy="${y-25}" r="12" fill="none" stroke="#ffffff" stroke-width="5"/>
                     <line x1="${x}" y1="${y-13}" x2="${x}" y2="${y+30}" stroke="#ffffff" stroke-width="5"/>
-                    <!-- a1 角度繪製為黃色手臂 -->
-                    <line x1="${x}" y1="${y-5}" x2="${p1x}" y2="${p1y}" stroke="#ffcc00" stroke-width="10"/>
-                    <!-- a2 角度繪製為藍色手臂 -->
-                    <line x1="${x}" y1="${y-5}" x2="${p2x}" y2="${p2y}" stroke="#00d2ff" stroke-width="10"/>
+                    
+                    <!-- 黃色手臂 (a1)：從肩膀向下畫 40 單位，再旋轉角度 -->
+                    <line x1="${x}" y1="${shoulderY}" x2="${x}" y2="${shoulderY + 40}" 
+                          stroke="#ffcc00" stroke-width="10" 
+                          transform="rotate(${a1}, ${x}, ${shoulderY})" />
+                    
+                    <!-- 藍色手臂 (a2)：從肩膀向下畫 40 單位，再旋轉角度 -->
+                    <line x1="${x}" y1="${shoulderY}" x2="${x}" y2="${shoulderY + 40}" 
+                          stroke="#00d2ff" stroke-width="10" 
+                          transform="rotate(${a2}, ${x}, ${shoulderY})" />
                 </g>`;
         }
     });
 
     svg += `</svg>`;
 
+    // 下載處理
     const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
