@@ -553,43 +553,29 @@ function downloadPigpenSVG(){
 
 // ===================== SEMAPHORE =====================
 function getSemaphoreSVGPath(angles, centerX, centerY) {
-    // 畫火柴人身體與腳
-    let person = `
-        <circle cx="${centerX}" cy="${centerY - 25}" r="7" fill="none" stroke="white" stroke-width="2"/>
-        <line x1="${centerX}" y1="${centerY - 18}" x2="${centerX}" y2="${centerY + 5}" stroke="white" stroke-width="2"/>
-        <line x1="${centerX}" y1="${centerY + 5}" x2="${centerX - 8}" y2="${centerY + 20}" stroke="white" stroke-width="2"/>
-        <line x1="${centerX}" y1="${centerY + 5}" x2="${centerX + 8}" y2="${centerY + 20}" stroke="white" stroke-width="2"/>
+    // 1. 白色火柴人主體
+    let html = `
+        <circle cx="${centerX}" cy="${centerY - 20}" r="6" fill="none" stroke="white" stroke-width="2"/>
+        <line x1="${centerX}" y1="${centerY - 14}" x2="${centerX}" y2="${centerY + 5}" stroke="white" stroke-width="2"/>
+        <line x1="${centerX}" y1="${centerY + 5}" x2="${centerX - 8}" y2="${centerY + 18}" stroke="white" stroke-width="2"/>
+        <line x1="${centerX}" y1="${centerY + 5}" x2="${centerX + 8}" y2="${centerY + 18}" stroke="white" stroke-width="2"/>
     `;
 
-    // 畫手與旗子
-    const hands = angles.map(angle => {
+    // 2. 畫雙手 (右手黃色，左手藍色)
+    // 根據你的 semaphoreAngles 定義：第一個角度通常是右手，第二個是左手
+    angles.forEach((angle, index) => {
         const rad = (angle - 90) * (Math.PI / 180);
-        const handLength = 30;
-        const x2 = centerX + Math.cos(rad) * handLength;
-        const y2 = (centerY - 5) + Math.sin(rad) * handLength;
+        const x2 = centerX + Math.cos(rad) * 35;
+        const y2 = (centerY - 5) + Math.sin(rad) * 35;
         
-        // 旗幟頂點
-        const flagSize = 15;
-        // 計算垂直於手臂的向量來畫正方形旗幟
-        const vx = Math.cos(rad);
-        const vy = Math.sin(rad);
-        const nx = -vy; // 法向量
-        const ny = vx;
+        // index 0 為右手 (黃色 #facc15)，index 1 為左手 (藍色 #0ea5e9)
+        const handColor = (index === 0) ? '#facc15' : '#0ea5e9';
+        
+        html += `<line x1="${centerX}" y1="${centerY - 5}" x2="${x2}" y2="${y2}" 
+                  stroke="${handColor}" stroke-width="4" stroke-linecap="round" />`;
+    });
 
-        // 建立一個簡單的矩形旗幟 (紅黃對角)
-        const p1x = x2, p1y = y2;
-        const p2x = x2 + vx * flagSize, p2y = y2 + vy * flagSize;
-        const p3x = x2 + (vx + nx) * flagSize, p3y = y2 + (vy + ny) * flagSize;
-        const p4x = x2 + nx * flagSize, p4y = y2 + ny * flagSize;
-
-        return `
-            <line x1="${centerX}" y1="${centerY - 5}" x2="${x2}" stroke="white" stroke-width="2.5" />
-            <polygon points="${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y}" fill="red" />
-            <polygon points="${p1x},${p1y} ${p3x},${p3y} ${p4x},${p4y}" fill="yellow" />
-        `;
-    }).join('');
-
-    return person + hands;
+    return html;
 }
 function getSemaphoreImage(ch){
   const file = SEMAPHORE_MAP[ch.toUpperCase()];
@@ -705,21 +691,8 @@ function downloadSemaphoreSVG() {
     const text = $('inputText').value.toUpperCase();
     if (!text) return;
 
-    // 定義角度 (包含特殊符號)
-    const semaphoreAngles = { 
-        'A': [180, 225], 'B': [180, 270], 'C': [180, 315], 'D': [180, 0], 
-        'E': [0, 45], 'F': [0, 90], 'G': [0, 135], 'H': [225, 270], 
-        'I': [225, 315], 'J': [90, 0], 'K': [225, 0], 'L': [225, 45], 
-        'M': [225, 90], 'N': [225, 135], 'O': [270, 315], 'P': [270, 0], 
-        'Q': [270, 45], 'R': [270, 90], 'S': [270, 135], 'T': [315, 0], 
-        'U': [315, 45], 'V': [0, 90], 'W': [45, 90], 'X': [45, 135], 
-        'Y': [315, 90], 'Z': [135, 90],
-        '!': [225, 225], '@': [0, 0], '#': [135, 225], '$': [90, 90], '%': [45, 135]
-    };
-
-    // 配置畫布
-    const charWidth = 120;
-    const charHeight = 160; 
+    const charWidth = 100;
+    const charHeight = 120;
     const padding = 50;
     const itemsPerRow = 10;
     const rows = Math.ceil(text.length / itemsPerRow);
@@ -727,7 +700,6 @@ function downloadSemaphoreSVG() {
     const height = rows * charHeight + padding * 2;
 
     let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
-    // 深藍色背景，適合專業展示
     svgContent += `<rect width="100%" height="100%" fill="#001a33" />`;
 
     text.split('').forEach((c, index) => {
@@ -737,24 +709,16 @@ function downloadSemaphoreSVG() {
         const y = padding + row * charHeight + charHeight / 2;
 
         if (c === ' ') {
-            svgContent += `<text x="${x}" y="${y + 10}" text-anchor="middle" fill="#64748b" font-size="60" font-weight="bold" font-family="Arial">/</text>`;
+            svgContent += `<text x="${x}" y="${y + 5}" text-anchor="middle" fill="#64748b" font-size="50" font-family="Arial">/</text>`;
         } else if (semaphoreAngles[c]) {
             svgContent += getSemaphoreSVGPath(semaphoreAngles[c], x, y);
         } else {
-            svgContent += `<text x="${x}" y="${y + 10}" text-anchor="middle" fill="#facc15" font-size="40" font-weight="bold" font-family="Arial">${c}</text>`;
+            svgContent += `<text x="${x}" y="${y + 5}" text-anchor="middle" fill="#facc15" font-size="30" font-family="Arial">${c}</text>`;
         }
     });
 
     svgContent += '</svg>';
-    
-    // 執行下載
-    const blob = new Blob([svgContent], {type: 'image/svg+xml;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'semaphore_pro.svg';
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadFile('semaphore_lesson.svg', svgContent, 'image/svg+xml');
 }
 // ===================== PNG DOWNLOAD (固定 8 格換行版) =====================
 function downloadSemaphorePNG() {
