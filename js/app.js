@@ -715,17 +715,15 @@ function downloadSemaphoreSVG() {
             svg += `<line x1="${x-15}" y1="${y+15}" x2="${x+15}" y2="${y-15}" stroke="#64748b" stroke-width="4"/>`;
         } else {
             const [a1, a2] = semaphoreAngles[char];
-            
-            // 關鍵修正：手臂長度
             const armLen = 40;
 
             /**
-             * 數學補正邏輯：
-             * 因為 Math.cos(0) 是水平向右，而你的 0 是垂直向下。
-             * 我們必須加上 90 度 (Math.PI / 2) 來校正座標軸。
+             * 核心修正：
+             * 1. (90 - angle): 90度起點在正右方，減去角度 = 順時針旋轉。
+             * 2. 這樣 0度會剛好在 90度位置(正下方)，45度會順時針轉向左下(對應旗手視角)。
              */
-            const rad1 = (a1 + 90) * Math.PI / 180;
-            const rad2 = (a2 + 90) * Math.PI / 180;
+            const rad1 = (90 - a1) * Math.PI / 180;
+            const rad2 = (90 - a2) * Math.PI / 180;
 
             const p1x = x + armLen * Math.cos(rad1);
             const p1y = y + armLen * Math.sin(rad1);
@@ -734,15 +732,12 @@ function downloadSemaphoreSVG() {
 
             svg += `
                 <g stroke-linecap="round">
-                    <!-- 下方字母標籤 -->
                     <text x="${x}" y="${y+55}" fill="#ffffff" font-size="12" text-anchor="middle" font-family="Arial">${char}</text>
-                    
-                    <!-- 身體與頭部 -->
                     <circle cx="${x}" cy="${y-25}" r="12" fill="none" stroke="#ffffff" stroke-width="5"/>
                     <line x1="${x}" y1="${y-13}" x2="${x}" y2="${y+30}" stroke="#ffffff" stroke-width="5"/>
-                    
-                    <!-- 手臂：a1 用黃色，a2 用藍色 (對應你的 CONST 定義) -->
+                    <!-- a1 角度繪製為黃色手臂 -->
                     <line x1="${x}" y1="${y-5}" x2="${p1x}" y2="${p1y}" stroke="#ffcc00" stroke-width="10"/>
+                    <!-- a2 角度繪製為藍色手臂 -->
                     <line x1="${x}" y1="${y-5}" x2="${p2x}" y2="${p2y}" stroke="#00d2ff" stroke-width="10"/>
                 </g>`;
         }
@@ -750,12 +745,11 @@ function downloadSemaphoreSVG() {
 
     svg += `</svg>`;
 
-    // 下載執行
     const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'scout-semaphore-final.svg';
+    link.download = 'scout-semaphore-print.svg';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
