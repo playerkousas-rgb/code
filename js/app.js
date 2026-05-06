@@ -657,57 +657,44 @@ function playSemaphoreAnim(){
   }
   showFrame();
 }
-function downloadSemaphoreSVG() {
-    const input = document.getElementById('inputText').value.toUpperCase();
-    const chars = input.split('').filter(c => semaphoreAngles[c] || c === ' ');
-    if (chars.length === 0) return;
-
-    const size = 120;
-    const charsPerRow = 8;
-    const rows = Math.ceil(chars.length / charsPerRow);
-    const padding = 40;
-
-    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${charsPerRow * size + padding * 2}" height="${rows * size + padding * 2}">`;
-    svg += `<rect width="100%" height="100%" fill="#001a33" />`;
-
-    chars.forEach((char, i) => {
-        const col = i % charsPerRow;
-        const row = Math.floor(i / charsPerRow);
-        const x = padding + col * size + (size / 2) - 30;
-        const y = padding + row * size + (size / 2) - 30;
-
-        if (char === ' ') {
-            svg += `<line x1="${x+15}" y1="${y+45}" x2="${x+45}" y2="${y+15}" stroke="#64748b" stroke-width="4"/>`;
-        } else {
-            const angles = semaphoreAngles[char];
-            svg += `
-                <g transform="translate(${x}, ${y})">
-                    <text x="30" y="85" fill="#ffffff" font-size="14" text-anchor="middle" font-family="Arial">${char}</text>
-                    <circle cx="30" cy="30" r="15" fill="none" stroke="white" stroke-width="2"/>
-                    <line x1="30" y1="30" x2="30" y2="70" stroke="white" stroke-width="2"/>
-                    
-                    <!-- 黃色手臂：照抄 HTML 邏輯，線段向下畫 (30-45) -->
-                    <line x1="30" y1="30" x2="30" y2="45" 
-                          stroke="yellow" stroke-width="5" stroke-linecap="round"
-                          transform="rotate(${angles[0]}, 30, 30)" />
-                          
-                    <!-- 藍色手臂 -->
-                    <line x1="30" y1="30" x2="30" y2="45" 
-                          stroke="#007bff" stroke-width="5" stroke-linecap="round"
-                          transform="rotate(${angles[1]}, 30, 30)" />
-                </g>`;
-        }
-    });
-
-    svg += `</svg>`;
-
-    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'scout-semaphore.svg';
-    link.click();
-    URL.revokeObjectURL(url);
+function drawSemaphore(char, size = 60) {
+    const c = char.toUpperCase(); 
+    if (!semaphoreAngles[c]) return `<div class="w-[${size}px] h-[${size}px]"></div>`;
+    
+    const [a1, a2] = semaphoreAngles[c];
+    
+    // 核心邏輯修正：你的角度定義與數學座標系的轉換
+    // 配合你 A: [180, 225] 的邏輯，這裡必須保持 (ang - 90) 以確保 180度指向正下方
+    const getPos = (ang) => { 
+        const rad = (ang - 90) * (Math.PI / 180); 
+        return { 
+            x: 30 + 20 * Math.cos(rad), 
+            y: 30 + 20 * Math.sin(rad) 
+        }; 
+    }; 
+    
+    const p1 = getPos(a1); 
+    const p2 = getPos(a2);
+    
+    return `
+        <div class="flex flex-col items-center">
+            <svg width="${size}" height="${size+10}" viewBox="0 0 60 70" xmlns="http://www.w3.org/2000/svg">
+                <!-- 身體結構 -->
+                <circle cx="30" cy="20" r="5" fill="none" stroke="#fff" stroke-width="2"/>
+                <line x1="30" y1="25" x2="30" y2="45" stroke="#fff" stroke-width="2"/>
+                
+                <!-- 手臂 a1 (右手 - 黃色) -->
+                <line x1="30" y1="30" x2="${p1.x}" y2="${p1.y}" 
+                      stroke="#ffcc00" stroke-width="4" stroke-linecap="round"/>
+                
+                <!-- 手臂 a2 (左手 - 藍色) -->
+                <line x1="30" y1="30" x2="${p2.x}" y2="${p2.y}" 
+                      stroke="#00d2ff" stroke-width="4" stroke-linecap="round"/>
+                
+                <!-- 字母標記 (增加下載時的可讀性) -->
+                <text x="30" y="65" fill="#ffffff" font-size="10" text-anchor="middle" font-family="Arial">${char}</text>
+            </svg>
+        </div>`;
 }
 // ===================== PNG DOWNLOAD (固定 8 格換行版) =====================
 function downloadSemaphorePNG() {
