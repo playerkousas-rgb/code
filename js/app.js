@@ -547,6 +547,14 @@ function downloadPigpenSVG(){
 }
 
 // ===================== SEMAPHORE =====================
+function getSemaphoreSVGPath(angles, centerX, centerY) {
+    return angles.map(angle => {
+        const rad = (angle - 90) * (Math.PI / 180);
+        const x2 = centerX + Math.cos(rad) * 40; 
+        const y2 = centerY + Math.sin(rad) * 40;
+        return `<line x1="${centerX}" y1="${centerY}" x2="${x2}" y2="${y2}" stroke="white" stroke-width="4" stroke-linecap="round" />`;
+    }).join('');
+}
 function getSemaphoreImage(ch){
   const file = SEMAPHORE_MAP[ch.toUpperCase()];
   if(file) return 'images/'+file;
@@ -657,44 +665,51 @@ function playSemaphoreAnim(){
   }
   showFrame();
 }
-function drawSemaphore(char, size = 60) {
-    const c = char.toUpperCase(); 
-    if (!semaphoreAngles[c]) return `<div class="w-[${size}px] h-[${size}px]"></div>`;
+function downloadSemaphoreSVG() {
+    const text = $('inputText').value.toUpperCase();
+    if (!text) return;
+
+    // 設定畫布參數
+    const charWidth = 100;
+    const charHeight = 120;
+    const padding = 20;
+    const itemsPerRow = 10;
+    const totalChars = text.length;
     
-    const [a1, a2] = semaphoreAngles[c];
+    const rows = Math.ceil(totalChars / itemsPerRow);
+    const width = Math.min(totalChars, itemsPerRow) * charWidth + padding * 2;
+    const height = rows * charHeight + padding * 2;
+
+    // 建立 SVG 容器 (使用深色背景方便列印時看清白色線條，或可改為透明/白色)
+    let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+    svgContent += `<rect width="100%" height="100%" fill="#001a33" />`; // 背景
+
+    text.split('').forEach((c, index) => {
+        const row = Math.floor(index / itemsPerRow);
+        const col = index % itemsPerRow;
+        const x = padding + col * charWidth + charWidth / 2;
+        const y = padding + row * charHeight + charHeight / 2;
+
+        if (c === ' ') {
+            // 空格畫斜線
+            svgContent += `<text x="${x}" y="${y + 15}" text-anchor="middle" fill="#64748b" font-size="50" font-weight="bold">/</text>`;
+        } else if (semaphoreAngles[c]) {
+            // 畫小人的軀幹 (圓形頭部 + 直線身體)
+            svgContent += `<circle cx="${x}" cy="${y - 10}" r="8" fill="none" stroke="white" stroke-width="3" />`; // 頭
+            svgContent += `<line x1="${x}" y1="${y - 2}" x2="${x}" y2="${y + 20}" stroke="white" stroke-width="3" />`; // 身體
+            
+            // 根據 angles 畫出兩隻手
+            svgContent += getSemaphoreSVGPath(semaphoreAngles[c], x, y + 5);
+        } else {
+            // 符號直接顯示文字
+            svgContent += `<text x="${x}" y="${y + 15}" text-anchor="middle" fill="#ffcc00" font-size="40" font-weight="bold">${c}</text>`;
+        }
+    });
+
+    svgContent += '</svg>';
     
-    // 核心邏輯修正：你的角度定義與數學座標系的轉換
-    // 配合你 A: [180, 225] 的邏輯，這裡必須保持 (ang - 90) 以確保 180度指向正下方
-    const getPos = (ang) => { 
-        const rad = (ang - 90) * (Math.PI / 180); 
-        return { 
-            x: 30 + 20 * Math.cos(rad), 
-            y: 30 + 20 * Math.sin(rad) 
-        }; 
-    }; 
-    
-    const p1 = getPos(a1); 
-    const p2 = getPos(a2);
-    
-    return `
-        <div class="flex flex-col items-center">
-            <svg width="${size}" height="${size+10}" viewBox="0 0 60 70" xmlns="http://www.w3.org/2000/svg">
-                <!-- 身體結構 -->
-                <circle cx="30" cy="20" r="5" fill="none" stroke="#fff" stroke-width="2"/>
-                <line x1="30" y1="25" x2="30" y2="45" stroke="#fff" stroke-width="2"/>
-                
-                <!-- 手臂 a1 (右手 - 黃色) -->
-                <line x1="30" y1="30" x2="${p1.x}" y2="${p1.y}" 
-                      stroke="#ffcc00" stroke-width="4" stroke-linecap="round"/>
-                
-                <!-- 手臂 a2 (左手 - 藍色) -->
-                <line x1="30" y1="30" x2="${p2.x}" y2="${p2.y}" 
-                      stroke="#00d2ff" stroke-width="4" stroke-linecap="round"/>
-                
-                <!-- 字母標記 (增加下載時的可讀性) -->
-                <text x="30" y="65" fill="#ffffff" font-size="10" text-anchor="middle" font-family="Arial">${char}</text>
-            </svg>
-        </div>`;
+    // 呼叫你原本的 downloadFile
+    downloadFile('semaphore_print.svg', svgContent, 'image/svg+xml');
 }
 // ===================== PNG DOWNLOAD (固定 8 格換行版) =====================
 function downloadSemaphorePNG() {
