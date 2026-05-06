@@ -714,26 +714,34 @@ function downloadSemaphoreSVG() {
         if (char === ' ') {
             svg += `<line x1="${x-15}" y1="${y+15}" x2="${x+15}" y2="${y-15}" stroke="#64748b" stroke-width="4"/>`;
         } else {
-            const angles = semaphoreAngles[char];
-            const a1 = angles[0];
-            const a2 = angles[1];
-
-            // 手臂長度固定為 40
+            const [a1, a2] = semaphoreAngles[char];
+            
+            // 關鍵修正：手臂長度
             const armLen = 40;
 
-            // 計算第一隻手 (a1) 終點座標 - 修正角度偏移使 0 度在下方
-            const p1x = x + armLen * Math.cos((a1 + 90) * Math.PI / 180);
-            const p1y = y + armLen * Math.sin((a1 + 90) * Math.PI / 180);
+            /**
+             * 數學補正邏輯：
+             * 因為 Math.cos(0) 是水平向右，而你的 0 是垂直向下。
+             * 我們必須加上 90 度 (Math.PI / 2) 來校正座標軸。
+             */
+            const rad1 = (a1 + 90) * Math.PI / 180;
+            const rad2 = (a2 + 90) * Math.PI / 180;
 
-            // 計算第二隻手 (a2) 終點座標
-            const p2x = x + armLen * Math.cos((a2 + 90) * Math.PI / 180);
-            const p2y = y + armLen * Math.sin((a2 + 90) * Math.PI / 180);
+            const p1x = x + armLen * Math.cos(rad1);
+            const p1y = y + armLen * Math.sin(rad1);
+            const p2x = x + armLen * Math.cos(rad2);
+            const p2y = y + armLen * Math.sin(rad2);
 
             svg += `
                 <g stroke-linecap="round">
+                    <!-- 下方字母標籤 -->
                     <text x="${x}" y="${y+55}" fill="#ffffff" font-size="12" text-anchor="middle" font-family="Arial">${char}</text>
+                    
+                    <!-- 身體與頭部 -->
                     <circle cx="${x}" cy="${y-25}" r="12" fill="none" stroke="#ffffff" stroke-width="5"/>
                     <line x1="${x}" y1="${y-13}" x2="${x}" y2="${y+30}" stroke="#ffffff" stroke-width="5"/>
+                    
+                    <!-- 手臂：a1 用黃色，a2 用藍色 (對應你的 CONST 定義) -->
                     <line x1="${x}" y1="${y-5}" x2="${p1x}" y2="${p1y}" stroke="#ffcc00" stroke-width="10"/>
                     <line x1="${x}" y1="${y-5}" x2="${p2x}" y2="${p2y}" stroke="#00d2ff" stroke-width="10"/>
                 </g>`;
@@ -742,21 +750,16 @@ function downloadSemaphoreSVG() {
 
     svg += `</svg>`;
 
-    // 安全下載邏輯
-    try {
-        const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const link = document.body.appendChild(document.createElement('a'));
-        link.href = url;
-        link.download = 'scout-semaphore-print.svg';
-        link.click();
-        setTimeout(() => {
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        }, 100);
-    } catch (e) {
-        console.error("下載失敗:", e);
-    }
+    // 下載執行
+    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'scout-semaphore-final.svg';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
 // ===================== PNG DOWNLOAD (固定 8 格換行版) =====================
 function downloadSemaphorePNG() {
