@@ -659,50 +659,39 @@ function playSemaphoreAnim(){
 }
 function downloadSemaphoreSVG() {
     const input = document.getElementById('inputText').value.toUpperCase();
-    // 過濾掉不支援的字元，保留空格
     const chars = input.split('').filter(c => semaphoreAngles[c] || c === ' ');
-    
     if (chars.length === 0) return;
 
-    const size = 120; // 每個旗語格子的寬度
+    const size = 120;
     const charsPerRow = 8;
     const rows = Math.ceil(chars.length / charsPerRow);
     const padding = 40;
 
-    // 1. 建立大畫布
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${charsPerRow * size + padding * 2}" height="${rows * size + padding * 2}">`;
     svg += `<rect width="100%" height="100%" fill="#001a33" />`;
 
     chars.forEach((char, i) => {
         const col = i % charsPerRow;
         const row = Math.floor(i / charsPerRow);
-        
-        // 2. 計算中心偏移 (讓每個小人剛好在格子正中間)
         const x = padding + col * size + (size / 2) - 30;
         const y = padding + row * size + (size / 2) - 30;
 
         if (char === ' ') {
-            // 空格畫斜線
             svg += `<line x1="${x+15}" y1="${y+45}" x2="${x+45}" y2="${y+15}" stroke="#64748b" stroke-width="4"/>`;
         } else {
             const angles = semaphoreAngles[char];
-
-            // 3. 這裡就是你要的「照抄」：完全複製 HTML 正確版的 SVG 結構
             svg += `
                 <g transform="translate(${x}, ${y})">
-                    <!-- 字母標籤 -->
                     <text x="30" y="85" fill="#ffffff" font-size="14" text-anchor="middle" font-family="Arial">${char}</text>
-                    
-                    <!-- 身體結構 -->
                     <circle cx="30" cy="30" r="15" fill="none" stroke="white" stroke-width="2"/>
                     <line x1="30" y1="30" x2="30" y2="70" stroke="white" stroke-width="2"/>
                     
-                    <!-- 黃色手臂：直接套用 angles[0]，繞 (30,30) 旋轉線段 (30,30)-(30,45) -->
+                    <!-- 黃色手臂：照抄 HTML 邏輯，線段向下畫 (30-45) -->
                     <line x1="30" y1="30" x2="30" y2="45" 
                           stroke="yellow" stroke-width="5" stroke-linecap="round"
                           transform="rotate(${angles[0]}, 30, 30)" />
                           
-                    <!-- 藍色手臂：直接套用 angles[1]，繞 (30,30) 旋轉線段 (30,30)-(30,45) -->
+                    <!-- 藍色手臂 -->
                     <line x1="30" y1="30" x2="30" y2="45" 
                           stroke="#007bff" stroke-width="5" stroke-linecap="round"
                           transform="rotate(${angles[1]}, 30, 30)" />
@@ -712,15 +701,12 @@ function downloadSemaphoreSVG() {
 
     svg += `</svg>`;
 
-    // 4. 執行下載動作
     const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'scout-semaphore-correct.svg';
-    document.body.appendChild(link);
+    link.download = 'scout-semaphore.svg';
     link.click();
-    document.body.removeChild(link);
     URL.revokeObjectURL(url);
 }
 // ===================== PNG DOWNLOAD (固定 8 格換行版) =====================
