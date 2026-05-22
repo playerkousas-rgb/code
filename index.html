@@ -234,7 +234,10 @@
     </div>
   </div>
 
-  <!-- Print View -->
+  <!-- Toast (已加入/已複製 提示) -->
+  <div id="toast" class="toast no-print">已複製</div>
+
+  <!-- Print View - 放在 main-content 外面，避免版面移位 -->
   <div id="printView" class="hidden">
     <div class="flex justify-between items-end border-b-4 border-black pb-4 mb-12">
       <div><h1 class="text-4xl font-black">筲箕灣區童軍密碼考核試卷</h1><p class="text-xl font-bold mt-2">SKWSCOUT Cipher Examination 2026</p></div>
@@ -244,7 +247,6 @@
     <div class="mt-32 pt-10 border-t border-gray-300 text-center text-sm text-gray-400 font-bold uppercase">COPY RIGHT 2026 SKWSCOUT</div>
   </div>
 
-  <div id="toast" class="toast">已複製</div>
   <script src="js/app.js"></script>
 </body>
 </html>

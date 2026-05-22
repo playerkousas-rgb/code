@@ -5,8 +5,6 @@ const SEM_ANGLES = {'A':[180,225],'B':[180,270],'C':[180,315],'D':[180,0],'E':[0
 const BRAILLE_MAP = {'A':[1],'B':[1,2],'C':[1,4],'D':[1,4,5],'E':[1,5],'F':[1,2,4],'G':[1,2,4,5],'H':[1,2,5],'I':[2,4],'J':[2,4,5],'K':[1,3],'L':[1,2,3],'M':[1,3,4],'N':[1,3,4,5],'O':[1,3,5],'P':[1,2,3,4],'Q':[1,2,3,4,5],'R':[1,2,3,5],'S':[2,3,4],'T':[2,3,4,5],'U':[1,3,6],'V':[1,2,3,6],'W':[2,4,5,6],'X':[1,3,4,6],'Y':[1,3,4,5,6],'Z':[1,3,5,6]};
 const CANGJIE_ROOTS = {'A':'日','B':'月','C':'金','D':'木','E':'水','F':'火','G':'土','H':'竹','I':'戈','J':'十','K':'大','L':'中','M':'一','N':'弓','O':'人','P':'心','Q':'手','R':'口','S':'屍','T':'廿','U':'山','V':'女','W':'田','X':'難','Y':'卜','Z':'重'};
 const NATO_MAP = {'A':'Alpha','B':'Bravo','C':'Charlie','D':'Delta','E':'Echo','F':'Foxtrot','G':'Golf','H':'Hotel','I':'India','J':'Juliett','K':'Kilo','L':'Lima','M':'Mike','N':'November','O':'Oscar','P':'Papa','Q':'Quebec','R':'Romeo','S':'Sierra','T':'Tango','U':'Uniform','V':'Victor','W':'Whiskey','X':'X-ray','Y':'Yankee','Z':'Zulu'};
-const PINYIN_MAP = {'A':'ā','B':'bēi','C':'cī','D':'dī','E':'ē','F':'éf','G':'gē','H':'hēi','I':'ī','J':'jiē','K':'kēi','L':'ēl','M':'ēm','N':'ēn','O':'ō','P':'pī','Q':'qiū','R':'ār','S':'ēs','T':'tī','U':'ū','V':'vī','W':'dá bū liú','X':'ēi kè sī','Y':'wāi','Z':'zèi'};
-const JYUTPING_MAP = {'A':'ei1','B':'bi1','C':'si1','D':'di1','E':'i1','F':'ef1','G':'ze1','H':'eik1 si2','I':'aai1','J':'ze1','K':'kei1','L':'e1 lou2','M':'em1','N':'en1','O':'o1','P':'pi1','Q':'kiu1','R':'aa1 lou2','S':'e1 si2','T':'ti1','U':'ju1','V':'wi1','W':'daa1 bou2 liu4','X':'ik1 si2','Y':'waai1','Z':'zei1'};
 const PHONE_LOOKUP = {}; const PHONE_GROUPS = {'2':['A','B','C'],'3':['D','E','F'],'4':['G','H','I'],'5':['J','K','L'],'6':['M','N','O'],'7':['P','Q','R','S'],'8':['T','U','V'],'9':['W','X','Y','Z']};
 for(const [key, letters] of Object.entries(PHONE_GROUPS)) letters.forEach((ch, idx)=>{ PHONE_LOOKUP[ch] = {key, presses: idx+1}; });
 
@@ -17,7 +15,7 @@ const CHINESE_DICTIONARY = {
 
 // ===================== STATE =====================
 let testQuestions = JSON.parse(localStorage.getItem('skw_test_questions') || '[]');
-let currentProjIdx = 0, projTimer = null, audioCtx = null, natoSynth = null, peer = null, hostConn = null, connections = [], players = {}, buzzQueue = [], gameMode = 'idle';
+let currentProjIdx = 0, projTimer = null, audioCtx = null, peer = null, hostConn = null, connections = [], players = {}, buzzQueue = [], gameMode = 'idle';
 
 const $ = (id) => document.getElementById(id);
 const showToast = (msg) => { const t = $('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); };
@@ -63,23 +61,13 @@ function getEncoded(text, type, key = 'SCOUT', shift = 3) {
 }
 
 // ===================== PROJECTION ENGINE =====================
-function clearProj() {
-    clearInterval(projTimer);
-    projTimer = null;
-    if(audioCtx) { audioCtx.close(); audioCtx = null; }
-    if(natoSynth) { window.speechSynthesis && window.speechSynthesis.cancel(); natoSynth = null; }
-    $('btnProjPlay').classList.add('hidden');
-}
+function clearProj() { clearInterval(projTimer); projTimer = null; if(audioCtx) { audioCtx.close(); audioCtx = null; } $('btnProjPlay').classList.add('hidden'); }
 
 function showProjection() {
     clearProj(); const q = testQuestions[currentProjIdx]; if(!q) return;
     $('projectionOverlay').style.display = 'flex';
     $('projCounter').textContent = `${currentProjIdx + 1} / ${testQuestions.length}`;
-
-    // Show play button for carousel/audio types
-    const hasCarousel = (q.type==='Morse' || q.type==='Semaphore' || q.type==='NATO') && q.display==='carousel';
-    const hasAudio = (q.type==='Morse' || q.type==='NATO') && q.display==='audio';
-    if(hasCarousel || hasAudio) {
+    if((q.type==='Morse' && (q.display==='carousel'||q.display==='audio')) || (q.type==='Semaphore' && q.display==='carousel')) {
         $('btnProjPlay').classList.remove('hidden');
         $('btnProjPlay').textContent = q.display === 'audio' ? '🔊 播放音訊' : '▶ 開始輪播';
     }
@@ -88,7 +76,7 @@ function showProjection() {
 
 function renderProjStatic(q) {
     const content = $('projectionContent'), upper = q.text.toUpperCase(); let html = '';
-    if(q.display === 'static' || (q.type !== 'Morse' && q.type !== 'Semaphore' && q.type !== 'NATO')) {
+    if(q.display === 'static' || (q.type !== 'Morse' && q.type !== 'Semaphore')) {
         if(q.type==='Morse') html = `<div class="text-[7vw] font-mono tracking-widest text-[var(--skw-gold)]">${getEncoded(q.text, 'Morse')}</div>`;
         else if(q.type==='Semaphore') {
             const style = $('semPrintStyle').value;
@@ -96,7 +84,6 @@ function renderProjStatic(q) {
         }
         else if(q.type==='Braille') html = `<div class="flex flex-wrap justify-center gap-10 scale-[2.5]">${upper.split('').map(c => c===' '?'<div class="w-10"></div>':renderBraille(c)).join('')}</div>`;
         else if(q.type==='Pigpen') html = `<div class="flex flex-wrap justify-center gap-10 scale-[3]">${upper.split('').map(c => c===' '?'<div class="w-10"></div>':renderPigpenSVG(c)).join('')}</div>`;
-        else if(q.type==='NATO') html = `<div class="text-[5vw] font-black text-white text-center leading-relaxed">${getEncoded(q.text, 'NATO').split(' ').map(w => `<span class="inline-block mx-2 px-6 py-2 bg-white/5 rounded-2xl">${w}</span>`).join('')}</div>`;
         else html = `<div class="text-[9vw] font-black text-white text-center">${getEncoded(q.text, q.type)}</div>`;
     } else {
         html = `<div class="text-slate-600 text-3xl font-black">${q.display==='audio'?'聽力考核項目':'點擊下方開始輪播'}</div>`;
@@ -104,27 +91,20 @@ function renderProjStatic(q) {
     content.innerHTML = `<div class="animate-in w-full text-center">${html}</div>`;
 }
 
-// ===================== NATO AUDIO (Web Speech API) =====================
-function playNatoAudio(text) {
-    if(!window.speechSynthesis) { showToast('瀏覽器不支援語音'); return; }
-    window.speechSynthesis.cancel();
-    const upper = text.toUpperCase();
-    let idx = 0;
-    natoSynth = setInterval(() => {
-        if(idx >= upper.length) { clearInterval(natoSynth); natoSynth = null; return; }
-        const c = upper[idx];
-        if(c === ' ') { idx++; return; }
-        const word = NATO_MAP[c];
-        if(word) {
-            const utter = new SpeechSynthesisUtterance(word);
-            utter.lang = 'en-US';
-            utter.rate = 0.8;
-            utter.pitch = 1.0;
-            window.speechSynthesis.speak(utter);
-        }
-        idx++;
-    }, 800);
-}
+$('btnProjPlay').onclick = () => {
+    const q = testQuestions[currentProjIdx], text = q.text.toUpperCase(), speed = parseInt($('projSpeed').value);
+    if(q.display === 'audio') { playMorse(text); return; }
+    let i = 0; const style = $('semPrintStyle').value;
+    clearInterval(projTimer);
+    projTimer = setInterval(() => {
+        if(i >= text.length) { clearInterval(projTimer); return; }
+        const c = text[i]; let h = '';
+        if(q.type === 'Morse') h = `<div class="text-[25vw] font-mono text-[var(--skw-gold)]">${MORSE_CODE[c]||c}</div>`;
+        else h = (style==='doll' ? renderDoll(c, 450) : renderStickFigure(c, "white", 450));
+        $('projectionContent').innerHTML = `<div class="animate-in flex flex-col items-center">${h}<div class="mt-16 text-slate-500 font-bold text-2xl">字母 ${i+1} / ${text.length}</div></div>`;
+        i++;
+    }, speed);
+};
 
 // ===================== INTERFACE & TABLES =====================
 function buildReferenceTables() {
@@ -150,19 +130,6 @@ function buildReferenceTables() {
     $('brailleTableWrap').innerHTML = h + '</div>';
 }
 
-function buildPigpenGrid() {
-    const grid = $('pigpenGrid');
-    if(!grid) return;
-    let h = ''; const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
-    letters.forEach(c => {
-        h += `<div class="flex flex-col items-center gap-1 p-2 bg-black/20 rounded border border-white/5">
-            ${renderPigpenSVG(c)}
-            <span class="text-[9px] font-black text-slate-500">${c}</span>
-        </div>`;
-    });
-    grid.innerHTML = h;
-}
-
 function updateAll() {
     const v = $('inputText').value, t = v.toUpperCase(), key = $('gridKey').value.toUpperCase();
     $('outMorse').textContent = getEncoded(v, 'Morse');
@@ -180,33 +147,10 @@ function updateAll() {
     $('outJyutping').textContent = t.split('').map(c => JYUTPING_MAP[c] || c).join(' ');
 }
 
-// ===================== MORSE AUDIO =====================
-function playMorse(text) {
-    if(audioCtx) audioCtx.close(); audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    let t = audioCtx.currentTime;
-    text.split('').forEach(c => {
-        const code = MORSE_CODE[c];
-        if(code) {
-            code.split('').forEach(s => {
-                const d = s==='.'?0.1:0.3; const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
-                o.connect(g); g.connect(audioCtx.destination); g.gain.setValueAtTime(0.1, t); o.start(t); o.stop(t+d); t += d + 0.1;
-            }); t += 0.2;
-        } else t += 0.4;
-    });
-}
-
-// ===================== PIGPEN RENDERER =====================
-function renderPigpenSVG(c, color="#ffcc00") {
-    const maps = {'A':"M35,10 L35,35 L10,35",'B':"M10,10 L10,35 L35,35 L35,10",'C':"M10,10 L10,35 L35,35",'D':"M10,10 L35,10 L35,35 L10,35",'E':"M10,10 L35,10 L35,35 L10,35 Z",'F':"M35,10 L10,10 L10,35 L35,35",'G':"M35,35 L35,10 L10,10",'H':"M10,35 L10,10 L35,10 L35,35",'I':"M10,35 L10,10 L35,10",'J':["M35,10 L35,35 L10,35",true],'K':["M10,10 L10,35 L35,35 L35,10",true],'L':["M10,10 L10,35 L35,35",true],'M':["M10,10 L35,10 L35,35 L10,35",true],'N':["M10,10 L35,10 L35,35 L10,35 Z",true],'O':["M35,10 L10,10 L10,35 L35,35",true],'P':["M35,35 L35,10 L10,10",true],'Q':["M10,35 L10,10 L35,10 L35,35",true],'R':["M10,35 L10,10 L35,10",true],'S':"M10,10 L22.5,22.5 L35,10",'T':"M35,10 L22.5,22.5 L35,35",'U':"M10,35 L22.5,22.5 L35,35",'V':"M10,10 L22.5,22.5 L10,35",'W':["M10,10 L22.5,22.5 L35,10",true,{x:22.5,y:15}],'X':["M35,10 L22.5,22.5 L35,35",true,{x:30,y:22.5}],'Y':["M10,35 L22.5,22.5 L35,35",true,{x:22.5,y:30}],'Z':["M10,10 L22.5,22.5 L10,35",true,{x:15,y:22.5}]};
-    let data = maps[c.toUpperCase()]; if(!data) return `<span>${c}</span>`;
-    let path = Array.isArray(data)?data[0]:data, dot=Array.isArray(data)&&data[1], dp=(Array.isArray(data)&&data[2])||{x:22.5,y:22.5};
-    return `<svg width="40" height="40" viewBox="0 0 45 45"><path d="${path}" fill="none" stroke="${color}" stroke-width="3"/><circle cx="${dp.x}" cy="${dp.y}" r="${dot?3:0}" fill="${color}"/></svg>`;
-}
-
 // ===================== APP INIT =====================
 document.addEventListener('DOMContentLoaded', () => {
-    buildReferenceTables(); buildPigpenGrid(); updateAll();
-
+    buildReferenceTables(); updateAll();
+    
     document.querySelectorAll('.mode-btn').forEach(btn => {
         btn.onclick = function() {
             document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); this.classList.add('active');
@@ -221,80 +165,62 @@ document.addEventListener('DOMContentLoaded', () => {
     $('mobileMenuBtn').onclick = () => $('sidebar').classList.toggle('open');
     $('inputText').oninput = updateAll;
     $('btnAddToTest').onclick = () => { if($('inputText').value) { testQuestions.push({id:Date.now(), text:$('inputText').value, type:'Morse', display:'static'}); localStorage.setItem('skw_test_questions', JSON.stringify(testQuestions)); showToast('已加入'); } };
-
-    // 摩斯密碼播放按鈕
-    $('btnPlayMorse').onclick = () => { const t = $('inputText').value.toUpperCase(); if(t) playMorse(t); };
-
-    // 投影速度滑桿
-    $('projSpeed').oninput = function() { $('projSpeedVal').textContent = (parseInt(this.value)/1000).toFixed(1) + 's'; };
-
-    // 座標 KEY 變更時更新
-    $('gridKey').oninput = () => { buildReferenceTables(); updateAll(); };
-
+    
     // Projection Nav
     $('btnProjectTest').onclick = () => { if(testQuestions.length) { currentProjIdx = 0; showProjection(); } };
     $('btnProjNext').onclick = () => { if(currentProjIdx < testQuestions.length-1) { currentProjIdx++; showProjection(); } };
     $('btnProjPrev').onclick = () => { if(currentProjIdx > 0) { currentProjIdx--; showProjection(); } };
     $('btnExitProjection').onclick = () => { $('projectionOverlay').style.display='none'; clearProj(); };
 
-    // ===== 列印功能 (已修復所有問題) =====
+    // Print
     $('btnExportPDF').onclick = () => {
         if(!testQuestions.length) return alert('請先加入題目');
         const style = $('semPrintStyle').value;
         $('printQuestions').innerHTML = testQuestions.map((q, idx) => {
-            const upper = q.text.toUpperCase();
             let encoded = '';
-            if(q.type==='Semaphore') {
-                encoded = `<div class="flex flex-wrap gap-4 justify-center">${upper.split('').map(c => c===' '?'<div class="w-8"></div>':(style==='doll'?`<img src="images/${SEMAPHORE_MAP[c]}" class="w-16 h-16 grayscale border border-black p-0.5">`:renderStickFigure(c, "black", 60))).join('')}</div>`;
-            }
-            else if(q.type==='Braille') {
-                encoded = `<div class="flex flex-wrap gap-4 justify-center">${upper.split('').map(c => c===' '?'<div class="w-8"></div>':renderBraille(c)).join('')}</div>`;
-            }
-            // === FIX #1: Pigpen 列印顯示符號而非英文字 ===
-            else if(q.type==='Pigpen') {
-                encoded = `<div class="flex flex-wrap gap-4 justify-center">${upper.split('').map(c => c===' '?'<div class="w-8"></div>':renderPigpenSVG(c, "#000")).join('')}</div>`;
-            }
-            // === FIX #2: NATO 列印支援 ===
-            else if(q.type==='NATO') {
-                if(q.display === 'audio') {
-                    encoded = `<span class="text-xl italic">（聽力考核項目）</span>`;
-                } else {
-                    encoded = `<div class="text-lg font-bold text-center">${upper.split('').map(c => c===' '?'  ':NATO_MAP[c]||c).join(' ')}</div>`;
-                }
-            }
-            else if(q.type==='Morse' && q.display === 'audio') {
-                encoded = `<span class="text-xl italic">（聽力考核項目）</span>`;
-            }
-            else {
-                encoded = `<span class="text-2xl font-mono">${getEncoded(q.text, q.type)}</span>`;
-            }
+            if(q.type==='Semaphore') encoded = `<div class="flex flex-wrap gap-4">${q.text.toUpperCase().split('').map(c => c===' '?'<div class="w-8"></div>':(style==='doll'?`<img src="images/${SEMAPHORE_MAP[c]}" class="w-16 h-16 grayscale border border-black p-0.5">`:renderStickFigure(c, "black", 60))).join('')}</div>`;
+            else if(q.type==='Braille') encoded = `<div class="flex flex-wrap gap-4">${q.text.toUpperCase().split('').map(c => c===' '?'<div class="w-8"></div>':renderBraille(c)).join('')}</div>`;
+            else if(q.type==='Morse' && q.display === 'audio') encoded = `<span class="text-xl italic">（聽力考核項目）</span>`;
+            else encoded = `<span class="text-2xl font-mono">${getEncoded(q.text, q.type)}</span>`;
             return `<div class="mb-12 border-2 border-black p-8 rounded-xl break-inside-avoid"><b>Q${idx+1}. 翻譯以下密碼 (${q.type}):</b><div class="mt-6 flex items-center justify-center">${encoded}</div><div class="mt-10 border-b border-black w-full h-8"></div></div>`;
         }).join('');
         window.print();
     };
 });
 
-// ===================== TEST QUESTION LIST =====================
 function renderTestList() {
     const list = $('testQuestionList'), labels = {"Morse":"摩斯密碼","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高密碼","Grid":"座標密碼","Phone":"電話密碼","Caesar":"凱撒位移","Atbash":"反射密碼","Reverse":"倒序密碼","NATO":"NATO","Cangjie":"倉頡","Quick":"速成"};
-    list.innerHTML = testQuestions.map((q,idx) => {
-        // === FIX #3: NATO 也能使用輪播/聲音模式 ===
-        const hasDisplayOptions = q.type==='Morse' || q.type==='Semaphore' || q.type==='NATO';
-        const hasAudio = q.type==='Morse' || q.type==='NATO';
-        return `
+    list.innerHTML = testQuestions.map((q,idx) => `
         <div class="skw-card flex flex-col md:flex-row justify-between items-center mb-0 p-5 gap-4">
             <div class="flex items-center gap-4 flex-wrap">
                 <span class="text-[var(--skw-gold)] font-black">Q${idx+1}</span><span class="font-bold">${q.text}</span>
                 <select onchange="testQuestions[${idx}].type=this.value; localStorage.setItem('skw_test_questions', JSON.stringify(testQuestions)); renderTestList();" class="bg-black/60 text-white text-xs p-2 rounded">
                     ${Object.entries(labels).map(([v,l]) => `<option value="${v}" ${q.type===v?'selected':''}>${l}</option>`).join('')}
                 </select>
-                ${hasDisplayOptions ? `<select onchange="testQuestions[${idx}].display=this.value; localStorage.setItem('skw_test_questions', JSON.stringify(testQuestions)); renderTestList();" class="bg-sky-900/40 text-sky-200 text-xs p-2 rounded">
-                    <option value="static" ${q.display==='static'?'selected':''}>整條</option>
-                    <option value="carousel" ${q.display==='carousel'?'selected':''}>輪播</option>
-                    ${hasAudio ? `<option value="audio" ${q.display==='audio'?'selected':''}>聲音</option>` : ''}
+                ${(q.type==='Morse'||q.type==='Semaphore') ? `<select onchange="testQuestions[${idx}].display=this.value; localStorage.setItem('skw_test_questions', JSON.stringify(testQuestions)); renderTestList();" class="bg-sky-900/40 text-sky-200 text-xs p-2 rounded">
+                    <option value="static" ${q.display==='static'?'selected':''}>整條</option><option value="carousel" ${q.display==='carousel'?'selected':''}>輪播</option>${q.type==='Morse'?'<option value="audio" '+(q.display==='audio'?'selected':'')+'>聲音</option>':''}
                 </select>` : ''}
             </div>
             <button onclick="testQuestions.splice(${idx},1); localStorage.setItem('skw_test_questions', JSON.stringify(testQuestions)); renderTestList();" class="text-red-400 text-xs">刪除</button>
-        </div>`;
-    }).join('');
+        </div>`).join('');
+}
+
+function playMorse(text) {
+    if(audioCtx) audioCtx.close(); audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let t = audioCtx.currentTime;
+    text.split('').forEach(c => {
+        const code = MORSE_CODE[c];
+        if(code) {
+            code.split('').forEach(s => {
+                const d = s==='.'?0.1:0.3; const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
+                o.connect(g); g.connect(audioCtx.destination); g.gain.setValueAtTime(0.1, t); o.start(t); o.stop(t+d); t += d + 0.1;
+            }); t += 0.2;
+        } else t += 0.4;
+    });
+}
+function renderPigpenSVG(c, color="#ffcc00") {
+    const maps = {'A':"M35,10 L35,35 L10,35",'B':"M10,10 L10,35 L35,35 L35,10",'C':"M10,10 L10,35 L35,35",'D':"M10,10 L35,10 L35,35 L10,35",'E':"M10,10 L35,10 L35,35 L10,35 Z",'F':"M35,10 L10,10 L10,35 L35,35",'G':"M35,35 L35,10 L10,10",'H':"M10,35 L10,10 L35,10 L35,35",'I':"M10,35 L10,10 L35,10",'J':["M35,10 L35,35 L10,35",true],'K':["M10,10 L10,35 L35,35 L35,10",true],'L':["M10,10 L10,35 L35,35",true],'M':["M10,10 L35,10 L35,35 L10,35",true],'N':["M10,10 L35,10 L35,35 L10,35 Z",true],'O':["M35,10 L10,10 L10,35 L35,35",true],'P':["M35,35 L35,10 L10,10",true],'Q':["M10,35 L10,10 L35,10 L35,35",true],'R':["M10,35 L10,10 L35,10",true],'S':"M10,10 L22.5,22.5 L35,10",'T':"M35,10 L22.5,22.5 L35,35",'U':"M10,35 L22.5,22.5 L35,35",'V':"M10,10 L22.5,22.5 L10,35",'W':["M10,10 L22.5,22.5 L35,10",true,{x:22.5,y:15}],'X':["M35,10 L22.5,22.5 L35,35",true,{x:30,y:22.5}],'Y':["M10,35 L22.5,22.5 L35,35",true,{x:22.5,y:30}],'Z':["M10,10 L22.5,22.5 L10,35",true,{x:15,y:22.5}]};
+    let data = maps[c.toUpperCase()]; if(!data) return `<span>${c}</span>`;
+    let path = Array.isArray(data)?data[0]:data, dot=Array.isArray(data)&&data[1], dp=(Array.isArray(data)&&data[2])||{x:22.5,y:22.5};
+    return `<svg width="40" height="40" viewBox="0 0 45 45"><path d="${path}" fill="none" stroke="${color}" stroke-width="3"/><circle cx="${dp.x}" cy="${dp.y}" r="${dot?3:0}" fill="${color}"/></svg>`;
 }
