@@ -267,6 +267,3 @@ body {
 }
 
 /* ===== Print screen styles (for preview before print) ===== */
-#printView.hidden {
-  display: none !important;
-}
