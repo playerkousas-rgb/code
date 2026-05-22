@@ -169,12 +169,12 @@
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-bold text-slate-400">旗號列印樣式：</span>
                     <select id="semPrintStyle" class="bg-black/60 text-white text-xs border border-white/20 rounded px-2 py-1">
-                        <option value="doll">具登堡公仔 (Full Graphics)</option>
+                        <option value="doll">貝登堡公仔</option>
                         <option value="stick" selected>環保火柴人 (Stick Figures)</option>
                     </select>
                 </div>
                 <div class="flex items-center gap-2 border-l border-white/10 pl-4">
-                    <span class="text-xs font-bold text-slate-400">投影輪播速度：</span>
+                    <span class="text-xs font-bold text-slate-400">輪播速度：</span>
                     <input type="range" id="projSpeed" min="400" max="2400" step="200" value="1200" class="w-32 accent-[var(--skw-gold)]">
                     <span id="projSpeedVal" class="text-xs text-[var(--skw-gold)] font-black">1.2s</span>
                 </div>
@@ -192,9 +192,9 @@
             <div class="lg:col-span-1">
                 <div class="skw-card text-center p-10">
                     <h3 class="font-black text-[var(--skw-gold)] mb-6 text-xl">搶答大廳</h3>
-                    <div id="joinQr" class="bg-white p-5 inline-block rounded-3xl mb-6"></div>
+                    <div id="joinQr" class="bg-white p-5 inline-block rounded-3xl mb-6"><p class="text-slate-400 text-xs">載入中...</p></div>
                     <p id="gameIdDisplay" class="font-mono text-xs text-slate-500 mb-8"></p>
-                    <button id="btnStartGame" class="w-full py-5 bg-emerald-600 rounded-3xl font-black text-white text-xl shadow-lg">開放搶答 (RESET)</button>
+                    <button id="btnStartGame" class="w-full py-5 bg-emerald-600 rounded-3xl font-black text-white text-xl shadow-lg">🟢 開放搶答</button>
                 </div>
             </div>
             <div class="lg:col-span-2">
@@ -222,29 +222,44 @@
     </div>
   </div>
 
-  <!-- Projections Overlay -->
+  <!-- Projections Overlay - FIX #1: 加入速度滑桿 -->
   <div id="projectionOverlay" class="no-print">
     <button id="btnExitProjection" class="absolute top-10 right-10 text-white/20 hover:text-white text-5xl">✕</button>
-    <div id="projectionContent" class="w-full flex items-center justify-center px-20"></div>
-    <div class="absolute bottom-16 flex gap-8 items-center bg-black/40 p-6 rounded-3xl border border-white/5">
-      <button id="btnProjPrev" class="bg-white/10 p-5 rounded-full text-white text-2xl">←</button>
-      <div id="projCounter" class="text-[var(--skw-gold)] font-black text-3xl min-w-[100px] text-center">1 / 1</div>
-      <button id="btnProjNext" class="bg-white/10 p-5 rounded-full text-white text-2xl">→</button>
-      <button id="btnProjPlay" class="ml-4 bg-sky-500 text-white px-8 py-4 rounded-2xl font-black text-lg hidden shadow-2xl">開始輪播</button>
+    <div id="projectionContent" class="w-full flex-1 flex items-center justify-center px-20"></div>
+    <div class="absolute bottom-10 flex flex-col items-center gap-4">
+      <!-- 投影控制列 -->
+      <div class="flex gap-8 items-center bg-black/60 p-4 rounded-3xl border border-white/10 backdrop-blur-sm">
+        <button id="btnProjPrev" class="bg-white/10 p-4 rounded-full text-white text-2xl hover:bg-white/20">←</button>
+        <div id="projCounter" class="text-[var(--skw-gold)] font-black text-2xl min-w-[100px] text-center">1 / 1</div>
+        <button id="btnProjNext" class="bg-white/10 p-4 rounded-full text-white text-2xl hover:bg-white/20">→</button>
+        <button id="btnProjPlay" class="ml-2 bg-sky-500 text-white px-8 py-3 rounded-2xl font-black text-base hidden shadow-2xl">開始輪播</button>
+      </div>
+      <!-- FIX #1: 速度滑桿移到投影畫面底部 -->
+      <div class="flex items-center gap-4 bg-black/40 px-6 py-3 rounded-2xl border border-white/5">
+        <span class="text-xs font-bold text-slate-400">⏱ 速度</span>
+        <input type="range" id="projSpeedOverlay" min="400" max="2400" step="200" value="1200" class="w-28 accent-[var(--skw-gold)]">
+        <span id="projSpeedOverlayVal" class="text-xs text-[var(--skw-gold)] font-black min-w-[40px]">1.2s</span>
+      </div>
     </div>
   </div>
 
   <!-- Toast (已加入/已複製 提示) -->
   <div id="toast" class="toast no-print">已複製</div>
 
-  <!-- Print View - 放在 main-content 外面，避免版面移位 -->
+  <!-- Print View - FIX #2: 修正白頁及被cut問題 -->
   <div id="printView" class="hidden">
-    <div class="flex justify-between items-end border-b-4 border-black pb-4 mb-12">
-      <div><h1 class="text-4xl font-black">筲箕灣區童軍密碼考核試卷</h1><p class="text-xl font-bold mt-2">SKWSCOUT Cipher Examination 2026</p></div>
-      <div class="text-right text-lg font-bold"><p>姓名: __________________</p><p class="mt-4">日期: __________________</p></div>
+    <div class="print-header">
+      <div class="print-title-area">
+        <h1 class="print-title">筲箕灣區童軍密碼考核試卷</h1>
+        <p class="print-subtitle">SKWSCOUT Cipher Examination 2026</p>
+      </div>
+      <div class="print-info-area">
+        <p>姓名: __________________</p>
+        <p>日期: __________________</p>
+      </div>
     </div>
-    <div id="printQuestions" class="space-y-16"></div>
-    <div class="mt-32 pt-10 border-t border-gray-300 text-center text-sm text-gray-400 font-bold uppercase">COPY RIGHT 2026 SKWSCOUT</div>
+    <div id="printQuestions" class="print-questions-container"></div>
+    <div class="print-footer">COPY RIGHT 2026 SKWSCOUT</div>
   </div>
 
   <script src="js/app.js"></script>

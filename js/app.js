@@ -17,7 +17,7 @@ const CHINESE_DICTIONARY = {
 
 // ===================== STATE =====================
 let testQuestions = JSON.parse(localStorage.getItem('skw_test_questions') || '[]');
-let currentProjIdx = 0, projTimer = null, audioCtx = null, natoSynth = null, peer = null, hostConn = null, connections = [], players = {}, buzzQueue = [], gameMode = 'idle';
+let currentProjIdx = 0, projTimer = null, audioCtx = null, natoSynth = null, peer = null, hostConn = null, connections = [], players = {}, buzzQueue = [], gameMode = 'idle', myPeerId = null, shakeWatcher = null;
 
 const $ = (id) => document.getElementById(id);
 const showToast = (msg) => { const t = $('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); };
@@ -31,9 +31,10 @@ function renderStickFigure(c, color = "white", size = 80) {
     return h + `</svg>`;
 }
 
+/** FIX #4: 貝登堡公仔 - 移除白色外框和圓角背景 */
 function renderDoll(c, size = 100) {
     const src = SEMAPHORE_MAP[c.toUpperCase()];
-    return src ? `<img src="images/${src}" style="width:${size}px; height:${size}px; object-fit:contain; background:white; border-radius:10px; padding:4px;">` : renderStickFigure(c, "white", size);
+    return src ? `<img src="images/${src}" style="width:${size}px; height:${size}px; object-fit:contain;">` : renderStickFigure(c, "white", size);
 }
 
 function renderBraille(c) {
@@ -68,7 +69,8 @@ function clearProj() {
     projTimer = null;
     if(audioCtx) { audioCtx.close(); audioCtx = null; }
     if(natoSynth) { window.speechSynthesis && window.speechSynthesis.cancel(); natoSynth = null; }
-    $('btnProjPlay').classList.add('hidden');
+    const playBtn = $('btnProjPlay');
+    if(playBtn) playBtn.classList.add('hidden');
 }
 
 function showProjection() {
@@ -79,9 +81,10 @@ function showProjection() {
     // Show play button for carousel/audio types
     const hasCarousel = (q.type==='Morse' || q.type==='Semaphore' || q.type==='NATO') && q.display==='carousel';
     const hasAudio = (q.type==='Morse' || q.type==='NATO') && q.display==='audio';
+    const playBtn = $('btnProjPlay');
     if(hasCarousel || hasAudio) {
-        $('btnProjPlay').classList.remove('hidden');
-        $('btnProjPlay').textContent = q.display === 'audio' ? '🔊 播放音訊' : '▶ 開始輪播';
+        if(playBtn) playBtn.classList.remove('hidden');
+        if(playBtn) playBtn.textContent = q.display === 'audio' ? '🔊 播放音訊' : '▶ 開始輪播';
     }
     renderProjStatic(q);
 }
@@ -203,10 +206,126 @@ function renderPigpenSVG(c, color="#ffcc00") {
     return `<svg width="40" height="40" viewBox="0 0 45 45"><path d="${path}" fill="none" stroke="${color}" stroke-width="3"/><circle cx="${dp.x}" cy="${dp.y}" r="${dot?3:0}" fill="${color}"/></svg>`;
 }
 
+// ===================== PEERJS / 搶答系統 (FIX #5) =====================
+function initGameHost() {
+    if(typeof Peer === 'undefined') { showToast('PeerJS 未載入'); return; }
+    try {
+        peer = new Peer();
+        peer.on('open', (id) => {
+            myPeerId = id;
+            $('gameIdDisplay').textContent = '遊戲 ID: ' + id;
+            // 生成 QR Code
+            const qrContainer = $('joinQr');
+            qrContainer.innerHTML = '';
+            try {
+                const qrUrl = window.location.origin + window.location.pathname + '?join=' + encodeURIComponent(id);
+                new QRCode(qrContainer, { text: qrUrl, width: 160, height: 160 });
+                showToast('QR Code 已生成');
+            } catch(e) { qrContainer.innerHTML = '<p class="text-slate-400 text-xs">QR Code 載入失敗</p>'; }
+        });
+        peer.on('connection', (conn) => {
+            connections.push(conn);
+            conn.on('data', (data) => {
+                if(data.type === 'join') {
+                    if(!players[data.name]) {
+                        players[data.name] = { name: data.name, score: 0, joinedAt: Date.now() };
+                        updatePlayerList();
+                    }
+                } else if(data.type === 'buzz') {
+                    if(gameMode === 'open' && !buzzQueue.find(p => p.name === data.name)) {
+                        buzzQueue.push({ name: data.name, time: Date.now() });
+                        updateBuzzList();
+                        // 通知所有玩家
+                        connections.forEach(c => c.send({ type: 'buzz_order', queue: buzzQueue.map(p => p.name) }));
+                    }
+                }
+            });
+            conn.on('close', () => {
+                connections = connections.filter(c => c !== conn);
+                $('playerCount').textContent = connections.length + ' 人連線';
+            });
+            // 傳送當前狀態
+            conn.send({ type: 'state', gameMode, players: Object.values(players), queue: buzzQueue.map(p => p.name) });
+        });
+    } catch(e) { showToast('搶答系統初始化失敗'); }
+}
+
+function updatePlayerList() {
+    const list = $('buzzList');
+    list.innerHTML = Object.values(players).sort((a,b) => b.score - a.score).map(p =>
+        `<div class="skw-card text-center p-6 mb-0"><div class="text-3xl font-black text-[var(--skw-gold)]">${p.name}</div><div class="text-slate-500 text-xs mt-2 font-bold">${p.score} 分</div></div>`
+    ).join('');
+    $('playerCount').textContent = Object.keys(players).length + ' 人連線';
+}
+
+function updateBuzzList() {
+    const list = $('buzzList');
+    list.innerHTML = buzzQueue.map((p, i) =>
+        `<div class="skw-card text-center p-6 mb-0 ${i===0?'ring-2 ring-emerald-500':''}"><div class="text-3xl font-black ${i===0?'text-emerald-400':'text-white'}">${i===0?'🔔 ':''}${p.name}</div><div class="text-slate-500 text-xs mt-2">搶答 #${i+1}</div></div>`
+    ).join('');
+    $('playerCount').textContent = Object.keys(players).length + ' 人連線';
+}
+
+// ===================== 搖一搖系統 (FIX #5) =====================
+function startShakeWatcher() {
+    if(typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        // iOS 需要權限
+        DeviceMotionEvent.requestPermission().then(state => {
+            if(state === 'granted') startShakeListener();
+        }).catch(() => startShakeListener());
+    } else {
+        startShakeListener();
+    }
+}
+
+function startShakeListener() {
+    if(shakeWatcher) return;
+    let lastX = 0, lastY = 0, lastZ = 0, lastTime = 0;
+    shakeWatcher = window.addEventListener('devicemotion', (e) => {
+        const acc = e.accelerationIncludingGravity;
+        if(!acc) return;
+        const x = acc.x, y = acc.y, z = acc.z;
+        if(lastTime === 0) { lastX = x; lastY = y; lastZ = z; lastTime = Date.now(); return; }
+        const delta = Math.abs(x - lastX) + Math.abs(y - lastY) + Math.abs(z - lastZ);
+        if(delta > 25 && gameMode === 'open') {
+            sendBuzz();
+        }
+        lastX = x; lastY = y; lastZ = z; lastTime = Date.now();
+    }, { frequency: 100 });
+}
+
+function stopShakeWatcher() {
+    if(shakeWatcher) { window.removeEventListener('devicemotion', shakeWatcher); shakeWatcher = null; }
+}
+
+function sendBuzz() {
+    if(hostConn && gameMode === 'open') {
+        hostConn.send({ type: 'buzz' });
+        $('buzzStatus').textContent = '已搶答！';
+        $('btnBuzzer').classList.add('disabled');
+    }
+}
+
 // ===================== APP INIT =====================
 document.addEventListener('DOMContentLoaded', () => {
     buildReferenceTables(); buildPigpenGrid(); updateAll();
 
+    // === 路由：檢查 URL 是否為搶答加入模式 ===
+    const urlParams = new URLSearchParams(window.location.search);
+    const joinId = urlParams.get('join');
+    if(joinId) {
+        // 進入會員搶答模式
+        document.querySelector('.mode-btn.active')?.classList.remove('active');
+        $('editorView').classList.add('hidden');
+        $('testPaperView').classList.add('hidden');
+        $('gameView').classList.add('hidden');
+        $('memberView').classList.remove('hidden');
+        $('memberView').style.display = 'flex';
+        // 自動連線到 host
+        myPeerId = joinId;
+    }
+
+    // === 編輯器切換 ===
     document.querySelectorAll('.mode-btn').forEach(btn => {
         btn.onclick = function() {
             document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); this.classList.add('active');
@@ -215,6 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
             $('testPaperView').classList.toggle('hidden', m!=='testpaper');
             $('gameView').classList.toggle('hidden', m!=='game');
             if(m==='testpaper') renderTestList();
+            if(m==='game') initGameHost();
         };
     });
 
@@ -224,12 +344,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 摩斯密碼播放按鈕
     $('btnPlayMorse').onclick = () => { const t = $('inputText').value.toUpperCase(); if(t) playMorse(t); };
-
-    // 投影速度滑桿
-    $('projSpeed').oninput = function() { $('projSpeedVal').textContent = (parseInt(this.value)/1000).toFixed(1) + 's'; };
+    // 投影速度滑桿 (FIX #1: 同步兩個滑桿)
+    $('projSpeed').oninput = function() {
+        var v = parseInt(this.value);
+        $('projSpeedVal').textContent = (v/1000).toFixed(1) + 's';
+        if($('projSpeedOverlay')) $('projSpeedOverlay').value = v;
+        if($('projSpeedOverlayVal')) $('projSpeedOverlayVal').textContent = (v/1000).toFixed(1) + 's';
+    };
+    if($('projSpeedOverlay')) {
+        $('projSpeedOverlay').oninput = function() {
+            var v = parseInt(this.value);
+            $('projSpeedOverlayVal').textContent = (v/1000).toFixed(1) + 's';
+            if($('projSpeed')) $('projSpeed').value = v;
+            if($('projSpeedVal')) $('projSpeedVal').textContent = (v/1000).toFixed(1) + 's';
+        };
+    }
 
     // 座標 KEY 變更時更新
+    // 座標 KEY 變更時更新
     $('gridKey').oninput = () => { buildReferenceTables(); updateAll(); };
+    // === FIX #1: 輪播速度不能在投影中調較 → 將速度滑桿也放到投影控制列 ===
+    // 現在 btnProjPlay 每次開始輪播時讀取最新的 projSpeed 值
+    // 我們在使用者點擊 btnProjPlay 時會即時讀取，所以只要滑桿可操作即可
+    // 在投影 overlay 底部加入速度滑桿
 
     // Projection Nav
     $('btnProjectTest').onclick = () => { if(testQuestions.length) { currentProjIdx = 0; showProjection(); } };
@@ -237,7 +374,31 @@ document.addEventListener('DOMContentLoaded', () => {
     $('btnProjPrev').onclick = () => { if(currentProjIdx > 0) { currentProjIdx--; showProjection(); } };
     $('btnExitProjection').onclick = () => { $('projectionOverlay').style.display='none'; clearProj(); };
 
-    // ===== 列印功能 (已修復所有問題) =====
+    // === FIX #3: NATO 聲音輪播按鈕 (原本 $('btnProjPlay').onclick 不在 DOMContentLoaded 內) ===
+    $('btnProjPlay').onclick = () => {
+        const q = testQuestions[currentProjIdx];
+        if(!q) return;
+        const text = q.text.toUpperCase();
+        const speed = parseInt((document.getElementById('projSpeedOverlay')||document.getElementById('projSpeed')).value);
+        if(q.display === 'audio') {
+            if(q.type === 'Morse') { playMorse(text); return; }
+            if(q.type === 'NATO') { playNatoAudio(text); return; }
+            return;
+        }
+        let i = 0; const style = $('semPrintStyle').value;
+        clearInterval(projTimer);
+        projTimer = setInterval(() => {
+            if(i >= text.length) { clearInterval(projTimer); return; }
+            const c = text[i]; let h = '';
+            if(q.type === 'Morse') h = `<div class="text-[25vw] font-mono text-[var(--skw-gold)]">${MORSE_CODE[c]||c}</div>`;
+            else if(q.type === 'NATO') h = `<div class="text-[12vw] font-black text-white">${NATO_MAP[c]||c}</div>`;
+            else h = (style==='doll' ? renderDoll(c, 450) : renderStickFigure(c, "white", 450));
+            $('projectionContent').innerHTML = `<div class="animate-in flex flex-col items-center">${h}<div class="mt-16 text-slate-500 font-bold text-2xl">字母 ${i+1} / ${text.length}</div></div>`;
+            i++;
+        }, speed);
+    };
+
+    // ===== 列印功能 =====
     $('btnExportPDF').onclick = () => {
         if(!testQuestions.length) return alert('請先加入題目');
         const style = $('semPrintStyle').value;
@@ -245,16 +406,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const upper = q.text.toUpperCase();
             let encoded = '';
             if(q.type==='Semaphore') {
-                encoded = `<div class="flex flex-wrap gap-4 justify-center">${upper.split('').map(c => c===' '?'<div class="w-8"></div>':(style==='doll'?`<img src="images/${SEMAPHORE_MAP[c]}" class="w-16 h-16 grayscale border border-black p-0.5">`:renderStickFigure(c, "black", 60))).join('')}</div>`;
+                encoded = `<div class="flex flex-wrap gap-4 justify-center">${upper.split('').map(c => c===' '?'<div class="w-8"></div>':(style==='doll'?`<img src="images/${SEMAPHORE_MAP[c]}" class="w-16 h-16 border border-black p-0.5">`:renderStickFigure(c, "black", 60))).join('')}</div>`;
             }
             else if(q.type==='Braille') {
                 encoded = `<div class="flex flex-wrap gap-4 justify-center">${upper.split('').map(c => c===' '?'<div class="w-8"></div>':renderBraille(c)).join('')}</div>`;
             }
-            // === FIX #1: Pigpen 列印顯示符號而非英文字 ===
             else if(q.type==='Pigpen') {
                 encoded = `<div class="flex flex-wrap gap-4 justify-center">${upper.split('').map(c => c===' '?'<div class="w-8"></div>':renderPigpenSVG(c, "#000")).join('')}</div>`;
             }
-            // === FIX #2: NATO 列印支援 ===
             else if(q.type==='NATO') {
                 if(q.display === 'audio') {
                     encoded = `<span class="text-xl italic">（聽力考核項目）</span>`;
@@ -268,17 +427,91 @@ document.addEventListener('DOMContentLoaded', () => {
             else {
                 encoded = `<span class="text-2xl font-mono">${getEncoded(q.text, q.type)}</span>`;
             }
-            return `<div class="mb-12 border-2 border-black p-8 rounded-xl break-inside-avoid"><b>Q${idx+1}. 翻譯以下密碼 (${q.type}):</b><div class="mt-6 flex items-center justify-center">${encoded}</div><div class="mt-10 border-b border-black w-full h-8"></div></div>`;
+            return `<div class="print-question"><b>Q${idx+1}. 翻譯以下密碼 (${q.type}):</b><div class="mt-6 flex items-center justify-center">${encoded}</div><div class="mt-10 border-b border-black w-full h-8"></div></div>`;
         }).join('');
-        window.print();
+        // FIX #2: 給瀏覽器一點時間渲染後再列印
+        setTimeout(() => window.print(), 100);
     };
+
+    // ===== FIX #5: 搶答系統 =====
+    // 開放搶答按鈕
+    $('btnStartGame').onclick = () => {
+        gameMode = (gameMode === 'open') ? 'idle' : 'open';
+        $('btnStartGame').textContent = gameMode === 'open' ? '🔴 關閉搶答' : '🟢 開放搶答 (RESET)';
+        $('btnStartGame').className = gameMode === 'open'
+            ? 'w-full py-5 bg-red-600 rounded-3xl font-black text-white text-xl shadow-lg'
+            : 'w-full py-5 bg-emerald-600 rounded-3xl font-black text-white text-xl shadow-lg';
+        if(gameMode === 'open') {
+            buzzQueue = [];
+            updateBuzzList();
+            // 通知所有玩家
+            connections.forEach(c => c.send({ type: 'game_open' }));
+        } else {
+            connections.forEach(c => c.send({ type: 'game_close' }));
+        }
+    };
+
+    // 會員加入遊戲
+    $('btnJoinConfirm').onclick = () => {
+        const name = $('playerName').value.trim();
+        if(!name) return alert('請輸入姓名');
+        if(!joinId && !myPeerId) return alert('無遊戲 ID');
+        const hostId = joinId || myPeerId;
+        try {
+            if(typeof Peer === 'undefined') { alert('PeerJS 未載入'); return; }
+            const memberPeer = new Peer();
+            memberPeer.on('open', () => {
+                const conn = memberPeer.connect(hostId);
+                hostConn = conn;
+                conn.on('open', () => {
+                    conn.send({ type: 'join', name });
+                    $('memberJoinForm').classList.add('hidden');
+                    $('memberBuzzer').classList.remove('hidden');
+                    $('displayMyName').textContent = name;
+                });
+                conn.on('data', (data) => {
+                    if(data.type === 'game_open') {
+                        gameMode = 'open';
+                        $('buzzStatus').textContent = '領袖已開放搶答！快按 BUZZ!';
+                        $('btnBuzzer').classList.remove('disabled');
+                        $('btnBuzzer').textContent = 'BUZZ!';
+                    } else if(data.type === 'game_close') {
+                        gameMode = 'idle';
+                        $('buzzStatus').textContent = '等待領袖開放...';
+                        $('btnBuzzer').classList.add('disabled');
+                    } else if(data.type === 'buzz_order') {
+                        const idx = data.queue.indexOf(name);
+                        $('buzzStatus').textContent = idx === 0 ? '你是第 1 名！' : `你是第 ${idx+1} 名`;
+                    }
+                });
+            });
+        } catch(e) { alert('連線失敗'); }
+    };
+
+    // BUZZ 按鈕
+    $('btnBuzzer').onclick = sendBuzz;
+
+    // 搖一搖切換
+    $('shakeToggle').onchange = function() {
+        if(this.checked) {
+            startShakeWatcher();
+            showToast('搖一搖已開啟');
+        } else {
+            stopShakeWatcher();
+        }
+    };
+
+    // 如為搶答加入模式，自動初始化 peer 顯示加入畫面
+    if(joinId) {
+        $('memberView').style.display = 'flex';
+    }
 });
 
 // ===================== TEST QUESTION LIST =====================
 function renderTestList() {
     const list = $('testQuestionList'), labels = {"Morse":"摩斯密碼","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高密碼","Grid":"座標密碼","Phone":"電話密碼","Caesar":"凱撒位移","Atbash":"反射密碼","Reverse":"倒序密碼","NATO":"NATO","Cangjie":"倉頡","Quick":"速成"};
     list.innerHTML = testQuestions.map((q,idx) => {
-        // === FIX #3: NATO 也能使用輪播/聲音模式 ===
+        // FIX #3: NATO 也有輪播/聲音選項
         const hasDisplayOptions = q.type==='Morse' || q.type==='Semaphore' || q.type==='NATO';
         const hasAudio = q.type==='Morse' || q.type==='NATO';
         return `

@@ -151,8 +151,13 @@ body {
 .ref-table td { border: 1px solid var(--skw-border); padding: 6px; text-align: center; font-size: 11px; }
 .ref-table td.highlight { background: rgba(0,210,255,0.2); color: var(--skw-blue-glow); font-weight: 900; }
 
-/* ===================== PRINT FIXES ===================== */
+/* ===================== PRINT FIXES (FIX #2) ===================== */
 @media print {
+  @page {
+    margin: 20mm 15mm;
+    size: A4;
+  }
+
   html, body {
     background: white !important;
     color: black !important;
@@ -160,6 +165,8 @@ body {
     print-color-adjust: exact !important;
     margin: 0 !important;
     padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
   }
 
   /* Hide everything except printView */
@@ -168,53 +175,98 @@ body {
   /* Reset main-content margin since sidebar is hidden */
   .main-content {
     margin-left: 0 !important;
-    display: block !important;
-    background: white !important;
-  }
-
-  /* Hide toast that overlaps with print footer */
-  .toast,
-  #toast {
     display: none !important;
   }
 
-  /* Hide projection overlay */
-  #projectionOverlay {
+  /* Hide toast & overlay */
+  .toast, #toast, #projectionOverlay {
     display: none !important;
   }
 
-  /* Print View styles */
+  /* ===== Print View ===== */
   #printView {
     display: block !important;
-    padding: 60px 80px !important;
+    width: 100% !important;
     background: white !important;
     color: black !important;
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif !important;
     position: relative !important;
     z-index: 1 !important;
     margin: 0 !important;
+    padding: 0 !important;
   }
 
-  /* Force page breaks properly */
-  #printQuestions > div {
+  /* 試卷表頭 */
+  .print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 4px solid black;
+    padding-bottom: 16px;
+    margin-bottom: 32px;
+  }
+  .print-title {
+    font-size: 28pt;
+    font-weight: 900;
+  }
+  .print-subtitle {
+    font-size: 16pt;
+    font-weight: 700;
+    margin-top: 8px;
+  }
+  .print-info-area {
+    text-align: right;
+    font-size: 14pt;
+    font-weight: 700;
+  }
+  .print-info-area p {
+    margin-top: 8px;
+  }
+
+  /* 題目容器：允許頁內斷頁，避免整題被推到下一頁產生大片空白 */
+  .print-questions-container > .print-question {
     page-break-inside: avoid;
-    break-inside: avoid;
+    margin-bottom: 48px;
+    border: 2px solid black;
+    padding: 24px;
+    border-radius: 8px;
+    font-size: 14pt;
+  }
+  .print-question b {
+    font-size: 16pt;
+  }
+  .print-question .mt-6 {
+    margin-top: 24px;
+  }
+  .print-question .mt-10 {
+    margin-top: 32px;
   }
 
-  /* Remove background artifacts */
-  .skw-card {
-    background: white !important;
-    border: 1px solid #ddd !important;
-  }
-  .output-box {
-    background: #f9f9f9 !important;
-    border: 1px solid #ddd !important;
-    color: #000 !important;
+  /* 當題目太長時才允許斷頁 */
+  .print-question.allow-break {
+    page-break-inside: auto;
   }
 
-  /* Ensure no fixed elements remain */
-  *[style*="position: fixed"],
-  *[style*="position:fixed"] {
-    display: none !important;
+  /* 答卷底線 */
+  .print-question .border-b {
+    border-bottom: 1px solid black !important;
   }
+
+  /* 頁尾 */
+  .print-footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid #ccc;
+    text-align: center;
+    font-size: 11pt;
+    color: #666;
+    font-weight: 700;
+    text-transform: uppercase;
+    page-break-after: avoid;
+  }
+}
+
+/* ===== Print screen styles (for preview before print) ===== */
+#printView.hidden {
+  display: none !important;
 }
