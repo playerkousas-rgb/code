@@ -1,6 +1,11 @@
 // ===================== DATA & MAPPINGS =====================
 const MORSE_CODE = {'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.','0':'-----',' ':'/'};
 const SEMAPHORE_MAP = {'A':'a.png','B':'b.png','C':'c.png','D':'d.png','E':'e.png','F':'f.png','G':'g.png','H':'h.png','I':'i.png','J':'j.png','K':'k.png','L':'l.png','M':'m.png','N':'n.png','O':'o.png','P':'p.png','Q':'q.png','R':'r.png','S':'s.png','T':'t.png','U':'u.png','V':'v.png','W':'w.png','X':'x.png','Y':'y.png','Z':'z.png','!':'error.png','@':'endof.png','#':'answering.png','$':'attention.png','%':'numbers.png'};
+const semaphoreAngles = {
+    'A':[180,225],'B':[180,270],'C':[180,315],'D':[180,0],'E':[0,45],'F':[0,90],'G':[0,135],'H':[225,270],
+    'I':[225,315],'J':[90,0],'K':[225,0],'L':[225,45],'M':[225,90],'N':[225,135],'O':[270,315],'P':[270,0],
+    'Q':[270,45],'R':[270,90],'S':[270,135],'T':[315,0],'U':[315,45],'V':[0,90],'W':[45,90],'X':[45,135],'Y':[315,90],'Z':[135,90]
+};
 const BRAILLE_MAP = {'A':[1],'B':[1,2],'C':[1,4],'D':[1,4,5],'E':[1,5],'F':[1,2,4],'G':[1,2,4,5],'H':[1,2,5],'I':[2,4],'J':[2,4,5],'K':[1,3],'L':[1,2,3],'M':[1,3,4],'N':[1,3,4,5],'O':[1,3,5],'P':[1,2,3,4],'Q':[1,2,3,4,5],'R':[1,2,3,5],'S':[2,3,4],'T':[2,3,4,5],'U':[1,3,6],'V':[1,2,3,6],'W':[2,4,5,6],'X':[1,3,4,6],'Y':[1,3,4,5,6],'Z':[1,3,5,6]};
 const CANGJIE_MAP = {'A':'日','B':'月','C':'金','D':'木','E':'水','F':'火','G':'土','H':'竹','I':'戈','J':'十','K':'大','L':'中','M':'一','N':'弓','O':'人','P':'心','Q':'手','R':'口','S':'屍','T':'廿','U':'山','V':'女','W':'田','X':'難','Y':'卜','Z':'重'};
 const JYUTPING_MAP = {'A':'ei1','B':'bi1','C':'si1','D':'di1','E':'i1','F':'ef1','G':'ji1','H':'eich1','I':'ai1','J':'jei1','K':'kei1','L':'el1','M':'em1','N':'en1','O':'ou1','P':'pi1','Q':'kiu1','R':'aa1','S':'es1','T':'ti1','U':'ju1','V':'wi1','W':'dël-bü-liu-ju1','X':'ik-si1','Y':'wai1','Z':'zet1'};
@@ -22,12 +27,38 @@ let gameMode = 'idle';
 const $ = (id) => document.getElementById(id);
 const showToast = (msg) => { const t = $('toast'); if(t){ t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); } };
 
-// ===================== CORE CIPHER LOGIC =====================
+// ===================== RENDERERS =====================
 function renderBrailleChar(c) {
     const dots = BRAILLE_MAP[c.toUpperCase()] || [];
     let h = '<div class="braille-char">';
     for(let i=1; i<=6; i++) h += `<div class="braille-dot ${dots.includes(i)?'active':''}"></div>`;
     return h + '</div>';
+}
+
+function renderStickFigure(c, color = "black", size = 80) {
+    const angles = semaphoreAngles[c.toUpperCase()];
+    if(!angles) return `<div class="font-bold text-center" style="width:${size}px">${c}</div>`;
+    
+    const cx = size/2, cy = size/2 + 10;
+    let h = `<svg width="${size}" height="${size+10}" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">`;
+    // Head
+    h += `<circle cx="50" cy="30" r="12" fill="none" stroke="${color}" stroke-width="4"/>`;
+    // Body
+    h += `<line x1="50" y1="42" x2="50" y2="80" stroke="${color}" stroke-width="4"/>`;
+    // Legs
+    h += `<line x1="50" y1="80" x2="35" y2="110" stroke="${color}" stroke-width="4"/>`;
+    h += `<line x1="50" y1="80" x2="65" y2="110" stroke="${color}" stroke-width="4"/>`;
+    
+    // Arms
+    angles.forEach((a, i) => {
+        const rad = (a - 90) * Math.PI / 180;
+        const x2 = 50 + Math.cos(rad) * 45;
+        const y2 = 50 + Math.sin(rad) * 45;
+        // Right hand gold, left hand blue for clarity if needed, but black for printing
+        const stroke = (color === "black") ? "black" : (i === 0 ? "#ffcc00" : "#00d2ff");
+        h += `<line x1="50" y1="50" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="6" stroke-linecap="round"/>`;
+    });
+    return h + `</svg>`;
 }
 
 function renderPigpenSVG(c, color = "#ffcc00") {
@@ -40,21 +71,16 @@ function renderPigpenSVG(c, color = "#ffcc00") {
     return `<svg class="pigpen-svg" width="40" height="40" viewBox="0 0 45 45"><path d="${path}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round"/><circle cx="${dotPos.x}" cy="${dotPos.y}" r="${dot?3:0}" fill="${color}"/></svg>`;
 }
 
-function encodeGrid(text, key) {
-    const alpha = "ABCDEFGHIKLMNOPQRSTUVWXY";
-    return text.toUpperCase().split('').map(c => {
-        if(c===' ') return '/'; if(c==='Z') return 'Z';
-        let idx = alpha.indexOf(c);
-        if(idx===-1) return c;
-        return key[idx % 5] + key[Math.floor(idx / 5)];
-    }).join(' ');
-}
-
+// ===================== CORE LOGIC =====================
 function getEncoded(text, type, key = 'SCOUT', shift = 3) {
     const upper = text.toUpperCase();
+    const alpha = "ABCDEFGHIKLMNOPQRSTUVWXY";
     switch(type) {
         case 'Morse': return upper.split('').map(c => MORSE_CODE[c] || c).join(' ');
-        case 'Grid': return encodeGrid(upper, key);
+        case 'Grid': return upper.split('').map(c => {
+            if(c===' ') return '/'; if(c==='Z') return 'Z';
+            let idx = alpha.indexOf(c); return idx===-1 ? c : key[idx % 5] + key[Math.floor(idx / 5)];
+        }).join(' ');
         case 'Caesar': return upper.replace(/[A-Z]/g, c => String.fromCharCode(65 + (c.charCodeAt(0) - 65 + shift) % 26));
         case 'Atbash': return upper.replace(/[A-Z]/g, c => String.fromCharCode(90 - (c.charCodeAt(0) - 65)));
         case 'Cangjie': return upper.split('').map(c => c===' '?'/':(CANGJIE_MAP[c] || c)).join(' ');
@@ -65,7 +91,6 @@ function getEncoded(text, type, key = 'SCOUT', shift = 3) {
     }
 }
 
-// ===================== UPDATE VIEW =====================
 function updateAll() {
     const text = $('inputText').value;
     const upper = text.toUpperCase();
@@ -92,67 +117,6 @@ function updateAll() {
     highlightTables(upper);
 }
 
-function buildReferenceTables() {
-    let h = '';
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split('');
-    for(let i=0; i<chars.length; i+=6) {
-        h += '<tr>';
-        for(let j=0; j<6 && (i+j)<chars.length; j++) {
-            let c = chars[i+j];
-            h += `<td data-ch="${c}" class="border border-white/5 p-2 text-center text-xs"><b>${c}</b><br>${MORSE_CODE[c]}</td>`;
-        }
-        h += '</tr>';
-    }
-    if($('morseTable')) $('morseTable').innerHTML = h;
-
-    h = '';
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(c => {
-        h += `<div class="flex flex-col items-center gap-1 p-2 bg-black/20 rounded border border-white/5">
-            <span class="text-[9px] font-bold text-slate-500">${c}</span>
-            <img src="images/${SEMAPHORE_MAP[c]}" class="w-10 h-10 grayscale opacity-40">
-        </div>`;
-    });
-    if($('semaphoreGrid')) $('semaphoreGrid').innerHTML = h;
-
-    const brailleWrap = $('brailleTableWrap');
-    if(brailleWrap) {
-        h = '<div class="grid grid-cols-6 md:grid-cols-9 gap-2">';
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(c => {
-            h += `<div class="flex flex-col items-center gap-1">${renderBrailleChar(c)}<span class="text-[10px] text-slate-500">${c}</span></div>`;
-        });
-        brailleWrap.innerHTML = h + '</div>';
-    }
-
-    const key = ($('gridKey').value || 'SCOUT').toUpperCase();
-    if($('gridTable')) {
-        h = `<tr><th class="p-2"></th>${key.split('').map(k => `<th class="p-2 text-[var(--skw-gold)]">${k}</th>`).join('')}</tr>`;
-        const alpha = "ABCDEFGHIKLMNOPQRSTUVWXY";
-        for(let r=0; r<5; r++) {
-            h += `<tr><th class="p-2 text-[var(--skw-gold)]">${key[r]}</th>`;
-            for(let c=0; c<5; c++) {
-                let char = alpha[r*5 + c] || '';
-                h += `<td data-ch="${char}" class="p-2 border border-white/5 text-center">${char}</td>`;
-            }
-            h += '</tr>';
-        }
-        $('gridTable').innerHTML = h;
-    }
-
-    const cjWrap = $('cangjieTableWrap');
-    if(cjWrap) {
-        h = '<div class="grid grid-cols-5 md:grid-cols-10 gap-2">';
-        Object.entries(CANGJIE_MAP).forEach(([k,v]) => {
-            h += `<div class="p-2 bg-black/20 rounded border border-white/5 text-center"><span class="block text-[10px] text-slate-500">${k}</span><span class="text-lg font-bold text-[var(--skw-gold)]">${v}</span></div>`;
-        });
-        cjWrap.innerHTML = h + '</div>';
-    }
-}
-
-function highlightTables(text) {
-    const chars = new Set(text.split(''));
-    document.querySelectorAll('td[data-ch]').forEach(td => td.classList.toggle('bg-sky-500/20', chars.has(td.dataset.ch)));
-}
-
 // ===================== PROJECTION & PRINT =====================
 function showProjection() {
     const q = testQuestions[currentProjIdx];
@@ -175,15 +139,23 @@ function showProjection() {
     else if(q.type==='Jyutping') html = `<div class="text-[8vw] font-bold text-[var(--skw-gold)]">${getEncoded(q.text, 'Jyutping')}</div>`;
     else html = `<div class="text-[10vw] font-black text-white">${upper}</div>`;
     
-    $('projectionContent').innerHTML = `<div class="text-center w-full px-10">${html}<div class="mt-24 text-slate-700 font-bold text-2xl tracking-[1em] opacity-40 uppercase">SKWSCOUT ASSESSMENT</div></div>`;
+    $('projectionContent').innerHTML = `<div class="text-center w-full px-10 animate-in">${html}<div class="mt-24 text-slate-700 font-bold text-2xl tracking-[1em] opacity-40 uppercase">SKWSCOUT ASSESSMENT</div></div>`;
 }
 
 window.onbeforeprint = () => {
+    const style = $('semPrintStyle').value;
     $('printQuestions').innerHTML = testQuestions.map((q, idx) => {
         let encoded = '';
         const upper = q.text.toUpperCase();
         if(q.type === 'Morse') encoded = `<span class="text-2xl font-mono">${getEncoded(q.text, 'Morse')}</span>`;
-        else if(q.type === 'Semaphore') encoded = `<div class="flex flex-wrap gap-2">${upper.split('').map(c => c===' '?'<div class="w-8"></div>':`<img src="images/${SEMAPHORE_MAP[c]}" class="w-12 h-12 grayscale border border-black p-0.5">`).join('')}</div>`;
+        else if(q.type === 'Semaphore') {
+            encoded = `<div class="flex flex-wrap gap-4">${upper.split('').map(c => {
+                if(c===' ') return '<div class="w-8"></div>';
+                if(style === 'stick') return renderStickFigure(c, "black", 60);
+                const src = SEMAPHORE_MAP[c];
+                return src ? `<img src="images/${src}" class="w-16 h-16 grayscale border border-black p-0.5">` : `<div class="w-16 h-16 border border-black flex items-center justify-center font-bold">${c}</div>`;
+            }).join('')}</div>`;
+        }
         else if(q.type === 'Braille') encoded = `<div class="flex flex-wrap gap-4">${upper.split('').map(c => c===' '?'<div class="w-8"></div>':renderBrailleChar(c)).join('')}</div>`;
         else if(q.type === 'Pigpen') encoded = `<div class="flex flex-wrap gap-4">${upper.split('').map(c => c===' '?'<div class="w-8"></div>':renderPigpenSVG(c, "#000")).join('')}</div>`;
         else if(q.type === 'Grid' || q.type === 'Caesar' || q.type === 'Atbash') encoded = `<span class="text-2xl font-mono">${getEncoded(q.text, q.type)}</span>`;
@@ -204,67 +176,29 @@ function renderTestQuestionList() {
     const list = $('testQuestionList');
     if(testQuestions.length === 0) return list.innerHTML = '<p class="text-center text-slate-500 italic py-10">清單為空</p>';
     
-    const types = ["Morse", "Semaphore", "Braille", "Pigpen", "Grid", "Caesar", "Atbash", "Cangjie", "Pinyin", "Jyutping", "Phone", "Text"];
+    // Label mapping for selection
+    const typeLabels = {
+        "Morse": "摩斯密碼", "Semaphore": "旗號", "Braille": "點字", "Pigpen": "朱高密碼", "Grid": "座標密碼",
+        "Caesar": "凱撒位移", "Atbash": "反射密碼", "Cangjie": "倉頡密碼", "Pinyin": "普通話拼音",
+        "Jyutping": "廣東話粵拼", "Phone": "電話密碼", "Text": "原文內容"
+    };
     
     list.innerHTML = testQuestions.map((q,idx)=>`
         <div class="skw-card p-4 flex justify-between items-center mb-0">
             <div class="flex items-center gap-4">
                 <span class="font-black text-[var(--skw-gold)]">Q${idx+1}</span>
                 <span class="text-white font-bold">${q.text}</span>
-                <select onchange="testQuestions[${idx}].type=this.value;localStorage.setItem('skw_test_questions',JSON.stringify(testQuestions))" class="bg-black/60 text-white text-xs border border-white/20 rounded px-2 py-1 outline-none">
-                    ${types.map(t => `<option value="${t}" ${q.type===t?'selected':''}>${t}</option>`).join('')}
+                <select onchange="testQuestions[${idx}].type=this.value;localStorage.setItem('skw_test_questions',JSON.stringify(testQuestions))" class="bg-black/60 text-white text-xs border border-white/20 rounded px-3 py-1.5 outline-none font-bold">
+                    ${Object.entries(typeLabels).map(([val, label]) => `<option value="${val}" ${q.type===val?'selected':''}>${label}</option>`).join('')}
                 </select>
             </div>
             <button onclick="testQuestions.splice(${idx},1);localStorage.setItem('skw_test_questions',JSON.stringify(testQuestions));renderTestQuestionList();" class="text-red-400 text-xs font-bold hover:text-red-300">刪除</button>
         </div>`).join('');
 }
 
-// ===================== PEERJS GAME FUNCTIONS =====================
-function initHost() {
-    peer = new Peer();
-    peer.on('open', (id) => { $('gameIdDisplay').textContent = `房號: ${id}`; generateJoinQR(id); });
-    peer.on('connection', (conn) => {
-        conn.on('data', (data) => {
-            if(data.type==='join') { players[conn.peer]={name:data.name,buzzTime:null}; connections.push(conn); updateHostUI(); }
-            if(data.type==='buzz' && gameMode==='open' && !players[conn.peer].buzzTime) {
-                players[conn.peer].buzzTime=Date.now(); buzzQueue.push({id:conn.peer, name:players[conn.peer].name, time:players[conn.peer].buzzTime});
-                buzzQueue.sort((a,b)=>a.time-b.time); updateHostUI(); broadcast({type:'buzzUpdate',queue:buzzQueue});
-            }
-        });
-    });
-}
-function generateJoinQR(id) {
-    $('joinQr').innerHTML = ''; new QRCode($('joinQr'), { text: `${window.location.origin}${window.location.pathname}?join=${id}`, width:150, height:150 });
-}
-function broadcast(data) { connections.forEach(c => c.send(data)); }
-function updateHostUI() {
-    $('playerCount').textContent = `${Object.keys(players).length} 人在線`;
-    $('buzzList').innerHTML = buzzQueue.map((p,idx)=>`<div class="skw-card p-4 bg-[var(--skw-gold)] text-black text-center font-bold shadow-xl animate-in"><span class="text-3xl block">#${idx+1}</span>${p.name}</div>`).join('');
-}
-function initMember(hostId) {
-    peer = new Peer();
-    peer.on('open', () => {
-        hostConn = peer.connect(hostId);
-        hostConn.on('data', (data) => {
-            if(data.type==='modeUpdate') { 
-                gameMode=data.mode; 
-                $('btnBuzzer').classList.toggle('disabled', gameMode!=='open'); 
-                $('buzzStatus').textContent = gameMode==='open'?'開放搶答中！':'請等待領袖...'; 
-            }
-            if(data.type==='buzzUpdate') { 
-                if(data.queue.find(p=>p.id===peer.id)) { 
-                    $('btnBuzzer').classList.add('disabled'); 
-                    $('buzzStatus').textContent='已搶答！'; 
-                    if(navigator.vibrate) navigator.vibrate(200); 
-                } 
-            }
-        });
-    });
-}
-function handleBuzz() { if(gameMode==='open' && hostConn) hostConn.send({type:'buzz'}); }
-
 // ===================== APP INIT =====================
 document.addEventListener('DOMContentLoaded', () => {
+    // Mode Switching
     document.querySelectorAll('.mode-btn').forEach(btn => {
         btn.onclick = function() {
             document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -283,7 +217,6 @@ document.addEventListener('DOMContentLoaded', () => {
     $('inputText').oninput = updateAll;
     $('gridKey').oninput = () => { buildReferenceTables(); updateAll(); };
     $('caesarShift').oninput = updateAll;
-    $('caesarDir').onchange = updateAll;
     $('btnDemo').onclick = () => { $('inputText').value = 'BRAVO SCOUTS'; updateAll(); };
     
     $('btnAddToTest').onclick = () => {
@@ -312,6 +245,120 @@ document.addEventListener('DOMContentLoaded', () => {
             }); t+=0.2; } else if(c===' ') t+=0.4;
         });
     };
+
+    $('btnPlaySemaphore').onclick = () => {
+        const text = $('inputText').value.toUpperCase();
+        if(!text) return;
+        const out = $('outSemaphore');
+        let idx = 0;
+        const timer = setInterval(() => {
+            if(idx >= text.length) { clearInterval(timer); updateAll(); return; }
+            const c = text[idx];
+            if(c === ' ') out.innerHTML = '<div class="text-4xl">/</div>';
+            else out.innerHTML = renderStickFigure(c, "#ffcc00", 120);
+            idx++;
+        }, 1000);
+    };
+
+    function buildReferenceTables() {
+        let h = '';
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split('');
+        for(let i=0; i<chars.length; i+=6) {
+            h += '<tr>';
+            for(let j=0; j<6 && (i+j)<chars.length; j++) {
+                let c = chars[i+j];
+                h += `<td data-ch="${c}" class="border border-white/5 p-2 text-center text-xs"><b>${c}</b><br>${MORSE_CODE[c]}</td>`;
+            }
+            h += '</tr>';
+        }
+        if($('morseTable')) $('morseTable').innerHTML = h;
+
+        h = '';
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(c => {
+            h += `<div class="flex flex-col items-center gap-1 p-2 bg-black/20 rounded border border-white/5">
+                <span class="text-[9px] font-bold text-slate-500">${c}</span>
+                <img src="images/${SEMAPHORE_MAP[c]}" class="w-10 h-10 grayscale opacity-40">
+            </div>`;
+        });
+        if($('semaphoreGrid')) $('semaphoreGrid').innerHTML = h;
+
+        const brailleWrap = $('brailleTableWrap');
+        if(brailleWrap) {
+            h = '<div class="grid grid-cols-6 md:grid-cols-9 gap-2">';
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(c => {
+                h += `<div class="flex flex-col items-center gap-1">${renderBrailleChar(c)}<span class="text-[10px] text-slate-500">${c}</span></div>`;
+            });
+            brailleWrap.innerHTML = h + '</div>';
+        }
+
+        const key = ($('gridKey').value || 'SCOUT').toUpperCase();
+        if($('gridTable')) {
+            h = `<tr><th class="p-2"></th>${key.split('').map(k => `<th class="p-2 text-[var(--skw-gold)]">${k}</th>`).join('')}</tr>`;
+            const alpha = "ABCDEFGHIKLMNOPQRSTUVWXY";
+            for(let r=0; r<5; r++) {
+                h += `<tr><th class="p-2 text-[var(--skw-gold)]">${key[r]}</th>`;
+                for(let c=0; c<5; c++) {
+                    let char = alpha[r*5 + c] || '';
+                    h += `<td data-ch="${char}" class="p-2 border border-white/5 text-center">${char}</td>`;
+                }
+                h += '</tr>';
+            }
+            $('gridTable').innerHTML = h;
+        }
+
+        const cjWrap = $('cangjieTableWrap');
+        if(cjWrap) {
+            h = '<div class="grid grid-cols-5 md:grid-cols-10 gap-2">';
+            Object.entries(CANGJIE_MAP).forEach(([k,v]) => {
+                h += `<div class="p-2 bg-black/20 rounded border border-white/5 text-center"><span class="block text-[10px] text-slate-500">${k}</span><span class="text-lg font-bold text-[var(--skw-gold)]">${v}</span></div>`;
+            });
+            cjWrap.innerHTML = h + '</div>';
+        }
+    }
+
+    function highlightTables(text) {
+        const chars = new Set(text.split(''));
+        document.querySelectorAll('td[data-ch]').forEach(td => td.classList.toggle('bg-sky-500/20', chars.has(td.dataset.ch)));
+    }
+
+    // PeerJS logic
+    function initHost() {
+        peer = new Peer();
+        peer.on('open', (id) => { $('gameIdDisplay').textContent = `房號: ${id}`; generateJoinQR(id); });
+        peer.on('connection', (conn) => {
+            conn.on('data', (data) => {
+                if(data.type==='join') { players[conn.peer]={name:data.name,buzzTime:null}; connections.push(conn); updateHostUI(); }
+                if(data.type==='buzz' && gameMode==='open' && !players[conn.peer].buzzTime) {
+                    players[conn.peer].buzzTime=Date.now(); buzzQueue.push({id:conn.peer, name:players[conn.peer].name, time:players[conn.peer].buzzTime});
+                    buzzQueue.sort((a,b)=>a.time-b.time); updateHostUI(); broadcast({type:'buzzUpdate',queue:buzzQueue});
+                }
+            });
+        });
+    }
+    function generateJoinQR(id) {
+        $('joinQr').innerHTML = ''; new QRCode($('joinQr'), { text: `${window.location.origin}${window.location.pathname}?join=${id}`, width:150, height:150 });
+    }
+    function broadcast(data) { connections.forEach(c => c.send(data)); }
+    function updateHostUI() {
+        $('playerCount').textContent = `${Object.keys(players).length} 人在線`;
+        $('buzzList').innerHTML = buzzQueue.map((p,idx)=>`<div class="skw-card p-4 bg-[var(--skw-gold)] text-black text-center font-bold shadow-xl animate-in"><span class="text-3xl block">#${idx+1}</span>${p.name}</div>`).join('');
+    }
+    function initMember(hostId) {
+        peer = new Peer();
+        peer.on('open', () => {
+            hostConn = peer.connect(hostId);
+            hostConn.on('data', (data) => {
+                if(data.type==='modeUpdate') { 
+                    gameMode=data.mode; 
+                    $('btnBuzzer').classList.toggle('disabled', gameMode!=='open'); 
+                }
+                if(data.type==='buzzUpdate') { 
+                    if(data.queue.find(p=>p.id===peer.id)) { $('btnBuzzer').classList.add('disabled'); } 
+                }
+            });
+        });
+    }
+    function handleBuzz() { if(gameMode==='open' && hostConn) hostConn.send({type:'buzz'}); }
 
     buildReferenceTables();
     updateAll();

@@ -72,7 +72,7 @@
         <textarea id="inputText" rows="2" class="skw-input w-full p-6 rounded-2xl text-2xl font-bold bg-black/40 text-white border-2 border-white/5 focus:border-[var(--skw-gold)] outline-none" placeholder="在此輸入想要轉換的英文文字..."></textarea>
       </section>
 
-      <!-- All Ciphers -->
+      <!-- Morse -->
       <div id="cardMorse" class="skw-card p-8">
         <div class="flex justify-between items-center mb-4">
           <h3 class="font-black text-white">摩斯密碼 (Morse)</h3>
@@ -82,20 +82,25 @@
         <div class="mt-4"><table id="morseTable" class="ref-table w-full"></table></div>
       </div>
 
+      <!-- Semaphore -->
       <div id="cardSemaphore" class="skw-card p-8">
         <div class="flex justify-between items-center mb-4">
           <h3 class="font-black text-white">旗號 (Semaphore)</h3>
-          <button id="btnPlaySemaphore" class="bg-sky-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold">▶ 動畫播放</button>
+          <div class="flex gap-2">
+            <button id="btnPlaySemaphore" class="bg-sky-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold">▶ 動畫播放</button>
+          </div>
         </div>
         <div id="outSemaphore" class="output-box flex-wrap gap-4 min-h-[140px]"></div>
         <div id="semaphoreGrid" class="flex flex-wrap gap-2 mt-4 justify-center"></div>
-      </section>
+      </div>
 
+      <!-- Pigpen -->
       <div id="cardPigpen" class="skw-card p-8">
         <h3 class="font-black text-white mb-4">朱高密碼 (Pigpen / Chu Ko)</h3>
         <div id="outPigpen" class="output-box flex-wrap gap-3"></div>
-      </section>
+      </div>
 
+      <!-- Grid -->
       <div id="cardGrid" class="skw-card p-8">
         <div class="flex justify-between items-center mb-4">
           <h3 class="font-black text-white">座標密碼 (Grid - SCOUT)</h3>
@@ -105,6 +110,7 @@
         <div class="mt-4 overflow-x-auto"><table id="gridTable" class="ref-table w-full"></table></div>
       </div>
 
+      <!-- Caesar & Atbash -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div id="cardCaesar" class="skw-card p-8">
           <h3 class="font-black text-white mb-4">凱撒位移 (Caesar)</h3>
@@ -123,7 +129,6 @@
         </div>
       </div>
 
-      <!-- Additional Ciphers (Cangjie, Pinyin, Braille, etc.) -->
       <div id="cardBraille" class="skw-card p-8">
         <h3 class="font-black text-white mb-4">點字 (Braille)</h3>
         <div id="outBraille" class="output-box flex-wrap gap-4"></div>
@@ -148,11 +153,20 @@
     <!-- Test Paper View -->
     <main class="max-w-6xl mx-auto px-6 py-4 space-y-8 no-print" id="testPaperView" style="display:none">
       <section class="skw-card p-8">
-        <div class="flex justify-between items-center mb-8">
-          <h2 class="text-xl font-black text-white">考核題目管理</h2>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div>
+            <h2 class="text-xl font-black text-white">考核題目管理</h2>
+            <div class="mt-4 flex items-center gap-4 bg-black/30 p-3 rounded-xl border border-white/5">
+                <span class="text-xs font-bold text-slate-400">旗號列印樣式：</span>
+                <select id="semPrintStyle" class="bg-black/40 text-white text-xs border border-white/20 rounded px-2 py-1 outline-none">
+                    <option value="doll">具登堡公仔 (Full Images)</option>
+                    <option value="stick">火柴人 (Eco Stick Figures)</option>
+                </select>
+            </div>
+          </div>
           <div class="flex gap-3">
-            <button id="btnProjectTest" class="bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-black">📽️ 進入投影模式</button>
-            <button id="btnClearTest" class="text-red-400 text-xs font-bold">清空所有題目</button>
+            <button id="btnProjectTest" class="bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg">📽️ 投影模式</button>
+            <button id="btnClearTest" class="text-red-400 text-xs font-bold">清空清單</button>
           </div>
         </div>
         <div id="testQuestionList" class="space-y-4"></div>
@@ -163,16 +177,16 @@
     <main class="max-w-6xl mx-auto px-6 py-4 space-y-8 no-print" id="gameView" style="display:none">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-1"><div class="skw-card p-8 text-center">
-          <h3 class="font-black text-[var(--skw-gold)] mb-6 uppercase tracking-widest">掃描掃描加入搶答</h3>
+          <h3 class="font-black text-[var(--skw-gold)] mb-6 uppercase tracking-widest">搶答房間</h3>
           <div id="joinQr" class="bg-white p-4 inline-block rounded-2xl mb-4"></div>
           <p id="gameIdDisplay" class="font-mono text-xs text-slate-500 mb-6"></p>
           <div class="space-y-3">
             <button id="btnStartGame" class="w-full py-4 bg-emerald-600 rounded-2xl font-black text-white">開放搶答 (Reset)</button>
-            <button id="btnLockGame" class="w-full py-4 bg-red-900/40 border border-red-900 rounded-2xl font-black text-red-200">鎖定按鈕</button>
+            <button id="btnLockGame" class="w-full py-4 bg-red-900/40 border border-red-900 rounded-2xl font-black text-red-200">鎖定</button>
           </div>
         </div></div>
         <div class="lg:col-span-2"><div class="skw-card p-8 h-full">
-          <div class="flex justify-between mb-6"><h3 class="font-black text-white">搶答排名榜</h3><span id="playerCount" class="text-xs text-slate-500">0 人在線</span></div>
+          <div class="flex justify-between mb-6"><h3 class="font-black text-white">排名榜</h3><span id="playerCount" class="text-xs text-slate-500">0 人在線</span></div>
           <div id="buzzList" class="grid grid-cols-2 md:grid-cols-3 gap-4"></div>
         </div></div>
       </div>
@@ -186,10 +200,7 @@
         <button id="btnJoinConfirm" class="w-full py-5 bg-sky-600 rounded-2xl text-xl font-black text-white">加入遊戲</button>
       </div>
       <div id="memberBuzzer" class="hidden w-full flex flex-col items-center gap-12">
-        <div class="text-white">
-          <h2 class="text-2xl font-black" id="displayMyName">Player</h2>
-          <p class="text-sm text-slate-500 mt-2" id="buzzStatus">等待領袖開放...</p>
-        </div>
+        <h2 class="text-2xl font-black text-white" id="displayMyName">Player</h2>
         <button id="btnBuzzer" class="buzzer-btn disabled">BUZZ!</button>
         <div class="flex items-center gap-3 text-slate-400"><input type="checkbox" id="shakeToggle" class="w-6 h-6"><label for="shakeToggle" class="font-bold">開啟搖一搖搶答</label></div>
       </div>
@@ -200,9 +211,10 @@
     </footer>
   </div>
 
+  <!-- Projections -->
   <div id="projectionOverlay" class="no-print">
     <button id="btnExitProjection" class="absolute top-10 right-10 text-white/20 hover:text-white text-5xl">✕</button>
-    <div id="projectionContent" class="w-full flex items-center justify-center"></div>
+    <div id="projectionContent" class="w-full"></div>
     <div class="absolute bottom-20 flex gap-6">
       <button id="btnProjPrev" class="bg-white/10 p-5 rounded-full text-white text-2xl hover:bg-white/20">←</button>
       <div id="projCounter" class="text-[var(--skw-gold)] font-black text-2xl flex items-center">1/1</div>
@@ -210,6 +222,7 @@
     </div>
   </div>
 
+  <!-- Print View -->
   <div id="printView" class="hidden">
     <div class="flex justify-between items-end border-b-4 border-black pb-4 mb-10">
       <div><h1 class="text-4xl font-black">筲箕灣區童軍密碼考核試卷</h1><p class="text-xl font-bold mt-2">SKWSCOUT Cipher Exam 2026</p></div>
