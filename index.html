@@ -18,7 +18,7 @@
       <div class="flex items-center gap-3 mb-8">
         <div class="w-10 h-10 bg-[var(--skw-gold)] rounded-xl flex items-center justify-center text-[var(--skw-navy-dark)] text-xl font-black shadow-lg">⚜</div>
         <div>
-          <h1 class="text-lg font-black text-white tracking-tight leading-tight">SKWSCOUT</h1>
+          <h1 class="text-lg font-black text-white leading-tight">SKWSCOUT</h1>
           <p class="text-[9px] text-sky-400 font-extrabold uppercase tracking-[0.1em]">密碼旗號助手</p>
         </div>
       </div>
@@ -30,99 +30,112 @@
       </div>
 
       <nav class="space-y-1 overflow-y-auto flex-1 custom-scrollbar">
-        <p class="px-4 py-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">訊號與圖形</p>
-        <a href="#cardMorse" class="nav-item"><span class="text-lg">⋯</span> 摩斯密碼</a>
-        <a href="#cardSemaphore" class="nav-item"><span class="text-lg">🚩</span> 旗號</a>
-        <a href="#cardPigpen" class="nav-item"><span class="text-lg">◰</span> 朱高密碼</a>
-        <a href="#cardBraille" class="nav-item"><span class="text-lg">⠿</span> 點字</a>
-        <p class="px-4 py-2 mt-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">轉換與代換</p>
-        <a href="#cardGrid" class="nav-item"><span class="text-lg">▦</span> 座標密碼</a>
-        <a href="#cardPhone" class="nav-item"><span class="text-lg">⌨</span> 電話密碼</a>
-        <a href="#cardCaesar" class="nav-item"><span class="text-lg">↺</span> 凱撒位移</a>
-        <a href="#cardAtbash" class="nav-item"><span class="text-lg">⇄</span> 反射密碼</a>
-        <a href="#cardReverse" class="nav-item"><span class="text-lg">⇄</span> 倒序密碼</a>
-        <a href="#cardNato" class="nav-item"><span class="text-lg">📢</span> NATO 音標</a>
-        <p class="px-4 py-2 mt-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">中文轉換</p>
-        <a href="#cardCangjie" class="nav-item"><span class="text-lg">字</span> 倉頡/速成</a>
-        <a href="#cardPinyin" class="nav-item"><span class="text-lg">音</span> 拼音/粵拼</a>
+        <p class="px-4 py-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">考核密碼</p>
+        <a href="#cardMorse" class="nav-item active">摩斯密碼</a>
+        <a href="#cardSemaphore" class="nav-item">旗號 (Semaphore)</a>
+        <a href="#cardPigpen" class="nav-item">朱高密碼 (Pigpen)</a>
+        <a href="#cardBraille" class="nav-item">點字 (Braille)</a>
+        <a href="#cardGrid" class="nav-item">座標密碼 (Grid)</a>
+        <a href="#cardPhone" class="nav-item">電話密碼 (Phone)</a>
+        <p class="px-4 py-2 mt-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">轉換工具</p>
+        <a href="#cardCaesar" class="nav-item">凱撒位移 (Caesar)</a>
+        <a href="#cardAtbash" class="nav-item">反射密碼 (Atbash)</a>
+        <a href="#cardReverse" class="nav-item">倒序密碼 (Reverse)</a>
+        <a href="#cardNato" class="nav-item">NATO 音標</a>
+        <a href="#cardCangjie" class="nav-item">倉頡 / 速成</a>
+        <a href="#cardPinyin" class="nav-item">拼音 / 粵拼</a>
       </nav>
       
       <div class="p-4 border-t border-white/5 mt-auto text-center">
-        <div class="text-[10px] text-slate-500 font-bold mb-1">COPY RIGHT 2026</div>
-        <div class="text-[12px] text-[var(--skw-gold)] font-black">SKWSCOUT</div>
+        <div class="text-[10px] text-slate-500 font-bold mb-1 uppercase">Copy Right 2026</div>
+        <div class="text-[12px] text-[var(--skw-gold)] font-black uppercase">SKWSCOUT</div>
       </div>
     </div>
   </aside>
 
+  <!-- Mobile Toggle -->
   <button id="mobileMenuBtn" class="lg:hidden fixed bottom-6 right-6 w-14 h-14 bg-[var(--skw-gold)] text-[var(--skw-navy-dark)] rounded-full shadow-2xl z-[110] flex items-center justify-center text-2xl no-print">☰</button>
 
   <div class="main-content" id="mainContent">
-    <header class="app-header py-4 px-6 no-print flex justify-between items-center border-b border-white/10 mb-8">
+    <header class="app-header py-4 px-6 no-print flex justify-between items-center border-b border-white/10 mb-6">
       <h2 id="currentModeTitle" class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Editor Mode</h2>
-      <button id="btnExportPDF" class="bg-[var(--skw-gold)] text-[var(--skw-navy-dark)] px-4 py-2 rounded-xl text-xs font-black">🖨 列印試卷</button>
+      <button id="btnExportPDF" class="bg-[var(--skw-gold)] text-black px-5 py-2.5 rounded-xl text-xs font-black hover:scale-105 transition-transform">🖨 列印考核試卷</button>
     </header>
 
+    <!-- 1. Editor Mode -->
     <main class="max-w-6xl mx-auto px-6 py-4 space-y-8 no-print" id="editorView">
-      <section class="skw-card p-8">
+      <section class="skw-card">
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-base font-black text-white">原文訊息輸入</h2>
-          <button id="btnAddToTest" class="bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-bold">➕ 加入試卷</button>
+          <h2 class="text-base font-black text-white">原文輸入 (English / Numbers)</h2>
+          <div class="flex gap-2">
+            <button id="btnDemo" class="text-xs text-slate-500 hover:text-white underline">填入範例</button>
+            <button id="btnAddToTest" class="bg-sky-500 text-white px-4 py-2 rounded-xl text-xs font-black">➕ 加入試卷題目</button>
+          </div>
         </div>
-        <textarea id="inputText" rows="2" class="skw-input w-full p-6 rounded-2xl text-2xl font-bold bg-black/40 text-white outline-none" placeholder="在此輸入想要轉換的英文文字..."></textarea>
+        <textarea id="inputText" rows="2" class="w-full p-6 rounded-2xl text-2xl font-bold bg-black/40 text-white border-2 border-white/5 focus:border-[var(--skw-gold)] outline-none transition-all" placeholder="輸入文字..."></textarea>
       </section>
 
       <!-- Morse -->
-      <div id="cardMorse" class="skw-card p-8">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="font-black text-white">摩斯密碼 (Morse)</h3>
-          <button id="btnPlayMorse" class="bg-[var(--skw-gold)] text-black px-4 py-1.5 rounded-lg text-xs font-bold">▶ 播放音訊</button>
+      <div id="cardMorse" class="skw-card">
+        <div class="flex justify-between items-center mb-5">
+          <h3 class="font-black text-white flex items-center gap-2"><div class="w-1.5 h-5 bg-amber-500 rounded-full"></div> 摩斯密碼 (Morse Code)</h3>
+          <button id="btnPlayMorse" class="bg-[var(--skw-gold)] text-black px-4 py-1.5 rounded-lg text-xs font-black">▶ 播放音訊</button>
         </div>
         <div id="outMorse" class="output-box tracking-[0.3em]"></div>
+        <div class="mt-6 overflow-x-auto"><table id="morseTable" class="ref-table w-full"></table></div>
       </div>
 
       <!-- Semaphore -->
-      <div id="cardSemaphore" class="skw-card p-8">
-        <h3 class="font-black text-white mb-4">旗號 (Semaphore)</h3>
+      <div id="cardSemaphore" class="skw-card">
+        <h3 class="font-black text-white mb-5 flex items-center gap-2"><div class="w-1.5 h-5 bg-blue-500 rounded-full"></div> 旗號 (Semaphore)</h3>
         <div id="outSemaphore" class="output-box flex-wrap gap-4 min-h-[140px]"></div>
+        <div id="semaphoreGrid" class="flex flex-wrap gap-2 mt-6 justify-center"></div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Pigpen -->
-        <div id="cardPigpen" class="skw-card p-8">
-          <h3 class="font-black text-white mb-4">朱高密碼 (Pigpen)</h3>
-          <div id="outPigpen" class="output-box flex-wrap gap-2"></div>
+        <div id="cardPigpen" class="skw-card">
+          <h3 class="font-black text-white mb-5 flex items-center gap-2"><div class="w-1.5 h-5 bg-orange-500 rounded-full"></div> 朱高密碼 (Pigpen)</h3>
+          <div id="outPigpen" class="output-box flex-wrap gap-3"></div>
         </div>
         <!-- Braille -->
-        <div id="cardBraille" class="skw-card p-8">
-          <h3 class="font-black text-white mb-4">點字 (Braille)</h3>
-          <div id="outBraille" class="output-box flex-wrap gap-2"></div>
+        <div id="cardBraille" class="skw-card">
+          <h3 class="font-black text-white mb-5 flex items-center gap-2"><div class="w-1.5 h-5 bg-emerald-500 rounded-full"></div> 點字 (Braille)</h3>
+          <div id="outBraille" class="output-box flex-wrap gap-4"></div>
         </div>
       </div>
 
       <!-- Phone -->
-      <div id="cardPhone" class="skw-card p-8">
-        <h3 class="font-black text-white mb-4">電話密碼 (Phone T9)</h3>
+      <div id="cardPhone" class="skw-card">
+        <h3 class="font-black text-white mb-5 flex items-center gap-2"><div class="w-1.5 h-5 bg-rose-500 rounded-full"></div> 電話密碼 (Phone T9)</h3>
         <div id="outPhone" class="output-box tracking-[0.2em]"></div>
       </div>
 
       <!-- Grid -->
-      <div id="cardGrid" class="skw-card p-8">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="font-black text-white">座標密碼 (Grid)</h3>
-          <input type="text" id="gridKey" value="SCOUT" maxlength="5" class="bg-black/40 text-[var(--skw-gold)] border border-white/10 rounded px-2 py-1 w-20 text-center font-bold">
+      <div id="cardGrid" class="skw-card">
+        <div class="flex justify-between items-center mb-5">
+          <h3 class="font-black text-white flex items-center gap-2"><div class="w-1.5 h-5 bg-sky-500 rounded-full"></div> 座標密碼 (Grid - SCOUT)</h3>
+          <input type="text" id="gridKey" value="SCOUT" maxlength="5" class="bg-black/40 text-[var(--skw-gold)] border border-white/10 rounded px-3 py-1 w-24 text-center font-black">
         </div>
-        <div id="outGrid" class="output-box tracking-[0.4em]"></div>
+        <div id="outGrid" class="output-box tracking-[0.5em]"></div>
+        <div class="mt-6 overflow-x-auto"><table id="gridTable" class="ref-table w-full"></table></div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Caesar -->
-        <div id="cardCaesar" class="skw-card p-8">
+        <div id="cardCaesar" class="skw-card">
           <h3 class="font-black text-white mb-4">凱撒位移 (Caesar)</h3>
-          <input type="number" id="caesarShift" value="3" class="bg-black/40 border border-white/10 rounded p-2 w-16 mb-4 text-center text-[var(--skw-gold)]">
+          <div class="flex gap-2 mb-4">
+            <input type="number" id="caesarShift" value="3" class="bg-black/40 border border-white/10 rounded p-2 w-16 text-center text-[var(--skw-gold)] font-bold">
+            <select id="caesarDir" class="bg-black/40 text-white border border-white/10 rounded p-2 text-xs font-bold">
+              <option value="forward">正向 (+)</option>
+              <option value="backward">逆向 (-)</option>
+            </select>
+          </div>
           <div id="outCaesar" class="output-box"></div>
         </div>
         <!-- Atbash -->
-        <div id="cardAtbash" class="skw-card p-8">
+        <div id="cardAtbash" class="skw-card">
           <h3 class="font-black text-white mb-4">反射密碼 (Atbash)</h3>
           <div id="outAtbash" class="output-box"></div>
         </div>
@@ -130,104 +143,144 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Reverse -->
-        <div id="cardReverse" class="skw-card p-8">
+        <div id="cardReverse" class="skw-card">
           <h3 class="font-black text-white mb-4">倒序密碼 (Reverse)</h3>
           <div id="outReverse" class="output-box"></div>
         </div>
         <!-- NATO -->
-        <div id="cardNato" class="skw-card p-8">
+        <div id="cardNato" class="skw-card">
           <h3 class="font-black text-white mb-4">NATO 音標</h3>
-          <div id="outNato" class="output-box text-sm"></div>
+          <div id="outNato" class="output-box text-sm font-bold"></div>
         </div>
       </div>
 
       <!-- Chinese -->
-      <div id="cardCangjie" class="skw-card p-8">
-        <h3 class="font-black text-white mb-4">倉頡 / 速成</h3>
-        <div id="outCangjie" class="output-box"></div>
-      </section>
+      <div id="cardCangjie" class="skw-card">
+        <h3 class="font-black text-white mb-4">倉頡 / 速成密碼</h3>
+        <div id="outCangjie" class="output-box mb-6"></div>
+        <div id="cangjieTableWrap"></div>
+      </div>
 
-      <div id="cardPinyin" class="skw-card p-8">
-        <h3 class="font-black text-white mb-4">拼音 / 粵拼</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div id="outPinyin" class="output-box text-sm"></div>
-          <div id="outJyutping" class="output-box text-sm"></div>
+      <div id="cardPinyin" class="skw-card">
+        <h3 class="font-black text-white mb-4">拼音 / 粵拼密碼</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <p class="text-[10px] text-slate-500 font-black uppercase">普通話拼音 (Pinyin)</p>
+            <div id="outPinyin" class="output-box text-sm"></div>
+          </div>
+          <div class="space-y-2">
+            <p class="text-[10px] text-slate-500 font-black uppercase">廣東話粵拼 (Jyutping)</p>
+            <div id="outJyutping" class="output-box text-sm"></div>
+          </div>
         </div>
       </div>
     </main>
 
-    <!-- Test Paper View -->
-    <main class="max-w-6xl mx-auto px-6 py-4 space-y-8 no-print" id="testPaperView" style="display:none">
-      <section class="skw-card p-8">
+    <!-- 2. Test Paper Mode -->
+    <main class="max-w-6xl mx-auto px-6 py-4 space-y-8 no-print hidden" id="testPaperView">
+      <section class="skw-card">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
           <div>
-            <h2 class="text-xl font-black text-white">考核題目管理</h2>
-            <div class="mt-4 flex flex-wrap gap-4 bg-black/30 p-4 rounded-xl border border-white/5">
+            <h2 class="text-xl font-black text-white">考核題目管理 (Test Management)</h2>
+            <div class="mt-4 flex flex-wrap gap-4 bg-black/40 p-4 rounded-2xl border border-white/5">
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-400">旗號樣式：</span>
-                    <select id="semPrintStyle" class="bg-black/40 text-white text-xs border border-white/20 rounded px-2 py-1">
-                        <option value="doll">具登堡公仔</option>
-                        <option value="stick">火柴人 (省墨)</option>
+                    <span class="text-xs font-black text-slate-400">旗號樣式：</span>
+                    <select id="semPrintStyle" class="bg-black/60 text-white text-xs border border-white/20 rounded px-3 py-1.5 font-bold">
+                        <option value="stick">環保火柴人 (Stick Figures)</option>
+                        <option value="doll">具登堡公仔 (Characters)</option>
                     </select>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-400">投影播放速度：</span>
-                    <input type="range" id="projSpeed" min="400" max="2000" step="200" value="1000" class="w-24">
-                    <span id="projSpeedVal" class="text-xs text-[var(--skw-gold)] font-bold">1.0s</span>
+                    <span class="text-xs font-black text-slate-400">投影輪播速度：</span>
+                    <input type="range" id="projSpeed" min="400" max="2400" step="200" value="1200" class="w-32 accent-[var(--skw-gold)]">
+                    <span id="projSpeedVal" class="text-xs text-[var(--skw-gold)] font-black w-8">1.2s</span>
                 </div>
             </div>
           </div>
-          <button id="btnProjectTest" class="bg-amber-600 text-white px-6 py-3 rounded-xl font-black shadow-lg">📽️ 進入投影模式</button>
+          <div class="flex gap-3">
+            <button id="btnProjectTest" class="bg-amber-600 text-white px-6 py-3 rounded-2xl font-black shadow-xl hover:scale-105 transition-transform">📽️ 進入投影模式</button>
+            <button id="btnClearTest" class="text-red-400 text-xs font-black px-2">清空所有</button>
+          </div>
         </div>
         <div id="testQuestionList" class="space-y-4"></div>
       </section>
     </main>
 
-    <!-- Game View & Projection & Print Views remain the same structure but updated JS handles them -->
-    <div id="projectionOverlay" class="no-print">
-      <button id="btnExitProjection" class="absolute top-10 right-10 text-white/20 hover:text-white text-5xl">✕</button>
-      <div id="projectionContent" class="w-full"></div>
-      <div class="absolute bottom-20 flex gap-6 items-center">
-        <button id="btnProjPrev" class="bg-white/10 p-5 rounded-full text-white">←</button>
-        <div id="projCounter" class="text-[var(--skw-gold)] font-black text-2xl">1/1</div>
-        <button id="btnProjNext" class="bg-white/10 p-5 rounded-full text-white">→</button>
-        <button id="btnProjPlay" class="ml-4 bg-sky-500 text-white px-6 py-3 rounded-xl font-bold hidden">播放輪播</button>
-      </div>
-    </div>
-
-    <!-- Game View -->
-    <main id="gameView" class="max-w-6xl mx-auto px-6 py-8 no-print" style="display:none">
+    <!-- 3. Game Mode -->
+    <main id="gameView" class="max-w-6xl mx-auto px-6 py-4 no-print hidden">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-1">
-                <div class="skw-card p-8 text-center">
-                    <h3 class="font-black text-[var(--skw-gold)] mb-6">搶答房間</h3>
-                    <div id="joinQr" class="bg-white p-4 inline-block rounded-xl mb-4"></div>
-                    <p id="gameIdDisplay" class="text-xs font-mono text-slate-500 mb-6"></p>
-                    <button id="btnStartGame" class="w-full py-4 bg-emerald-600 rounded-xl font-black text-white">開放搶答</button>
+                <div class="skw-card text-center p-10">
+                    <h3 class="font-black text-[var(--skw-gold)] mb-8 text-xl uppercase tracking-widest">搶答大廳</h3>
+                    <div id="joinQr" class="bg-white p-5 inline-block rounded-3xl mb-6 shadow-2xl"></div>
+                    <p id="gameIdDisplay" class="font-mono text-xs text-slate-500 mb-8 px-4 py-2 bg-black/40 rounded-full"></p>
+                    <button id="btnStartGame" class="w-full py-5 bg-emerald-600 rounded-3xl font-black text-white text-xl shadow-lg hover:bg-emerald-500 active:scale-95 transition-all">開放搶答 (Reset)</button>
                 </div>
             </div>
             <div class="lg:col-span-2">
-                <div class="skw-card p-8 h-full">
-                    <div id="buzzList" class="grid grid-cols-2 md:grid-cols-3 gap-4"></div>
+                <div class="skw-card h-full p-8">
+                    <div class="flex justify-between mb-8 items-center border-b border-white/5 pb-4">
+                        <h3 class="font-black text-white text-lg">即時排名榜</h3>
+                        <span id="playerCount" class="text-xs font-black text-slate-500 bg-black/40 px-3 py-1 rounded-full">0 人連接</span>
+                    </div>
+                    <div id="buzzList" class="grid grid-cols-2 md:grid-cols-3 gap-6"></div>
                 </div>
             </div>
         </div>
     </main>
 
-    <div id="memberView" class="fixed inset-0 bg-[#02133e] z-[200] hidden flex flex-col items-center justify-center p-8">
-        <div id="memberJoinForm" class="w-full max-w-sm space-y-6">
-            <input type="text" id="playerName" placeholder="你的姓名" class="w-full p-4 rounded-xl bg-black/40 text-white text-center text-xl">
-            <button id="btnJoinConfirm" class="w-full py-4 bg-sky-600 rounded-xl font-black text-white">加入</button>
+    <!-- Mobile Member View -->
+    <div id="memberView" class="fixed inset-0 bg-[#02133e] z-[200] hidden flex-col items-center justify-center p-8 text-center">
+        <div id="memberJoinForm" class="w-full max-w-sm space-y-8">
+            <div class="flex flex-col items-center gap-4">
+                <div class="w-16 h-16 bg-[var(--skw-gold)] rounded-2xl flex items-center justify-center text-3xl font-black">⚜</div>
+                <h2 class="text-3xl font-black text-white">SKW 搶答助手</h2>
+            </div>
+            <input type="text" id="playerName" placeholder="你的姓名 / 小隊" class="w-full p-6 rounded-3xl bg-black/40 text-white text-center text-2xl font-black border-2 border-white/10 focus:border-[var(--skw-gold)] outline-none">
+            <button id="btnJoinConfirm" class="w-full py-6 bg-sky-600 rounded-3xl text-2xl font-black text-white shadow-2xl">加入遊戲</button>
         </div>
-        <div id="memberBuzzer" class="hidden flex flex-col items-center gap-12">
+        <div id="memberBuzzer" class="hidden w-full flex flex-col items-center gap-16">
+            <div class="space-y-2">
+                <h2 class="text-3xl font-black text-white" id="displayMyName">Player</h2>
+                <p id="buzzStatus" class="text-slate-500 font-bold text-lg">等待領袖...</p>
+            </div>
             <button id="btnBuzzer" class="buzzer-btn disabled">BUZZ!</button>
+            <div class="flex items-center gap-4 text-slate-400 bg-black/30 px-6 py-3 rounded-full">
+                <input type="checkbox" id="shakeToggle" class="w-6 h-6 accent-[var(--skw-gold)]">
+                <label for="shakeToggle" class="font-black text-sm">開啟搖一搖搶答</label>
+            </div>
         </div>
     </div>
-
   </div>
 
+  <!-- Projection Modal -->
+  <div id="projectionOverlay" class="no-print">
+    <button id="btnExitProjection" class="absolute top-10 right-10 text-white/20 hover:text-white text-5xl transition-colors">✕</button>
+    <div id="projectionContent" class="w-full flex items-center justify-center"></div>
+    <div class="absolute bottom-16 flex gap-8 items-center bg-black/40 p-6 rounded-3xl backdrop-blur-xl border border-white/5">
+      <button id="btnProjPrev" class="bg-white/5 p-5 rounded-full text-white text-2xl hover:bg-[var(--skw-gold)] hover:text-black transition-all">←</button>
+      <div id="projCounter" class="text-[var(--skw-gold)] font-black text-3xl min-w-[100px] text-center">1 / 1</div>
+      <button id="btnProjNext" class="bg-white/5 p-5 rounded-full text-white text-2xl hover:bg-[var(--skw-gold)] hover:text-black transition-all">→</button>
+      <button id="btnProjPlay" class="ml-4 bg-sky-500 hover:bg-sky-400 text-white px-8 py-4 rounded-2xl font-black text-lg shadow-2xl hidden">開始輪播</button>
+    </div>
+  </div>
+
+  <!-- Print Layout -->
   <div id="printView" class="hidden">
-    <div id="printQuestions"></div>
+    <div class="flex justify-between items-end border-b-4 border-black pb-4 mb-12">
+      <div>
+        <h1 class="text-4xl font-black">筲箕灣區童軍密碼考核試卷</h1>
+        <p class="text-xl font-bold mt-2">SKWSCOUT Cipher Examination 2026</p>
+      </div>
+      <div class="text-right text-lg font-bold">
+        <p>姓名: ______________________</p>
+        <p class="mt-4">日期: ______________________</p>
+      </div>
+    </div>
+    <div id="printQuestions" class="space-y-20"></div>
+    <div class="mt-32 pt-10 border-t border-gray-300 text-center text-sm text-gray-400 font-black tracking-widest uppercase">
+      COPY RIGHT 2026 SKWSCOUT
+    </div>
   </div>
 
   <div id="toast" class="toast">已複製</div>
