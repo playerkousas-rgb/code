@@ -470,7 +470,80 @@
   .progress-item { padding: 12px 8px; text-align: center; background: rgba(3,13,34,.94); }
   .progress-label { color: #617795; font-size: 10px; letter-spacing: .08em; }
   .progress-value { color: #00ff88; font-size: 18px; font-weight: 900; margin-top: 5px; }
+  .selection-step {
+    width: min(90%, 720px); margin: 8px 0 7px; color: #6e86a9;
+    font-size: 10px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase;
+  }
+  .training-path-grid {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
+    width: min(92%, 760px); margin-bottom: 15px;
+  }
+  .training-path {
+    min-height: 132px; padding: 14px 11px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 5px; border: 2px solid #263954;
+    border-radius: 13px; background: rgba(7,18,43,.84); color: #d9e8fa;
+    font-family: inherit; cursor: pointer; transition: .2s; touch-action: manipulation;
+  }
+  .training-path:hover { border-color: #00d2ff; transform: translateY(-2px); }
+  .training-path.active {
+    border-color: #00ff88; background: rgba(0,255,136,.1);
+    box-shadow: 0 0 24px rgba(0,255,136,.18), inset 0 0 18px rgba(0,255,136,.04);
+  }
+  .path-icon { font-size: 24px; }
+  .training-path strong { font-size: 14px; letter-spacing: .06em; }
+  .training-path small { color: #8ea2bb; font-size: 10px; line-height: 1.45; }
+  .training-path em { color: #00ff88; font-size: 9px; font-style: normal; letter-spacing: .08em; }
+
+  #choice-panel {
+    position: fixed; left: 50%; bottom: max(16px, env(safe-area-inset-bottom));
+    transform: translateX(-50%); z-index: 29; width: min(620px, calc(100vw - 24px));
+    padding: 12px; border: 1px solid rgba(0,255,255,.38); border-radius: 16px;
+    background: rgba(0,8,28,.94); box-shadow: 0 0 32px rgba(0,210,255,.2);
+    backdrop-filter: blur(14px); pointer-events: auto;
+  }
+  #choice-panel.hidden { display: none !important; }
+  .choice-panel-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin-bottom: 10px; color: #9cafc8; font-size: 11px; letter-spacing: .04em;
+  }
+  .choice-panel-head b { color: #00d2ff; }
+  #btn-hint {
+    min-height: 34px; padding: 0 11px; border: 1px solid rgba(255,204,0,.4);
+    border-radius: 8px; background: rgba(255,204,0,.07); color: #ffdc4d;
+    font-family: inherit; font-size: 11px; font-weight: 800; line-height: 1; cursor: pointer;
+  }
+  .choice-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .choice-btn {
+    min-height: 58px; border: 1px solid #2b5c78; border-radius: 11px;
+    background: linear-gradient(180deg,#123352,#091a31); color: #fff;
+    font: 900 25px/1 'Courier New', monospace; cursor: pointer; touch-action: manipulation;
+    box-shadow: 0 4px 0 #020914; transition: .12s;
+  }
+  .choice-btn:hover { border-color: #00ffff; color: #aefcff; }
+  .choice-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #020914; }
+  .choice-btn.wrong { border-color: #ff0055; color: #ff739d; background: rgba(255,0,85,.14); }
+  .choice-btn.correct { border-color: #00ff88; color: #00ff88; background: rgba(0,255,136,.14); box-shadow: 0 0 18px rgba(0,255,136,.22); }
+  #lesson-feedback {
+    position: fixed; top: max(122px, calc(env(safe-area-inset-top) + 104px)); left: 50%;
+    transform: translateX(-50%); z-index: 35; width: min(520px, calc(100vw - 24px));
+    min-height: 62px; padding: 11px 16px; display: flex; align-items: center; gap: 12px;
+    border: 1px solid #00ff88; border-radius: 14px; background: rgba(0,20,34,.94);
+    color: #e8fff7; box-shadow: 0 0 28px rgba(0,255,136,.2); pointer-events: none;
+  }
+  #lesson-feedback.hidden { display: none !important; }
+  #lesson-feedback.wrong { border-color: #ff9d00; background: rgba(35,18,0,.96); box-shadow: 0 0 28px rgba(255,157,0,.18); }
+  #lesson-feedback-icon { font-size: 24px; }
+  #lesson-feedback strong { display: block; font-size: 13px; }
+  #lesson-feedback small { display: block; margin-top: 4px; color: #aebcd0; font-size: 11px; line-height: 1.45; }
+  #hud-learning-progress {
+    position: fixed; top: 84px; left: 50%; transform: translateX(-50%); z-index: 16;
+    padding: 6px 12px; border: 1px solid rgba(0,255,136,.25); border-radius: 999px;
+    background: rgba(0,8,28,.76); color: #76f9c4; font-size: 10px; font-weight: 900;
+    letter-spacing: .08em; pointer-events: none;
+  }
+  #hud-learning-progress.hidden { display: none !important; }
   #mobile-keyboard {
+
     display: none;
     position: fixed;
     left: 0;
@@ -514,6 +587,11 @@
     .neon-subtitle { letter-spacing: .14em; text-align: center; }
     .divider { width: 86%; margin: 1.1em 0; }
     .btn { min-height: 52px; margin-top: 1.25em; padding: .75em 1.25em; letter-spacing: .1em; }
+    .training-path-grid { grid-template-columns: 1fr; width: 100%; gap: 7px; }
+    .training-path { min-height: 78px; padding: 9px 12px; display: grid; grid-template-columns: 38px 1fr; grid-template-rows: auto auto auto; text-align: left; align-items: center; column-gap: 8px; }
+    .training-path .path-icon { grid-row: 1 / 4; font-size: 25px; text-align: center; }
+    .training-path strong, .training-path small, .training-path em { width: 100%; }
+    .selection-step { width: 100%; }
     .cipher-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; }
     .cipher-toggle { min-height: 74px; padding: 12px 7px; touch-action: manipulation; }
     .cipher-toggle-name { font-size: .82em; letter-spacing: .06em; }
@@ -529,6 +607,11 @@
     #hud-stage { top: 64px; font-size: .62em; }
     #timer-display { top: max(66px, calc(env(safe-area-inset-top) + 54px)) !important; right: 10px !important; }
     #input-overlay { bottom: calc(148px + env(safe-area-inset-bottom)); }
+    #choice-panel { bottom: max(8px, env(safe-area-inset-bottom)); padding: 10px; border-radius: 14px; }
+    .choice-btn { min-height: 54px; font-size: 23px; }
+    .choice-panel-head { margin-bottom: 8px; }
+    #hud-learning-progress { top: 69px; max-width: 74vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #lesson-feedback { top: max(100px, calc(env(safe-area-inset-top) + 82px)); }
     .input-zone { padding: 6px 12px; gap: 8px; border-radius: 999px; }
     .input-prompt-label { font-size: .65em; }
     #cipher-input { font-size: 1.5em; width: 38px; }
@@ -585,6 +668,19 @@
 </div>
 <div id="mobile-keyboard" class="hidden" aria-label="英文字母遊戲鍵盤"></div>
 
+<!-- Guided learning controls -->
+<div id="choice-panel" class="hidden" aria-label="四選一答案">
+  <div class="choice-panel-head">
+    <span><b id="choice-cipher-label">摩斯</b> · 選出代表的字母</span>
+    <button id="btn-hint" type="button">💡 提示</button>
+  </div>
+  <div id="choice-buttons" class="choice-buttons"></div>
+</div>
+<div id="lesson-feedback" class="hidden" role="status" aria-live="polite">
+  <span id="lesson-feedback-icon">✓</span>
+  <div><strong id="lesson-feedback-title">答對了！</strong><small id="lesson-feedback-detail"></small></div>
+</div>
+
 <!-- HUD -->
 <div id="hud" class="hidden">
   <div class="hud-shields" id="hud-shields"></div>
@@ -592,6 +688,7 @@
   <div id="hud-combo"></div>
 </div>
 <div id="hud-stage" class="hidden"></div>
+<div id="hud-learning-progress" class="hidden"></div>
 
 <!-- START SCREEN -->
 <div id="screen-start" class="screen">
@@ -610,7 +707,7 @@
   </div>
   <button class="btn" id="btn-start">開始任務</button>
   <div class="controls-hint">
-    手機按<span>畫面鍵盤</span> · 電腦直接按 <span>A–Z</span>
+    建議先玩<span>新手學習</span>，認得符號後再挑戰 A–Z 實戰
   </div>
 </div>
 
@@ -619,10 +716,24 @@
   <div class="neon-title" style="font-size:clamp(1.5rem,4vw,2.5rem);">選擇訓練密碼</div>
   <div class="neon-subtitle">// 可單選專攻或混合挑戰 //</div>
   <div class="divider"></div>
-  <div style="color:#a8b4c7; font-size:0.85em; text-align:center; max-width:520px; line-height:1.6; margin-bottom:1em;">
-    選擇一種密碼熟練基本功，或混合多種密碼挑戰反應。<br>
-    系統會根據錯題自動增加弱項出現機會。
+  <div style="color:#a8b4c7; font-size:0.85em; text-align:center; max-width:620px; line-height:1.6; margin-bottom:1em;">
+    先選學習方式，再選一種或多種密碼。新手可由四選一開始，熟習後再升級至鍵盤實戰。
   </div>
+
+  <p class="selection-step">01 · 選擇學習方式</p>
+  <div class="training-path-grid" id="training-path-grid">
+    <button type="button" class="training-path active" data-path="learn">
+      <span class="path-icon">🌱</span><strong>新手學習</strong><small>12 題 · 四選一 · 答錯即時教學</small><em>真正認識符號</em>
+    </button>
+    <button type="button" class="training-path" data-path="mission">
+      <span class="path-icon">🚀</span><strong>守城任務</strong><small>20 題 · A–Z 鍵盤 · 有限血量</small><em>由認得到記得</em>
+    </button>
+    <button type="button" class="training-path" data-path="endless">
+      <span class="path-icon">🔥</span><strong>無限挑戰</strong><small>速度逐步提升 · 挑戰最高分</small><em>熟練後衝榜</em>
+    </button>
+  </div>
+
+  <p class="selection-step">02 · 選擇密碼</p>
   <div class="cipher-grid" id="cipher-grid"></div>
   <div class="cipher-presets">
     <button class="preset-btn" onclick="selectPreset(['MORSE'])">★ 摩斯入門</button>
@@ -631,7 +742,7 @@
   </div>
 
   <!-- Collapsible settings panel -->
-  <button class="settings-toggle-btn" id="btn-toggle-settings" onclick="toggleSettings()">⚙ 遊戲設定 (速度 / 血量 / 限時) ▾</button>
+  <button class="settings-toggle-btn" id="btn-toggle-settings" onclick="toggleSettings()">⚙ 進階設定（速度／血量／限時）▾</button>
   <div id="settings-body" class="settings-body">
     <div class="settings-control">
       <span class="settings-label">⚡ 速度</span>
@@ -672,9 +783,9 @@
   </div>
 
   <div class="divider"></div>
-  <button class="btn" id="btn-start-game" style="color:#00ff88; border-color:#00ff88; text-shadow:0 0 8px #00ff88; box-shadow:0 0 15px rgba(0,255,136,0.3);">▶ 開始訓練</button>
-  <div class="controls-hint" style="margin-top:1.5em;">
-    看懂密碼後，按下它代表的<span>英文字母</span>
+  <button class="btn" id="btn-start-game" style="color:#00ff88; border-color:#00ff88; text-shadow:0 0 8px #00ff88; box-shadow:0 0 15px rgba(0,255,136,0.3);">▶ 開始 12 題學習任務</button>
+  <div class="controls-hint" id="path-description" style="margin-top:1.5em;">
+    每次只出一題；答錯會顯示答案，必須再答對才過關。
   </div>
 </div>
 
@@ -922,6 +1033,11 @@ const PHONE_T9 = {'A':'2-1','B':'2-2','C':'2-3','D':'3-1','E':'3-2','F':'3-3','G
 const CIPHER_LIST = ['MORSE','PIGPEN','BRAILLE','GRID','PHONET9','SEMAPHORE'];
 const CIPHER_LABELS = {MORSE:'摩斯',PIGPEN:'朱高',BRAILLE:'點字',GRID:'座標',PHONET9:'電話 T9',SEMAPHORE:'旗號'};
 const CIPHER_COLORS = {MORSE:'#ffcc00',PIGPEN:'#ff9900',BRAILLE:'#00ff88',GRID:'#ff00ff',PHONET9:'#00d2ff',SEMAPHORE:'#ff66cc'};
+const TRAINING_PATHS = {
+  learn: {goal:12, speed:2, lives:0, time:0, title:'新手學習', button:'開始 12 題學習任務', description:'每次只出一題；答錯會顯示答案，必須再答對才過關。'},
+  mission: {goal:20, speed:5, lives:5, time:0, title:'守城任務', button:'開始 20 題守城任務', description:'使用完整 A–Z 鍵盤，在五格防護失效前完成 20 題。'},
+  endless: {goal:0, speed:6, lives:3, time:0, title:'無限挑戰', button:'開始無限挑戰', description:'敵人會愈來愈快；運用所學挑戰最高分及最長連擊。'}
+};
 const TRAINING_PROGRESS_KEY = 'skw_cipher_training_progress';
 const TRAINING_SETTINGS_KEY = 'skw_cipher_training_settings';
 
@@ -936,15 +1052,22 @@ let selectedCiphers = Array.isArray(storedSettings.ciphers)
   : ['MORSE'];
 if (!selectedCiphers.length) selectedCiphers = ['MORSE'];
 let cipherStats = {};  // {cipher: {correct, wrong, weak: {letter: count}}}
-let gameSpeed = Number.isFinite(storedSettings.speed) ? storedSettings.speed : 5;
-let gameLives = Number.isFinite(storedSettings.lives) ? storedSettings.lives : 3;
-let gameTimeLimit = Number.isFinite(storedSettings.time) ? storedSettings.time : 0;
+let trainingPath = TRAINING_PATHS[storedSettings.path] ? storedSettings.path : 'learn';
+const initialPath = TRAINING_PATHS[trainingPath];
+const hadStoredPath = Boolean(TRAINING_PATHS[storedSettings.path]);
+let gameSpeed = hadStoredPath && Number.isFinite(storedSettings.speed) ? storedSettings.speed : initialPath.speed;
+let gameLives = hadStoredPath && Number.isFinite(storedSettings.lives) ? storedSettings.lives : initialPath.lives;
+let gameTimeLimit = hadStoredPath && Number.isFinite(storedSettings.time) ? storedSettings.time : initialPath.time;
+let sessionGoal = initialPath.goal;
 let soundEnabled = storedSettings.sound !== false;
 let sessionSaved = false;
+let learningLocked = false;
+let feedbackTimer = null;
 
 function saveTrainingSettings() {
   localStorage.setItem(TRAINING_SETTINGS_KEY, JSON.stringify({
     ciphers: selectedCiphers,
+    path: trainingPath,
     speed: gameSpeed,
     lives: gameLives,
     time: gameTimeLimit,
@@ -1029,6 +1152,33 @@ function setTime(val) {
   saveTrainingSettings();
 }
 
+function updateTrainingPathUI() {
+  const profile = TRAINING_PATHS[trainingPath];
+  document.querySelectorAll('[data-path]').forEach(button => {
+    const active = button.dataset.path === trainingPath;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  const startButton = document.getElementById('btn-start-game');
+  const description = document.getElementById('path-description');
+  if (startButton) startButton.textContent = '▶ ' + profile.button;
+  if (description) description.textContent = profile.description;
+}
+
+function setTrainingPath(path, applyDefaults = true) {
+  if (!TRAINING_PATHS[path]) return;
+  trainingPath = path;
+  const profile = TRAINING_PATHS[path];
+  sessionGoal = profile.goal;
+  if (applyDefaults) {
+    setSpeed(profile.speed);
+    setLives(profile.lives);
+    setTime(profile.time);
+  }
+  updateTrainingPathUI();
+  saveTrainingSettings();
+}
+
 function getSpeedMultiplier() {
   // Speed 1 = 0.5x, Speed 5 = 1.0x, Speed 10 = 2.5x
   return 0.5 + (gameSpeed - 1) * 0.222;
@@ -1052,6 +1202,102 @@ function encodeCipher(letter, type) {
   if (type === 'PHONET9') return PHONE_T9[letter] || '?';
   if (type === 'SEMAPHORE') return letter;  // angles
   return letter;
+}
+
+function angleName(angle) {
+  return ({0:'上',45:'右上',90:'右',135:'右下',180:'下',225:'左下',270:'左',315:'左上'})[angle] || angle + '°';
+}
+
+function describeCipherAnswer(threat) {
+  const letter = threat.answer;
+  if (threat.cipher === 'MORSE') return `摩斯 ${MORSE[letter]} 就是 ${letter}（點在前、劃在後的次序很重要）`;
+  if (threat.cipher === 'BRAILLE') return `點字凸點 ${BRAILLE_DOTS[letter].join('、')} 就是 ${letter}`;
+  if (threat.cipher === 'GRID') return `SCOUT 座標 ${encodeGrid(letter)} 就是 ${letter}`;
+  if (threat.cipher === 'PHONET9') return `電話鍵 ${PHONE_T9[letter]} 就是 ${letter}（前面是按鍵，後面是次數）`;
+  if (threat.cipher === 'SEMAPHORE') return `旗號 ${SEM_ANGLES[letter].map(angleName).join('＋')} 就是 ${letter}`;
+  const hasDot = Array.isArray(PIGPEN_PATHS[letter]) && PIGPEN_PATHS[letter][1];
+  return `朱高符號是 ${letter}；留意外框方向${hasDot ? '，而且中間有一點' : '，這個符號沒有點'}`;
+}
+
+function cipherDistance(cipher, answer, candidate) {
+  if (cipher === 'MORSE') {
+    const a = MORSE[answer], b = MORSE[candidate];
+    let distance = Math.abs(a.length - b.length) * 2;
+    for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] !== b[i]) distance++;
+    return distance;
+  }
+  if (cipher === 'BRAILLE') {
+    const a = new Set(BRAILLE_DOTS[answer]), b = new Set(BRAILLE_DOTS[candidate]);
+    return [...a].filter(dot => !b.has(dot)).length + [...b].filter(dot => !a.has(dot)).length;
+  }
+  if (cipher === 'PHONET9') {
+    const [ak, ap] = PHONE_T9[answer].split('-').map(Number), [bk, bp] = PHONE_T9[candidate].split('-').map(Number);
+    return (ak === bk ? 0 : 4) + Math.abs(ap - bp);
+  }
+  if (cipher === 'GRID') {
+    const a = encodeGrid(answer), b = encodeGrid(candidate);
+    return (a[0] === b[0] ? 0 : 2) + (a[1] === b[1] ? 0 : 2);
+  }
+  if (cipher === 'SEMAPHORE') {
+    const a = SEM_ANGLES[answer], b = SEM_ANGLES[candidate];
+    const angleGap = (x, y) => Math.min(Math.abs(x-y), 360-Math.abs(x-y)) / 45;
+    return Math.min(angleGap(a[0],b[0])+angleGap(a[1],b[1]), angleGap(a[0],b[1])+angleGap(a[1],b[0]));
+  }
+  return Math.abs(ALPHABET.indexOf(answer) - ALPHABET.indexOf(candidate));
+}
+
+function createLearningChoices(threat) {
+  if (threat.choices) return threat.choices;
+  const ranked = ALPHABET.filter(letter => letter !== threat.answer)
+    .map(letter => ({letter, score:cipherDistance(threat.cipher, threat.answer, letter) + Math.random() * 1.4}))
+    .sort((a,b) => a.score - b.score)
+    .slice(0, 8);
+  const distractors = [];
+  while (distractors.length < 3 && ranked.length) {
+    const pick = ranked.splice(Math.floor(Math.random() * Math.min(4, ranked.length)), 1)[0];
+    if (pick && !distractors.includes(pick.letter)) distractors.push(pick.letter);
+  }
+  threat.choices = [...distractors, threat.answer].sort(() => Math.random() - .5);
+  return threat.choices;
+}
+
+function getLearningTarget() {
+  return threats.filter(threat => threat.alive).sort((a,b) => b.y - a.y)[0] || null;
+}
+
+function updateChoicePanel(threat) {
+  if (trainingPath !== 'learn') return;
+  const container = document.getElementById('choice-buttons');
+  if (!threat) { container.innerHTML = ''; return; }
+  document.getElementById('choice-cipher-label').textContent = CIPHER_LABELS[threat.cipher];
+  container.innerHTML = '';
+  createLearningChoices(threat).forEach(letter => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'choice-btn';
+    button.textContent = letter;
+    button.dataset.answer = letter;
+    button.setAttribute('aria-label', '選擇答案 ' + letter);
+    button.addEventListener('click', () => answerLetter(letter));
+    container.appendChild(button);
+  });
+}
+
+function showLessonFeedback(threat, correct, guessed = '', hint = false) {
+  clearTimeout(feedbackTimer);
+  const panel = document.getElementById('lesson-feedback');
+  panel.classList.remove('hidden', 'wrong');
+  panel.classList.toggle('wrong', !correct);
+  document.getElementById('lesson-feedback-icon').textContent = correct ? '✓' : (hint ? '💡' : '↻');
+  document.getElementById('lesson-feedback-title').textContent = correct ? `答對了！${threat.answer}` : (hint ? `提示：答案是 ${threat.answer}` : `${guessed} 未正確，答案是 ${threat.answer}`);
+  document.getElementById('lesson-feedback-detail').textContent = describeCipherAnswer(threat) + (correct ? '' : '。看清楚後，再按一次正確答案。');
+  if (!correct) {
+    document.querySelectorAll('.choice-btn').forEach(button => {
+      button.classList.toggle('correct', button.dataset.answer === threat.answer);
+      if (button.dataset.answer === guessed) button.classList.add('wrong');
+    });
+  }
+  feedbackTimer = setTimeout(() => panel.classList.add('hidden'), correct ? 1050 : 2600);
 }
 
 function drawMorse(ctx, letter, x, y, size) {
@@ -1256,6 +1502,7 @@ function showCipherSelection() {
   document.getElementById('screen-cipher-select').classList.remove('hidden');
   buildCipherGrid();
   updateCipherSelectionUI();
+  updateTrainingPathUI();
 }
 
 function buildCipherGrid() {
@@ -1311,11 +1558,16 @@ function pickWeightedLetter() {
   for (const c of selectedCiphers) {
     const stats = getCipherStats(c);
     Object.entries(stats.weak).forEach(([letter, count]) => {
-      if (count >= 2) weakLetters.push({letter, weight: count, cipher: c});
+      if (count >= 1) weakLetters.push({letter, weight: count, cipher: c});
     });
   }
-  if (weakLetters.length > 0 && Math.random() < 0.5) {
-    return weakLetters[Math.floor(Math.random() * weakLetters.length)].letter;
+  if (weakLetters.length > 0 && Math.random() < 0.55) {
+    const totalWeight = weakLetters.reduce((sum, item) => sum + Math.min(item.weight, 8), 0);
+    let pick = Math.random() * totalWeight;
+    for (const item of weakLetters) {
+      pick -= Math.min(item.weight, 8);
+      if (pick <= 0) return item.letter;
+    }
   }
   return ALPHABET[Math.floor(Math.random() * 26)];
 }
@@ -1437,7 +1689,8 @@ function usesOnScreenKeyboard() {
 }
 
 function getFirewallY() {
-  return H - (usesOnScreenKeyboard() ? 205 : 80);
+  const controlOffset = usesOnScreenKeyboard() ? 205 : 80;
+  return H - Math.max(controlOffset, trainingPath === 'learn' ? 165 : 0);
 }
 
 function drawGrid() {
@@ -1877,15 +2130,15 @@ function createThreat(stage) {
   const cfg = STAGES[stageIdx];
   const type = cfg.types[Math.floor(Math.random() * cfg.types.length)];
   const col = THREAT_COLORS[type];
-  const size = 32 + Math.random() * 12;
-  const x = 60 + Math.random() * (W - 120);
+  const size = trainingPath === 'learn' ? 54 : 32 + Math.random() * 12;
+  const x = trainingPath === 'learn' ? W / 2 : 60 + Math.random() * (W - 120);
   const cipher = pickCipher();
   const letter = pickWeightedLetter();
   const speedMult = getSpeedMultiplier();
   return {
-    x, y: -60,
+    x, y: trainingPath === 'learn' ? Math.max(130, H * .18) : -60,
     type, size,
-    speed: cfg.speed * speedMult * (0.8 + Math.random() * 0.4),
+    speed: cfg.speed * speedMult * (trainingPath === 'learn' ? .62 : .8 + Math.random() * .4),
     fill: col.fill, stroke: col.stroke, glow: col.glow,
     rotation: 0,
     rotSpeed: (Math.random() - 0.5) * 2 * speedMult,
@@ -2194,7 +2447,12 @@ function playWrongInput() {
 }
 
 function checkStageComplete() {
-  // Endless mode — no stage completion checks
+  if (sessionGoal > 0 && totalNeutralized >= sessionGoal && gameState === STATES.PLAY) {
+    gameState = STATES.WIN;
+    threats = [];
+    updateHUD();
+    setTimeout(() => showWin(), 650);
+  }
 }
 
 // ============================================================
@@ -2217,7 +2475,13 @@ function takeDamage(t) {
     const stats = getCipherStats(t.cipher);
     stats.wrong++;
     stats.total++;
-    stats.weak[t.answer] = (stats.weak[t.answer] || 0) + 1;
+    stats.weak[t.answer] = (stats.weak[t.answer] || 0) + 2;
+    if (trainingPath === 'learn') {
+      learningLocked = true;
+      showLessonFeedback(t, false, '', true);
+      updateChoicePanel(null);
+      setTimeout(() => { learningLocked = false; }, 850);
+    }
   }
 
   updateHUD();
@@ -2244,16 +2508,30 @@ function updateHUD() {
 
   const shieldsEl = document.getElementById('hud-shields');
   shieldsEl.innerHTML = '';
-  const displayLives = gameLives === 0 ? Math.min(lives, 10) : lives;
-  const maxShields = gameLives === 0 ? 3 : Math.min(gameLives, 10);
-  for (let i = 0; i < maxShields; i++) {
-    const s = document.createElement('span');
-    s.className = 'shield-icon' + (i >= displayLives ? ' dead' : '');
-    s.textContent = '🛡';
-    shieldsEl.appendChild(s);
+  if (gameLives === 0) {
+    const infinite = document.createElement('span');
+    infinite.className = 'shield-icon';
+    infinite.textContent = '🛡∞';
+    infinite.setAttribute('aria-label', '無限防護');
+    shieldsEl.appendChild(infinite);
+  } else {
+    for (let i = 0; i < Math.min(gameLives, 10); i++) {
+      const s = document.createElement('span');
+      s.className = 'shield-icon' + (i >= lives ? ' dead' : '');
+      s.textContent = '🛡';
+      shieldsEl.appendChild(s);
+    }
   }
 
-  document.getElementById('hud-stage').textContent = `STAGE ${currentStage + 1} — ENDLESS`;
+  const pathProfile = TRAINING_PATHS[trainingPath];
+  document.getElementById('hud-stage').textContent = sessionGoal > 0
+    ? `${pathProfile.title} · ${Math.min(totalNeutralized, sessionGoal)} / ${sessionGoal}`
+    : `STAGE ${currentStage + 1} · 無限挑戰`;
+  const attempts = Object.values(cipherStats).reduce((sum, stats) => sum + stats.total, 0);
+  const correct = Object.values(cipherStats).reduce((sum, stats) => sum + stats.correct, 0);
+  const accuracy = attempts ? Math.round(correct / attempts * 100) : 100;
+  const learningProgress = document.getElementById('hud-learning-progress');
+  learningProgress.textContent = `${sessionGoal > 0 ? '任務 '+Math.min(totalNeutralized,sessionGoal)+'/'+sessionGoal+' · ' : ''}準確率 ${accuracy}%`;
 
   // Timer display
   if (gameTimeLimit > 0) {
@@ -2287,8 +2565,11 @@ function hideAllScreens() {
   document.getElementById('screen-win').classList.add('hidden');
   document.getElementById('hud').classList.add('hidden');
   document.getElementById('hud-stage').classList.add('hidden');
+  document.getElementById('hud-learning-progress').classList.add('hidden');
   document.getElementById('input-overlay').classList.add('hidden');
   document.getElementById('mobile-keyboard').classList.add('hidden');
+  document.getElementById('choice-panel').classList.add('hidden');
+  document.getElementById('lesson-feedback').classList.add('hidden');
   document.getElementById('screen-cipher-select').classList.add('hidden');
   const stw = document.getElementById('settings-toggle-wrap');
   if (stw) stw.style.display = 'none';
@@ -2300,16 +2581,22 @@ function hideAllScreens() {
 
 function showGame() {
   hideAllScreens();
+  document.body.dataset.trainingPath = trainingPath;
   document.getElementById('hud').classList.remove('hidden');
   document.getElementById('hud-stage').classList.remove('hidden');
-  document.getElementById('input-overlay').classList.remove('hidden');
-  document.getElementById('mobile-keyboard').classList.remove('hidden');
+  document.getElementById('hud-learning-progress').classList.remove('hidden');
+  if (trainingPath === 'learn') {
+    document.getElementById('choice-panel').classList.remove('hidden');
+  } else {
+    document.getElementById('input-overlay').classList.remove('hidden');
+    document.getElementById('mobile-keyboard').classList.remove('hidden');
+  }
   const stw = document.getElementById('settings-toggle-wrap');
   if (stw) stw.style.display = 'block';
   const td = document.getElementById('timer-display');
   if (td) td.style.display = gameTimeLimit > 0 ? 'block' : 'none';
   gameState = STATES.PLAY;
-  setTimeout(() => document.getElementById('cipher-input').focus(), 50);
+  if (trainingPath !== 'learn') setTimeout(() => document.getElementById('cipher-input').focus(), 50);
 }
 
 function showStageClear() {
@@ -2324,6 +2611,24 @@ function showStageClear() {
     <div><div class="stat-label">最高連擊</div><div class="stat-value">×${maxCombo}</div></div>
     <div><div class="stat-label">總分</div><div class="stat-value">${score.toLocaleString()}</div></div>
   `;
+}
+
+function getSessionSummary() {
+  const entries = Object.entries(cipherStats).filter(([, stats]) => stats.total > 0);
+  const attempts = entries.reduce((sum, [, stats]) => sum + stats.total, 0);
+  const correct = entries.reduce((sum, [, stats]) => sum + stats.correct, 0);
+  const accuracy = attempts ? Math.round(correct / attempts * 100) : 0;
+  const weakest = entries.slice().sort(([,a],[,b]) => (a.correct/a.total) - (b.correct/b.total))[0];
+  let recommendation = '表現穩定，可以加入另一種密碼作混合訓練。';
+  if (weakest) {
+    const [cipher, stats] = weakest;
+    const letters = Object.entries(stats.weak).filter(([,count]) => count > 0).sort((a,b) => b[1]-a[1]).slice(0,4).map(([letter]) => letter);
+    const cipherAccuracy = Math.round(stats.correct / stats.total * 100);
+    if (cipherAccuracy < 90 || letters.length) {
+      recommendation = `下一步：再練 ${CIPHER_LABELS[cipher]}${letters.length ? '，集中 ' + letters.join('、') : ''}。`;
+    }
+  }
+  return {attempts, correct, accuracy, recommendation};
 }
 
 function showGameOver() {
@@ -2357,16 +2662,18 @@ function showGameOver() {
     })
     .join('');
   const timeInfo = gameTimeLimit > 0 ? `<div><div class="stat-label">剩餘時間</div><div class="stat-value">${Math.max(0, timeRemaining)}s</div></div>` : '';
+  const summary = getSessionSummary();
   document.getElementById('gameover-stats').innerHTML = `
     <div><div class="stat-label">本局得分</div><div class="stat-value">${score.toLocaleString()}</div></div>
-    <div><div class="stat-label">到達階段</div><div class="stat-value">${currentStage+1} / ${STAGES.length}</div></div>
+    <div><div class="stat-label">完成進度</div><div class="stat-value">${totalNeutralized}${sessionGoal ? ' / '+sessionGoal : ''}</div></div>
     ${timeInfo}
-    <div><div class="stat-label">成功破解</div><div class="stat-value">${totalNeutralized}</div></div>
+    <div><div class="stat-label">本局準確率</div><div class="stat-value">${summary.accuracy}%</div></div>
     <div><div class="stat-label">最高連擊</div><div class="stat-value">×${maxCombo}</div></div>
     <div style="grid-column: 1 / -1; border-top: 1px solid #2a3556; padding-top: 0.8em; margin-top: 0.5em;">
       <div class="stat-label" style="margin-bottom: 0.5em;">各密碼準確率</div>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8em;">${cipherBreakdown || '<div style="color:#888;">未有紀錄</div>'}</div>
     </div>
+    <div style="grid-column:1/-1;color:#ffcc66;background:rgba(255,153,0,.08);border:1px solid rgba(255,153,0,.25);padding:12px;border-radius:10px;font-size:.82em;line-height:1.5;">💡 ${summary.recommendation}</div>
   `;
 }
 
@@ -2386,16 +2693,20 @@ function showWin() {
     })
     .join('');
   const timeInfo = gameTimeLimit > 0 ? `<div><div class="stat-label">剩餘時間</div><div class="stat-value">${timeRemaining}s</div></div>` : '';
+  const summary = getSessionSummary();
+  const rating = summary.accuracy >= 95 ? 'S' : summary.accuracy >= 85 ? 'A' : summary.accuracy >= 70 ? 'B' : 'C';
   document.getElementById('win-stats').innerHTML = `
     <div><div class="stat-label">本局得分</div><div class="stat-value">${score.toLocaleString()}</div></div>
     <div><div class="stat-label">成功破解</div><div class="stat-value">${totalNeutralized}</div></div>
+    <div><div class="stat-label">本局準確率</div><div class="stat-value">${summary.accuracy}%</div></div>
     <div><div class="stat-label">最高連擊</div><div class="stat-value">×${maxCombo}</div></div>
     ${timeInfo}
-    <div><div class="stat-label">任務評級</div><div class="stat-value">${score>80000?'S':score>50000?'A':score>30000?'B':'C'}</div></div>
+    <div><div class="stat-label">任務評級</div><div class="stat-value">${rating}</div></div>
     <div style="grid-column: 1 / -1; border-top: 1px solid #2a3556; padding-top: 0.8em; margin-top: 0.5em;">
       <div class="stat-label" style="margin-bottom: 0.5em;">各密碼準確率</div>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8em;">${cipherBreakdown || '<div style="color:#888;">未有紀錄</div>'}</div>
     </div>
+    <div style="grid-column:1/-1;color:#77f5c1;background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.22);padding:12px;border-radius:10px;font-size:.82em;line-height:1.5;">🎯 ${summary.recommendation}</div>
   `;
 }
 
@@ -2403,6 +2714,11 @@ function startGame() {
   initAudio();
   sessionSaved = false;
   cipherStats = {};
+  sessionGoal = TRAINING_PATHS[trainingPath].goal;
+  learningLocked = false;
+  clearTimeout(feedbackTimer);
+  document.getElementById('lesson-feedback').classList.add('hidden');
+  document.getElementById('choice-buttons').innerHTML = '';
   score = 0;
   combo = 0;
   maxCombo = 0;
@@ -2462,10 +2778,14 @@ function setFeedback(text, cls) {
 }
 
 function commitInput() {
-  if (!inputBuffer) return;
+  if (!inputBuffer || learningLocked) return;
   const typed = inputBuffer.toUpperCase();
-  // Find all threats whose answer is in the typed buffer
-  const matches = threats.filter(t => typed.includes(t.answer));
+  const learningTarget = trainingPath === 'learn' ? getLearningTarget() : null;
+  // Guided mode asks one deliberate question at a time. Challenge modes
+  // retain the faster mechanic where a typed letter can neutralize a match.
+  const matches = learningTarget
+    ? (typed === learningTarget.answer ? [learningTarget] : [])
+    : threats.filter(t => typed.includes(t.answer));
   if (matches.length > 0) {
     matches.forEach(t => {
       threats.splice(threats.indexOf(t), 1);
@@ -2499,6 +2819,13 @@ function commitInput() {
     });
     setFeedback(`✓ ${typed}`, 'hit');
     if (navigator.vibrate) navigator.vibrate(22);
+    if (learningTarget) {
+      learningLocked = true;
+      showLessonFeedback(learningTarget, true);
+      updateChoicePanel(null);
+      spawnTimer = .85;
+      setTimeout(() => { learningLocked = false; }, 520);
+    }
     updateHUD();
     checkStageComplete();
   } else {
@@ -2509,20 +2836,40 @@ function commitInput() {
     updateHUD();
     // Attribute a miss to the threat nearest the firewall, so weak-item
     // weighting reinforces the answer the player actually failed to decode.
-    const nearest = threats.slice().sort((a, b) => b.y - a.y)[0];
+    const nearest = learningTarget || threats.slice().sort((a, b) => b.y - a.y)[0];
     if (nearest) {
       const stats = getCipherStats(nearest.cipher);
       stats.wrong++;
       stats.total++;
-      stats.weak[nearest.answer] = (stats.weak[nearest.answer] || 0) + 1;
+      stats.weak[nearest.answer] = (stats.weak[nearest.answer] || 0) + 2;
+      if (trainingPath === 'learn') {
+        learningLocked = true;
+        showLessonFeedback(nearest, false, typed);
+        setTimeout(() => { learningLocked = false; }, 850);
+      }
     }
   }
   inputBuffer = '';
   document.getElementById('cipher-input').value = '';
 }
 
+function revealHint() {
+  if (gameState !== STATES.PLAY || trainingPath !== 'learn' || learningLocked) return;
+  const target = getLearningTarget();
+  if (!target) return;
+  const stats = getCipherStats(target.cipher);
+  stats.wrong++;
+  stats.total++;
+  stats.weak[target.answer] = (stats.weak[target.answer] || 0) + 2;
+  combo = 0;
+  learningLocked = true;
+  showLessonFeedback(target, false, '', true);
+  updateHUD();
+  setTimeout(() => { learningLocked = false; }, 850);
+}
+
 function answerLetter(letter) {
-  if (gameState !== STATES.PLAY || !/^[A-Z]$/.test(letter)) return;
+  if (gameState !== STATES.PLAY || learningLocked || !/^[A-Z]$/.test(letter)) return;
   initAudio();
   inputBuffer = letter;
   document.getElementById('cipher-input').value = letter;
@@ -2538,7 +2885,7 @@ function handleKeyDown(e) {
 
 window.addEventListener('keydown', handleKeyDown);
 canvas.addEventListener('click', () => {
-  document.getElementById('cipher-input').focus();
+  if (trainingPath !== 'learn') document.getElementById('cipher-input').focus();
 });
 
 function returnToSelection(saveCurrent = false) {
@@ -2551,6 +2898,7 @@ function returnToSelection(saveCurrent = false) {
   document.getElementById('screen-cipher-select').classList.remove('hidden');
   buildCipherGrid();
   updateCipherSelectionUI();
+  updateTrainingPathUI();
 }
 
 function syncSoundButton() {
@@ -2573,6 +2921,10 @@ ALPHABET.forEach(letter => {
 });
 
 // Button listeners
+document.querySelectorAll('[data-path]').forEach(button => {
+  button.addEventListener('click', () => setTrainingPath(button.dataset.path, true));
+});
+document.getElementById('btn-hint').addEventListener('click', revealHint);
 document.getElementById('btn-start').addEventListener('click', () => { initAudio(); showCipherSelection(); });
 document.getElementById('btn-start-game').addEventListener('click', () => { initAudio(); startWithSelectedCiphers(); });
 document.getElementById('btn-next-stage').addEventListener('click', () => { initAudio(); nextStage(); });
@@ -2633,6 +2985,7 @@ document.addEventListener('click', (e) => {
 setSpeed(gameSpeed);
 setLives(gameLives);
 setTime(gameTimeLimit);
+setTrainingPath(trainingPath, false);
 
 // ============================================================
 // MAIN LOOP
@@ -2692,12 +3045,16 @@ function gameLoop(ts) {
       }
     }
 
-    // ENDLESS spawning
+    // Guided learning keeps one clear target on screen. Challenge paths
+    // allow overlapping threats to create urgency and retrieval practice.
     const cfg = STAGES[Math.min(currentStage, STAGES.length - 1)];
     const speedMult = getSpeedMultiplier();
     spawnTimer -= dt;
-    if (spawnTimer <= 0) {
-      threats.push(createThreat(currentStage));
+    const canSpawn = trainingPath === 'learn' ? threats.length === 0 && !learningLocked : true;
+    if (spawnTimer <= 0 && canSpawn) {
+      const newThreat = createThreat(currentStage);
+      threats.push(newThreat);
+      if (trainingPath === 'learn') updateChoicePanel(newThreat);
       spawnTimer = cfg.spawnInterval * (0.8 + Math.random() * 0.4) / speedMult;
     }
 
@@ -2716,11 +3073,15 @@ function gameLoop(ts) {
         });
       }
 
-      t.y += t.speed * dt * 60;
-      t.rotation += t.rotSpeed * dt;
-      t.wobble += t.wobbleSpeed * dt;
-      t.x += Math.sin(t.wobble) * 0.3 * dt * 60;
-      t.x = Math.max(t.size + 10, Math.min(W - t.size - 10, t.x));
+      // Briefly freeze guided questions after a mistake so the learner can
+      // inspect the symbol and explanation instead of being punished for reading.
+      if (!(trainingPath === 'learn' && learningLocked)) {
+        t.y += t.speed * dt * 60;
+        t.rotation += t.rotSpeed * dt;
+        t.wobble += t.wobbleSpeed * dt;
+        t.x += Math.sin(t.wobble) * 0.3 * dt * 60;
+        t.x = Math.max(t.size + 10, Math.min(W - t.size - 10, t.x));
+      }
 
       if (t.y >= floorY - t.size / 2) {
         takeDamage(t);
@@ -2742,8 +3103,8 @@ function gameLoop(ts) {
       lastStageProgression = stageNeutralized;
       currentStage++;
       stageConfig = STAGES[Math.min(currentStage, STAGES.length - 1)];
-      // Show stage clear notification briefly
-      document.getElementById('hud-stage').textContent = `STAGE ${currentStage + 1}`;
+      // Increase enemy variety and speed after each learning block.
+      updateHUD();
       stageScore = 0;
       // Play stage clear sound
       playStageClear();

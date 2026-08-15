@@ -3,7 +3,7 @@ import vm from 'node:vm'
 
 const requiredIds = {
   'index.html': ['editorView', 'testPaperView', 'gameView', 'inputText', 'mobileMenuBtn'],
-  'training/index.html': ['gameCanvas', 'screen-start', 'screen-cipher-select', 'mobile-keyboard'],
+  'training/index.html': ['gameCanvas', 'screen-start', 'screen-cipher-select', 'training-path-grid', 'mobile-keyboard', 'choice-panel', 'lesson-feedback'],
 }
 
 let failures = 0
