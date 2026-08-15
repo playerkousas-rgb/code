@@ -2,18 +2,21 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>密碼旗號助手 - SKWSCOUT</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#02133e">
+  <meta name="description" content="SKWSCOUT 密碼旗號助手：密碼轉換、考核試卷、互動搶答及遊戲化訓練。">
+  <title>密碼旗號助手｜SKWSCOUT</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="bg-[var(--skw-navy-bg)]">
+  <a class="skip-link no-print" href="#editorView">跳到主要內容</a>
 
   <!-- Sidebar -->
-  <aside class="sidebar no-print" id="sidebar">
+  <aside class="sidebar no-print" id="sidebar" aria-label="主要導覽">
     <div class="p-6 h-full flex flex-col">
       <div class="flex items-center gap-3 mb-8">
         <div class="w-10 h-10 bg-[var(--skw-gold)] rounded-xl flex items-center justify-center text-[var(--skw-navy-dark)] text-xl font-black shadow-lg">⚜</div>
@@ -23,10 +26,11 @@
         </div>
       </div>
       
-      <div class="mode-switch">
-        <div class="mode-btn active" data-mode="editor">編輯器</div>
-        <div class="mode-btn" data-mode="testpaper">試卷生成</div>
-        <div class="mode-btn" data-mode="game">互動搶答</div>
+      <div class="mode-switch" aria-label="功能模式">
+        <button class="mode-btn active" type="button" data-mode="editor"><span aria-hidden="true">⌁</span> 編碼工具</button>
+        <button class="mode-btn" type="button" data-mode="testpaper"><span aria-hidden="true">▤</span> 試卷生成</button>
+        <button class="mode-btn" type="button" data-mode="game"><span aria-hidden="true">⚡</span> 互動搶答</button>
+        <a class="mode-btn training-mode-link" href="training/"><span aria-hidden="true">◈</span> 訓練遊戲</a>
       </div>
 
       <nav class="space-y-1 overflow-y-auto flex-1 custom-scrollbar">
@@ -52,23 +56,62 @@
       </div>
     </div>
   </aside>
-
-  <button id="mobileMenuBtn" class="lg:hidden fixed bottom-6 right-6 w-14 h-14 bg-[var(--skw-gold)] text-black rounded-full shadow-2xl z-[110] flex items-center justify-center text-2xl no-print">☰</button>
+  <button id="sidebarBackdrop" class="sidebar-backdrop no-print" type="button" aria-label="關閉導覽選單"></button>
 
   <div class="main-content">
-    <header class="app-header py-4 px-6 no-print flex justify-between items-center border-b border-white/10 mb-8 bg-black/20">
-      <h2 id="currentModeTitle" class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">EDITOR MODE</h2>
-      <button id="btnExportPDF" class="bg-[var(--skw-gold)] text-black px-6 py-2.5 rounded-xl text-xs font-black shadow-lg">🖨 列印考核試卷</button>
+    <header class="app-header no-print">
+      <div class="header-leading">
+        <button id="mobileMenuBtn" class="mobile-menu-btn" type="button" aria-controls="sidebar" aria-expanded="false" aria-label="開啟密碼導覽">☰</button>
+        <div>
+          <p class="mobile-brand">SKWSCOUT</p>
+          <h2 id="currentModeTitle">編碼工具</h2>
+        </div>
+      </div>
+      <button id="btnExportPDF" class="header-action"><span aria-hidden="true">🖨</span> <span class="header-action-label">列印試卷</span></button>
     </header>
 
     <!-- 1. Editor Mode -->
-    <main class="max-w-6xl mx-auto px-6 py-4 space-y-8 no-print" id="editorView">
-      <section class="skw-card p-8">
-        <div class="flex justify-between items-center mb-6">
-          <h2 class="text-base font-black text-white">訊息輸入 (支援中英文)</h2>
-          <button id="btnAddToTest" class="bg-sky-500 text-white px-5 py-2 rounded-xl text-xs font-bold shadow-lg">➕ 加入試卷題目</button>
+    <main class="max-w-6xl mx-auto px-6 py-4 space-y-8 no-print" id="editorView" tabindex="-1">
+      <section class="learning-hero" aria-labelledby="heroTitle">
+        <div class="hero-copy">
+          <p class="eyebrow">LEARN · DECODE · PLAY</p>
+          <h1 id="heroTitle">由看懂密碼，<br><span>到守住童軍基地。</span></h1>
+          <p>先用工具探索 13 種密碼，再進入遊戲實戰。系統會記住錯題，讓弱項重複出現。</p>
+          <div class="hero-actions">
+            <a class="primary-cta" href="training/">開始密碼防衛戰 <span aria-hidden="true">→</span></a>
+            <button class="secondary-cta" type="button" data-scroll-to-input>先試試編碼</button>
+          </div>
         </div>
-        <textarea id="inputText" rows="2" class="w-full p-6 rounded-2xl text-2xl font-bold bg-black/40 text-white border-2 border-white/5 focus:border-[var(--skw-gold)] outline-none" placeholder="輸入英文或中文..."></textarea>
+        <div class="mission-card" aria-label="訓練模式個人紀錄">
+          <div class="mission-orbit" aria-hidden="true"><span>⚜</span></div>
+          <div>
+            <p>個人最佳</p>
+            <strong id="trainingBestScore">0</strong>
+            <small id="trainingLastResult">尚未開始訓練</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="skw-card composer-card" id="messageComposer">
+        <div class="composer-heading">
+          <div>
+            <p class="section-kicker">即時轉換</p>
+            <h2>輸入你的秘密訊息</h2>
+          </div>
+          <span id="inputCount" class="input-count">0 / 200</span>
+        </div>
+        <label class="sr-only" for="inputText">要轉換的中英文訊息</label>
+        <textarea id="inputText" rows="3" maxlength="200" placeholder="例如：BE PREPARED"></textarea>
+        <div class="sample-row" aria-label="範例訊息">
+          <span>快速試玩</span>
+          <button type="button" class="sample-chip" data-sample="SOS">SOS</button>
+          <button type="button" class="sample-chip" data-sample="BE PREPARED">BE PREPARED</button>
+          <button type="button" class="sample-chip" data-sample="SCOUT 2026">SCOUT 2026</button>
+        </div>
+        <div class="composer-actions">
+          <button id="btnClearInput" type="button" class="quiet-btn">清除</button>
+          <button id="btnAddToTest" type="button" class="add-test-btn">＋ 加入試卷題目</button>
+        </div>
       </section>
 
       <!-- Morse -->
@@ -222,6 +265,13 @@
     </div>
   </div>
 
+  <nav class="mobile-bottom-nav no-print" aria-label="手機模式導覽">
+    <button type="button" class="mode-btn active" data-mode="editor"><span aria-hidden="true">⌁</span><small>編碼</small></button>
+    <button type="button" class="mode-btn" data-mode="testpaper"><span aria-hidden="true">▤</span><small>試卷</small></button>
+    <button type="button" class="mode-btn" data-mode="game"><span aria-hidden="true">⚡</span><small>搶答</small></button>
+    <a class="mode-btn training-mode-link" href="training/"><span aria-hidden="true">◈</span><small>訓練</small></a>
+  </nav>
+
   <!-- Projections Overlay - FIX #1: 加入速度滑桿 -->
   <div id="projectionOverlay" class="no-print">
     <button id="btnExitProjection" class="absolute top-10 right-10 text-white/20 hover:text-white text-5xl">✕</button>
@@ -262,6 +312,6 @@
     <div class="print-footer">COPY RIGHT 2026 SKWSCOUT</div>
   </div>
 
-  <script src="js/app.js"></script>
+  <script type="module" src="/js/app.js"></script>
 </body>
 </html>
