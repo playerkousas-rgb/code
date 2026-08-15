@@ -1,0 +1,3132 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#020a1a">
+<meta name="description" content="SKWSCOUT 密碼防衛戰：用摩斯、旗號、朱高、點字、座標及電話密碼進行遊戲化訓練。">
+<title>密碼防衛戰｜SKWSCOUT 訓練模式</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #000;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    user-select: none;
+  }
+  canvas { display: block; }
+  #ui-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .screen {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    background: rgba(0,5,20,0.92);
+  }
+  #screen-cipher-select {
+    justify-content: flex-start;
+    overflow-y: auto;
+    padding: 10px 0 30px 0;
+    align-content: flex-start;
+  }
+  #screen-cipher-select > * {
+    flex-shrink: 0;
+  }
+  .screen.hidden { display: none; }
+  .neon-title {
+    font-size: clamp(2rem, 6vw, 4.5rem);
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    color: #00ffff;
+    text-shadow: 0 0 10px #00ffff, 0 0 30px #00ffff, 0 0 60px #00aaff;
+    animation: titlePulse 2s ease-in-out infinite;
+  }
+  .neon-subtitle {
+    font-size: clamp(0.7rem, 2vw, 1rem);
+    color: #ff00ff;
+    letter-spacing: 0.3em;
+    text-shadow: 0 0 8px #ff00ff;
+    margin-top: 0.5em;
+  }
+  @keyframes titlePulse {
+    0%,100% { text-shadow: 0 0 10px #00ffff, 0 0 30px #00ffff, 0 0 60px #00aaff; }
+    50% { text-shadow: 0 0 20px #00ffff, 0 0 50px #00ffff, 0 0 90px #00aaff, 0 0 120px #0066ff; }
+  }
+  .btn {
+    margin-top: 2em;
+    padding: 0.8em 2.5em;
+    font-family: 'Courier New', monospace;
+    font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    background: transparent;
+    color: #00ffff;
+    border: 2px solid #00ffff;
+    cursor: pointer;
+    pointer-events: all;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    text-shadow: 0 0 8px #00ffff;
+    box-shadow: 0 0 15px rgba(0,255,255,0.3), inset 0 0 15px rgba(0,255,255,0.05);
+  }
+  .btn:hover {
+    background: rgba(0,255,255,0.15);
+    box-shadow: 0 0 30px rgba(0,255,255,0.6), inset 0 0 20px rgba(0,255,255,0.1);
+    transform: scale(1.05);
+  }
+  .btn:active { transform: scale(0.97); }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1em 3em;
+    margin-top: 1.5em;
+    text-align: left;
+  }
+  .stat-label { color: #888; font-size: 0.8em; letter-spacing: 0.15em; text-transform: uppercase; }
+  .stat-value { color: #00ff88; font-size: 1.4em; font-weight: 700; text-shadow: 0 0 8px #00ff88; }
+  .divider {
+    width: 60%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #00ffff, transparent);
+    margin: 1.5em 0;
+    box-shadow: 0 0 8px #00ffff;
+  }
+  #hud {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 60px;
+    z-index: 15;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    background: linear-gradient(180deg, rgba(0,5,20,0.9) 0%, transparent 100%);
+  }
+  #hud.hidden { display: none; }
+  .hud-shields { display: flex; gap: 8px; }
+  .shield-icon {
+    font-size: 1.4em;
+    filter: drop-shadow(0 0 6px #00ffff);
+    transition: all 0.3s;
+  }
+  .shield-icon.dead {
+    filter: drop-shadow(0 0 4px #333);
+    opacity: 0.2;
+  }
+  #hud-score {
+    flex: 1;
+    text-align: center;
+    color: #00ffff;
+    font-size: clamp(1rem, 3vw, 1.5rem);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 10px #00ffff;
+  }
+  #hud-combo {
+    color: #ff00ff;
+    font-size: clamp(0.8rem, 2vw, 1rem);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 8px #ff00ff;
+    min-width: 100px;
+    text-align: right;
+  }
+  #hud-stage {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ff9900;
+    font-size: 0.75em;
+    letter-spacing: 0.3em;
+    text-shadow: 0 0 6px #ff9900;
+    z-index: 15;
+    pointer-events: none;
+  }
+  #hud-stage.hidden { display: none; }
+  .scanlines {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 50;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+  }
+  .stage-title-text {
+    font-size: clamp(1.5rem, 5vw, 3rem);
+    color: #ff9900;
+    text-shadow: 0 0 15px #ff9900, 0 0 40px #ff6600;
+    letter-spacing: 0.2em;
+    margin-bottom: 0.3em;
+  }
+  .controls-hint {
+    color: #446;
+    font-size: 0.75em;
+    letter-spacing: 0.2em;
+    margin-top: 2em;
+    text-align: center;
+  }
+  .controls-hint span { color: #00ffaa; }
+
+  /* === CIPHER SELECTION === */
+  .cipher-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    max-width: 720px;
+    width: 90%;
+    margin: 0.5em 0;
+  }
+  .cipher-toggle {
+    background: rgba(10, 20, 40, 0.6);
+    border: 2px solid #2a3556;
+    border-radius: 10px;
+    padding: 14px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .cipher-toggle:hover {
+    border-color: #00ffff;
+    background: rgba(0, 255, 255, 0.05);
+  }
+  .cipher-toggle.on {
+    border-color: #00ff88;
+    background: rgba(0, 255, 136, 0.1);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3), inset 0 0 12px rgba(0, 255, 136, 0.05);
+  }
+  .cipher-toggle-name {
+    color: #ffffff;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    font-size: 0.9em;
+    margin-bottom: 4px;
+  }
+  .cipher-toggle-desc {
+    color: #888;
+    font-size: 0.65em;
+    letter-spacing: 0.05em;
+  }
+  .cipher-toggle.on .cipher-toggle-desc {
+    color: #00ff88;
+  }
+  .cipher-presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 0.5em;
+  }
+  .preset-btn {
+    background: transparent;
+    border: 1px solid #ff00ff;
+    color: #ff00ff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.7em;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+  }
+  .preset-btn:hover {
+    background: rgba(255, 0, 255, 0.15);
+    box-shadow: 0 0 12px rgba(255, 0, 255, 0.4);
+  }
+
+  /* === COLLAPSIBLE SETTINGS === */
+  .settings-toggle-btn {
+    background: rgba(10, 20, 40, 0.6);
+    border: 1px solid #2a3556;
+    color: #aaa;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    margin: 0.5em auto;
+    max-width: 300px;
+    width: 80%;
+    transition: all 0.2s;
+    display: block;
+  }
+  .settings-toggle-btn:hover {
+    border-color: #ff9900;
+    color: #ff9900;
+  }
+  .settings-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  .settings-body.open {
+    max-height: 600px;
+  }
+
+  /* === SPEED & SETTINGS SLIDER === */
+  .speed-control, .settings-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(10, 20, 40, 0.6);
+    border: 1px solid #2a3556;
+    border-radius: 10px;
+    padding: 12px 20px;
+    margin: 0.6em auto;
+    max-width: 440px;
+    width: 90%;
+  }
+  .settings-label {
+    color: #888;
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .settings-value {
+    font-size: 0.85em;
+    font-weight: 900;
+    min-width: 50px;
+    text-align: center;
+  }
+  .settings-value.lives-val { color: #00ff88; text-shadow: 0 0 6px #00ff88; }
+  .settings-value.time-val { color: #ff6644; text-shadow: 0 0 6px #ff6644; }
+  .settings-value.speed-val { color: #ff9900; text-shadow: 0 0 6px #ff9900; }
+  input[type="range"].settings-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"].settings-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 0 10px rgba(0,255,255,0.6);
+    cursor: pointer;
+  }
+  input[type="range"].settings-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 0 10px rgba(0,255,255,0.6);
+    border: none;
+    cursor: pointer;
+  }
+  .speed-slider { background: linear-gradient(90deg, #00ff88, #ff9900, #ff0055); }
+  .lives-slider { background: linear-gradient(90deg, #ff0055, #ff6644, #00ff88, #00ff88); }
+  .time-slider { background: linear-gradient(90deg, #00ff88, #ff9900, #ff0055); }
+
+  .settings-presets {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    justify-content: center;
+  }
+  .settings-preset-btn {
+    background: transparent;
+    border: 1px solid #555;
+    color: #aaa;
+    padding: 3px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.65em;
+    letter-spacing: 0.05em;
+    transition: all 0.15s;
+  }
+  .settings-preset-btn:hover {
+    border-color: #ff9900;
+    color: #ff9900;
+    background: rgba(255,153,0,0.1);
+  }
+
+  /* === INPUT OVERLAY === */
+  #input-overlay {
+    position: fixed;
+    bottom: 80px;
+    left: 0; right: 0;
+    display: flex;
+    justify-content: center;
+    z-index: 25;
+    pointer-events: none;
+  }
+  #input-overlay.hidden { display: none !important; }
+  .input-zone {
+    background: rgba(0, 5, 20, 0.9);
+    border: 2px solid #00ffff;
+    border-radius: 14px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 0 24px rgba(0, 255, 255, 0.4), inset 0 0 12px rgba(0, 255, 255, 0.05);
+    pointer-events: auto;
+  }
+  .input-prompt-label {
+    color: #00ffff;
+    font-size: 0.8em;
+    letter-spacing: 0.2em;
+    text-shadow: 0 0 6px #00ffff;
+  }
+  #cipher-input {
+    background: transparent;
+    border: none;
+    color: #00ff88;
+    font-family: 'Courier New', monospace;
+    font-size: 2.5em;
+    font-weight: 900;
+    text-align: center;
+    width: 60px;
+    padding: 0;
+    outline: none;
+    text-shadow: 0 0 12px #00ff88;
+  }
+  #cipher-input:focus {
+    animation: inputPulse 1s ease-in-out infinite;
+  }
+  @keyframes inputPulse {
+    0%, 100% { text-shadow: 0 0 12px #00ff88; }
+    50%      { text-shadow: 0 0 24px #00ff88, 0 0 8px #ffffff; }
+  }
+  .input-feedback {
+    color: #888;
+    font-size: 0.8em;
+    letter-spacing: 0.1em;
+    min-width: 60px;
+    text-align: left;
+  }
+  .input-feedback.hit { color: #00ff88; text-shadow: 0 0 6px #00ff88; }
+  .input-feedback.miss { color: #ff0055; text-shadow: 0 0 6px #ff0055; }
+
+  /* === SKWSCOUT INTEGRATION & MOBILE CONTROLS === */
+  html, body { width: 100%; height: 100%; height: 100dvh; overscroll-behavior: none; }
+  button, a, input { -webkit-tap-highlight-color: transparent; }
+  button:focus-visible, a:focus-visible, input:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 3px;
+  }
+  .top-control {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    z-index: 70;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(0,255,255,.55);
+    border-radius: 999px;
+    background: rgba(0,5,20,.86);
+    color: #bffcff;
+    padding: 0 16px;
+    font: 800 12px/1 'Courier New', monospace;
+    letter-spacing: .08em;
+    text-decoration: none;
+    box-shadow: 0 0 18px rgba(0,255,255,.16);
+    backdrop-filter: blur(12px);
+    pointer-events: auto;
+  }
+  #back-home { left: max(12px, env(safe-area-inset-left)); }
+  #sound-toggle { right: max(12px, env(safe-area-inset-right)); cursor: pointer; }
+  .progress-card {
+    width: min(90vw, 440px);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    overflow: hidden;
+    margin-top: 18px;
+    border: 1px solid #18365a;
+    border-radius: 12px;
+    background: #18365a;
+  }
+  .progress-item { padding: 12px 8px; text-align: center; background: rgba(3,13,34,.94); }
+  .progress-label { color: #617795; font-size: 10px; letter-spacing: .08em; }
+  .progress-value { color: #00ff88; font-size: 18px; font-weight: 900; margin-top: 5px; }
+  .selection-step {
+    width: min(90%, 720px); margin: 8px 0 7px; color: #6e86a9;
+    font-size: 10px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase;
+  }
+  .training-path-grid {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
+    width: min(92%, 760px); margin-bottom: 15px;
+  }
+  .training-path {
+    min-height: 132px; padding: 14px 11px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 5px; border: 2px solid #263954;
+    border-radius: 13px; background: rgba(7,18,43,.84); color: #d9e8fa;
+    font-family: inherit; cursor: pointer; transition: .2s; touch-action: manipulation;
+  }
+  .training-path:hover { border-color: #00d2ff; transform: translateY(-2px); }
+  .training-path.active {
+    border-color: #00ff88; background: rgba(0,255,136,.1);
+    box-shadow: 0 0 24px rgba(0,255,136,.18), inset 0 0 18px rgba(0,255,136,.04);
+  }
+  .path-icon { font-size: 24px; }
+  .training-path strong { font-size: 14px; letter-spacing: .06em; }
+  .training-path small { color: #8ea2bb; font-size: 10px; line-height: 1.45; }
+  .training-path em { color: #00ff88; font-size: 9px; font-style: normal; letter-spacing: .08em; }
+
+  #choice-panel {
+    position: fixed; left: 50%; bottom: max(16px, env(safe-area-inset-bottom));
+    transform: translateX(-50%); z-index: 29; width: min(620px, calc(100vw - 24px));
+    padding: 12px; border: 1px solid rgba(0,255,255,.38); border-radius: 16px;
+    background: rgba(0,8,28,.94); box-shadow: 0 0 32px rgba(0,210,255,.2);
+    backdrop-filter: blur(14px); pointer-events: auto;
+  }
+  #choice-panel.hidden { display: none !important; }
+  .choice-panel-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin-bottom: 10px; color: #9cafc8; font-size: 11px; letter-spacing: .04em;
+  }
+  .choice-panel-head b { color: #00d2ff; }
+  #btn-hint {
+    min-height: 34px; padding: 0 11px; border: 1px solid rgba(255,204,0,.4);
+    border-radius: 8px; background: rgba(255,204,0,.07); color: #ffdc4d;
+    font-family: inherit; font-size: 11px; font-weight: 800; line-height: 1; cursor: pointer;
+  }
+  .choice-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .choice-btn {
+    min-height: 58px; border: 1px solid #2b5c78; border-radius: 11px;
+    background: linear-gradient(180deg,#123352,#091a31); color: #fff;
+    font: 900 25px/1 'Courier New', monospace; cursor: pointer; touch-action: manipulation;
+    box-shadow: 0 4px 0 #020914; transition: .12s;
+  }
+  .choice-btn:hover { border-color: #00ffff; color: #aefcff; }
+  .choice-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #020914; }
+  .choice-btn.wrong { border-color: #ff0055; color: #ff739d; background: rgba(255,0,85,.14); }
+  .choice-btn.correct { border-color: #00ff88; color: #00ff88; background: rgba(0,255,136,.14); box-shadow: 0 0 18px rgba(0,255,136,.22); }
+  #lesson-feedback {
+    position: fixed; top: max(122px, calc(env(safe-area-inset-top) + 104px)); left: 50%;
+    transform: translateX(-50%); z-index: 35; width: min(520px, calc(100vw - 24px));
+    min-height: 62px; padding: 11px 16px; display: flex; align-items: center; gap: 12px;
+    border: 1px solid #00ff88; border-radius: 14px; background: rgba(0,20,34,.94);
+    color: #e8fff7; box-shadow: 0 0 28px rgba(0,255,136,.2); pointer-events: none;
+  }
+  #lesson-feedback.hidden { display: none !important; }
+  #lesson-feedback.wrong { border-color: #ff9d00; background: rgba(35,18,0,.96); box-shadow: 0 0 28px rgba(255,157,0,.18); }
+  #lesson-feedback-icon { font-size: 24px; }
+  #lesson-feedback strong { display: block; font-size: 13px; }
+  #lesson-feedback small { display: block; margin-top: 4px; color: #aebcd0; font-size: 11px; line-height: 1.45; }
+  #hud-learning-progress {
+    position: fixed; top: 84px; left: 50%; transform: translateX(-50%); z-index: 16;
+    padding: 6px 12px; border: 1px solid rgba(0,255,136,.25); border-radius: 999px;
+    background: rgba(0,8,28,.76); color: #76f9c4; font-size: 10px; font-weight: 900;
+    letter-spacing: .08em; pointer-events: none;
+  }
+  #hud-learning-progress.hidden { display: none !important; }
+  #mobile-keyboard {
+
+    display: none;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 28;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    gap: 5px;
+    padding: 9px max(8px, env(safe-area-inset-right)) max(9px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    background: linear-gradient(180deg, rgba(0,5,20,.76), rgba(0,5,20,.98) 24%);
+    border-top: 1px solid rgba(0,255,255,.28);
+    backdrop-filter: blur(10px);
+    pointer-events: auto;
+  }
+  #mobile-keyboard.hidden { display: none !important; }
+  .key-btn {
+    min-width: 0;
+    min-height: 42px;
+    border: 1px solid #24506d;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #102642, #081629);
+    color: #e8fbff;
+    font: 900 17px/1 'Courier New', monospace;
+    box-shadow: 0 3px 0 #020712, 0 0 10px rgba(0,210,255,.08);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .key-btn:active { transform: translateY(2px); color: #00ff88; border-color: #00ff88; box-shadow: 0 1px 0 #020712; }
+  .screen { padding: 72px 18px max(24px, env(safe-area-inset-bottom)); }
+  .screen-scroll { overflow-y: auto; justify-content: flex-start; }
+  .secondary-btn { margin-top: 12px; color: #93a4bc; border-color: #40516a; box-shadow: none; }
+  .result-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .result-actions .btn { margin-top: 0; }
+
+  @media (max-width: 800px) {
+    .scanlines { opacity: .45; }
+    .screen { min-height: 100dvh; }
+    #screen-start { justify-content: flex-start; overflow-y: auto; padding-top: 92px; }
+    #screen-cipher-select { padding: 80px 12px 26px; }
+    .neon-title { font-size: clamp(1.65rem, 9vw, 2.5rem); text-align: center; letter-spacing: .08em; }
+    .neon-subtitle { letter-spacing: .14em; text-align: center; }
+    .divider { width: 86%; margin: 1.1em 0; }
+    .btn { min-height: 52px; margin-top: 1.25em; padding: .75em 1.25em; letter-spacing: .1em; }
+    .training-path-grid { grid-template-columns: 1fr; width: 100%; gap: 7px; }
+    .training-path { min-height: 78px; padding: 9px 12px; display: grid; grid-template-columns: 38px 1fr; grid-template-rows: auto auto auto; text-align: left; align-items: center; column-gap: 8px; }
+    .training-path .path-icon { grid-row: 1 / 4; font-size: 25px; text-align: center; }
+    .training-path strong, .training-path small, .training-path em { width: 100%; }
+    .selection-step { width: 100%; }
+    .cipher-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; }
+    .cipher-toggle { min-height: 74px; padding: 12px 7px; touch-action: manipulation; }
+    .cipher-toggle-name { font-size: .82em; letter-spacing: .06em; }
+    .cipher-toggle-desc { line-height: 1.35; }
+    .preset-btn, .settings-preset-btn { min-height: 40px; padding: 7px 11px; touch-action: manipulation; }
+    .settings-control { width: 100%; padding: 12px; }
+    .settings-label { font-size: .68em; }
+    .settings-body.open { max-height: 720px; }
+    #hud { height: 62px; padding: max(7px, env(safe-area-inset-top)) 10px 0; }
+    #hud-score { font-size: .93rem; }
+    #hud-combo { min-width: 62px; font-size: .72rem; }
+    .shield-icon { font-size: 1.05em; }
+    #hud-stage { top: 64px; font-size: .62em; }
+    #timer-display { top: max(66px, calc(env(safe-area-inset-top) + 54px)) !important; right: 10px !important; }
+    #input-overlay { bottom: calc(148px + env(safe-area-inset-bottom)); }
+    #choice-panel { bottom: max(8px, env(safe-area-inset-bottom)); padding: 10px; border-radius: 14px; }
+    .choice-btn { min-height: 54px; font-size: 23px; }
+    .choice-panel-head { margin-bottom: 8px; }
+    #hud-learning-progress { top: 69px; max-width: 74vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #lesson-feedback { top: max(100px, calc(env(safe-area-inset-top) + 82px)); }
+    .input-zone { padding: 6px 12px; gap: 8px; border-radius: 999px; }
+    .input-prompt-label { font-size: .65em; }
+    #cipher-input { font-size: 1.5em; width: 38px; }
+    .input-feedback { min-width: 38px; font-size: .7em; }
+    #mobile-keyboard:not(.hidden) { display: grid; }
+    #settings-toggle-wrap { bottom: calc(152px + env(safe-area-inset-bottom)) !important; right: 8px !important; }
+    #settings-overlay { left: 8px; right: 8px !important; bottom: calc(198px + env(safe-area-inset-bottom)) !important; max-height: 42dvh; overflow-y: auto; }
+    #settings-overlay > div { width: 100%; }
+    #settings-overlay input { min-width: 0; flex: 1; }
+    .stat-grid { width: min(92vw, 460px); gap: .8em 1.1em; font-size: .86em; }
+    .screen[id="screen-gameover"], .screen[id="screen-win"] { justify-content: flex-start; overflow-y: auto; padding-top: 90px; }
+    .controls-hint { line-height: 1.6; margin-top: 1em; }
+  }
+
+  @media (max-width: 390px) {
+    .top-control { min-height: 40px; padding: 0 11px; font-size: 10px; }
+    .progress-card { width: 94vw; }
+    .progress-item { padding: 9px 4px; }
+    .input-prompt-label { display: none; }
+    #input-overlay { bottom: calc(146px + env(safe-area-inset-bottom)); }
+    #mobile-keyboard { gap: 4px; padding-left: 5px; padding-right: 5px; }
+    .key-btn { min-height: 40px; font-size: 15px; }
+  }
+
+  @media (pointer: coarse) {
+    #mobile-keyboard:not(.hidden) { display: grid; }
+    #input-overlay { bottom: calc(148px + env(safe-area-inset-bottom)); }
+    #settings-toggle-wrap { bottom: calc(152px + env(safe-area-inset-bottom)) !important; }
+    #settings-overlay { bottom: calc(198px + env(safe-area-inset-bottom)) !important; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    .scanlines { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<a id="back-home" class="top-control" href="../" aria-label="返回密碼工具箱">← 返回工具箱</a>
+<button id="sound-toggle" class="top-control" type="button" aria-pressed="false" aria-label="關閉音效">🔊 音效</button>
+<div class="scanlines"></div>
+
+<!-- CANVAS -->
+<canvas id="gameCanvas"></canvas>
+
+<!-- CIPHER INPUT OVERLAY -->
+<div id="input-overlay" class="hidden">
+  <div class="input-zone">
+    <div class="input-prompt-label">輸入答案：</div>
+    <input id="cipher-input" type="text" inputmode="none" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="1" placeholder="A-Z" aria-label="輸入密碼代表的英文字母">
+    <div class="input-feedback" id="input-feedback" aria-live="polite"></div>
+  </div>
+</div>
+<div id="mobile-keyboard" class="hidden" aria-label="英文字母遊戲鍵盤"></div>
+
+<!-- Guided learning controls -->
+<div id="choice-panel" class="hidden" aria-label="四選一答案">
+  <div class="choice-panel-head">
+    <span><b id="choice-cipher-label">摩斯</b> · 選出代表的字母</span>
+    <button id="btn-hint" type="button">💡 提示</button>
+  </div>
+  <div id="choice-buttons" class="choice-buttons"></div>
+</div>
+<div id="lesson-feedback" class="hidden" role="status" aria-live="polite">
+  <span id="lesson-feedback-icon">✓</span>
+  <div><strong id="lesson-feedback-title">答對了！</strong><small id="lesson-feedback-detail"></small></div>
+</div>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div class="hud-shields" id="hud-shields"></div>
+  <div id="hud-score">SCORE: 0</div>
+  <div id="hud-combo"></div>
+</div>
+<div id="hud-stage" class="hidden"></div>
+<div id="hud-learning-progress" class="hidden"></div>
+
+<!-- START SCREEN -->
+<div id="screen-start" class="screen">
+  <div class="neon-title">密碼防衛戰</div>
+  <div class="neon-subtitle">// CIPHER DEFENSE 訓練終端 //</div>
+  <div class="divider"></div>
+  <div style="color:#a8b4c7; font-size:0.9em; text-align:center; line-height:1.8; letter-spacing:0.03em; max-width:440px;">
+    病毒正向童軍基地逼近。<br>
+    看懂敵人身上的<span style="color:#00ffff;">密碼符號</span>，在它碰到防火牆前輸入答案。<br>
+    答錯過的字母會更常出現，愈玩愈熟！
+  </div>
+  <div class="progress-card" aria-label="個人訓練紀錄">
+    <div class="progress-item"><div class="progress-label">最高分</div><div class="progress-value" id="progress-best">0</div></div>
+    <div class="progress-item"><div class="progress-label">上次準確率</div><div class="progress-value" id="progress-accuracy">--</div></div>
+    <div class="progress-item"><div class="progress-label">完成訓練</div><div class="progress-value" id="progress-sessions">0</div></div>
+  </div>
+  <button class="btn" id="btn-start">開始任務</button>
+  <div class="controls-hint">
+    建議先玩<span>新手學習</span>，認得符號後再挑戰 A–Z 實戰
+  </div>
+</div>
+
+<!-- CIPHER SELECTION SCREEN -->
+<div id="screen-cipher-select" class="screen screen-scroll hidden">
+  <div class="neon-title" style="font-size:clamp(1.5rem,4vw,2.5rem);">選擇訓練密碼</div>
+  <div class="neon-subtitle">// 可單選專攻或混合挑戰 //</div>
+  <div class="divider"></div>
+  <div style="color:#a8b4c7; font-size:0.85em; text-align:center; max-width:620px; line-height:1.6; margin-bottom:1em;">
+    先選學習方式，再選一種或多種密碼。新手可由四選一開始，熟習後再升級至鍵盤實戰。
+  </div>
+
+  <p class="selection-step">01 · 選擇學習方式</p>
+  <div class="training-path-grid" id="training-path-grid">
+    <button type="button" class="training-path active" data-path="learn">
+      <span class="path-icon">🌱</span><strong>新手學習</strong><small>12 題 · 四選一 · 答錯即時教學</small><em>真正認識符號</em>
+    </button>
+    <button type="button" class="training-path" data-path="mission">
+      <span class="path-icon">🚀</span><strong>守城任務</strong><small>20 題 · A–Z 鍵盤 · 有限血量</small><em>由認得到記得</em>
+    </button>
+    <button type="button" class="training-path" data-path="endless">
+      <span class="path-icon">🔥</span><strong>無限挑戰</strong><small>速度逐步提升 · 挑戰最高分</small><em>熟練後衝榜</em>
+    </button>
+  </div>
+
+  <p class="selection-step">02 · 選擇密碼</p>
+  <div class="cipher-grid" id="cipher-grid"></div>
+  <div class="cipher-presets">
+    <button class="preset-btn" onclick="selectPreset(['MORSE'])">★ 摩斯入門</button>
+    <button class="preset-btn" onclick="selectPreset(['MORSE','PIGPEN','BRAILLE'])">★ 反應三項</button>
+    <button class="preset-btn" onclick="selectPreset(['MORSE','SEMAPHORE','PIGPEN','BRAILLE','GRID','PHONET9'])">★ 全能挑戰</button>
+  </div>
+
+  <!-- Collapsible settings panel -->
+  <button class="settings-toggle-btn" id="btn-toggle-settings" onclick="toggleSettings()">⚙ 進階設定（速度／血量／限時）▾</button>
+  <div id="settings-body" class="settings-body">
+    <div class="settings-control">
+      <span class="settings-label">⚡ 速度</span>
+      <input type="range" class="settings-slider speed-slider" id="speedSlider" min="1" max="10" step="1" value="5">
+      <span class="settings-value speed-val" id="speedValue">5</span>
+    </div>
+    <div class="settings-presets">
+      <button class="settings-preset-btn" onclick="setSpeed(1)">🐌</button>
+      <button class="settings-preset-btn" onclick="setSpeed(3)">🚶</button>
+      <button class="settings-preset-btn" onclick="setSpeed(5)">🏃</button>
+      <button class="settings-preset-btn" onclick="setSpeed(8)">🔥</button>
+      <button class="settings-preset-btn" onclick="setSpeed(10)">💀</button>
+    </div>
+    <div class="settings-control">
+      <span class="settings-label">🛡 血量</span>
+      <input type="range" class="settings-slider lives-slider" id="livesSlider" min="0" max="10" step="1" value="3">
+      <span class="settings-value lives-val" id="livesValue">3</span>
+    </div>
+    <div class="settings-presets">
+      <button class="settings-preset-btn" onclick="setLives(0)">♾</button>
+      <button class="settings-preset-btn" onclick="setLives(3)">3</button>
+      <button class="settings-preset-btn" onclick="setLives(5)">5</button>
+      <button class="settings-preset-btn" onclick="setLives(10)">10</button>
+      <button class="settings-preset-btn" onclick="setLives(1)">1</button>
+    </div>
+    <div class="settings-control">
+      <span class="settings-label">⏱ 限時</span>
+      <input type="range" class="settings-slider time-slider" id="timeSlider" min="0" max="120" step="5" value="0">
+      <span class="settings-value time-val" id="timeValue">∞</span>
+    </div>
+    <div class="settings-presets">
+      <button class="settings-preset-btn" onclick="setTime(0)">∞</button>
+      <button class="settings-preset-btn" onclick="setTime(30)">30s</button>
+      <button class="settings-preset-btn" onclick="setTime(60)">60s</button>
+      <button class="settings-preset-btn" onclick="setTime(90)">90s</button>
+      <button class="settings-preset-btn" onclick="setTime(120)">120s</button>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+  <button class="btn" id="btn-start-game" style="color:#00ff88; border-color:#00ff88; text-shadow:0 0 8px #00ff88; box-shadow:0 0 15px rgba(0,255,136,0.3);">▶ 開始 12 題學習任務</button>
+  <div class="controls-hint" id="path-description" style="margin-top:1.5em;">
+    每次只出一題；答錯會顯示答案，必須再答對才過關。
+  </div>
+</div>
+
+<!-- IN-GAME SETTINGS TOGGLE (outside screens so it's visible during gameplay) -->
+<div id="settings-toggle-wrap" style="position:fixed; bottom:10px; right:10px; z-index:30; pointer-events:all; display:none;">
+  <button id="btn-settings-toggle" style="background:rgba(0,5,20,0.9); border:1px solid #ff9900; color:#ff9900; padding:8px 16px; border-radius:8px; cursor:pointer; font-family:inherit; font-size:0.8em; letter-spacing:0.1em; text-shadow:0 0 6px #ff9900; box-shadow:0 0 12px rgba(255,153,0,0.3);">⚙ 設定</button>
+</div>
+<div id="settings-overlay" style="position:fixed; bottom:50px; right:10px; z-index:31; pointer-events:all; background:rgba(0,5,20,0.95); border:1px solid #2a3556; border-radius:12px; padding:16px; display:none; flex-direction:column; align-items:center; gap:8px; box-shadow:0 0 20px rgba(255,153,0,0.2);">
+  <!-- Speed -->
+  <div style="display:flex; align-items:center; gap:10px;">
+    <span style="color:#888;font-size:0.7em;font-weight:700;letter-spacing:0.1em;">⚡ 速度</span>
+    <input type="range" class="settings-slider speed-slider" id="speedSliderGame" min="1" max="10" step="1" value="5" style="width:160px;">
+    <span class="settings-value speed-val" id="speedValueGame" style="min-width:30px;">5</span>
+  </div>
+  <!-- Lives -->
+  <div style="display:flex; align-items:center; gap:10px;">
+    <span style="color:#888;font-size:0.7em;font-weight:700;letter-spacing:0.1em;">🛡 血量</span>
+    <input type="range" class="settings-slider lives-slider" id="livesSliderGame" min="0" max="10" step="1" value="3" style="width:160px;">
+    <span class="settings-value lives-val" id="livesValueGame" style="min-width:30px;">3</span>
+  </div>
+  <!-- Time limit -->
+  <div style="display:flex; align-items:center; gap:10px;">
+    <span style="color:#888;font-size:0.7em;font-weight:700;letter-spacing:0.1em;">⏱ 限時</span>
+    <input type="range" class="settings-slider time-slider" id="timeSliderGame" min="0" max="120" step="5" value="0" style="width:160px;">
+    <span class="settings-value time-val" id="timeValueGame" style="min-width:50px;">∞</span>
+  </div>
+  <div style="color:#71809a;font-size:0.65em;letter-spacing:0.05em;margin-top:4px;">速度及限時會即時生效；血量下局生效</div>
+  <button id="btn-end-session" class="settings-preset-btn" type="button" style="min-height:40px;width:100%;margin-top:5px;border-color:#ff6688;color:#ff99aa;">結束本局／更換密碼</button>
+</div>
+
+<!-- IN-GAME TIMER DISPLAY -->
+<div id="timer-display" style="position:fixed; top:10px; right:20px; z-index:32; pointer-events:none; display:none;">
+  <span id="timer-value" style="color:#ff6644; font-size:1.4em; font-weight:900; font-family:'Courier New',monospace; text-shadow:0 0 10px #ff6644;">--</span>
+</div>
+
+<!-- STAGE CLEAR SCREEN -->
+<div id="screen-stage" class="screen hidden">
+  <div class="stage-title-text" id="stage-clear-title">STAGE 1 CLEAR</div>
+  <div class="neon-subtitle">// THREAT NEUTRALIZED //</div>
+  <div class="divider"></div>
+  <div class="stat-grid" id="stage-stats"></div>
+  <button class="btn" id="btn-next-stage" style="margin-top:2em;">NEXT STAGE ▶</button>
+</div>
+
+<!-- GAME OVER SCREEN -->
+<div id="screen-gameover" class="screen hidden">
+  <div class="neon-title" style="color:#ff0055; text-shadow:0 0 10px #ff0055, 0 0 30px #ff0055;">防火牆失守</div>
+  <div class="neon-subtitle" style="color:#ff9900;">// 任務完成 · 檢視弱項 //</div>
+  <div class="divider"></div>
+  <div class="stat-grid" id="gameover-stats"></div>
+  <div class="divider"></div>
+  <div class="result-actions">
+    <button class="btn" id="btn-restart" style="color:#ff00ff; border-color:#ff00ff; text-shadow:0 0 8px #ff00ff; box-shadow:0 0 15px rgba(255,0,255,0.3);">再挑戰一次</button>
+    <button class="btn secondary-btn" id="btn-reselect">更換密碼</button>
+  </div>
+</div>
+
+<!-- WIN SCREEN -->
+<div id="screen-win" class="screen hidden">
+  <div class="neon-title" style="color:#00ff88; text-shadow:0 0 10px #00ff88, 0 0 40px #00ff88;">基地安全</div>
+  <div class="neon-subtitle" style="color:#00ffff;">// 威脅已全部解除 //</div>
+  <div class="divider"></div>
+  <div class="stat-grid" id="win-stats"></div>
+  <div class="divider"></div>
+  <div class="result-actions">
+    <button class="btn" id="btn-play-again" style="color:#00ff88; border-color:#00ff88; text-shadow:0 0 8px #00ff88;">再玩一次</button>
+    <button class="btn secondary-btn" id="btn-reselect-win">更換密碼</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// AUDIO ENGINE
+// ============================================================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function initAudio() {
+  if (!soundEnabled || !AudioCtx) return;
+  if (!audioCtx) audioCtx = new AudioCtx();
+}
+
+function playNeutralize() {
+  if (!audioCtx || !soundEnabled) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(660, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.15);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+}
+
+function playDamage() {
+  if (!audioCtx || !soundEnabled) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const dist = audioCtx.createWaveShaper();
+  const curve = new Float32Array(256);
+  for (let i=0;i<256;i++) { const x=i*2/256-1; curve[i]=x*(Math.PI+300)/(Math.PI+300*Math.abs(x)); }
+  dist.curve = curve;
+  osc.connect(dist); dist.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.3);
+  gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+}
+
+function playStageClear() {
+  if (!audioCtx || !soundEnabled) return;
+  [[440,0],[660,0.18],[880,0.36]].forEach(([freq, delay]) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+    gain.gain.setValueAtTime(0, audioCtx.currentTime + delay);
+    gain.gain.linearRampToValueAtTime(0.35, audioCtx.currentTime + delay + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + 0.25);
+    osc.start(audioCtx.currentTime + delay);
+    osc.stop(audioCtx.currentTime + delay + 0.25);
+  });
+}
+
+function playComboUp() {
+  if (!audioCtx || !soundEnabled) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.08);
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+}
+
+function playGameOver() {
+  if (!audioCtx || !soundEnabled) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(55, audioCtx.currentTime + 0.8);
+  gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.8);
+  // rumble
+  const osc2 = audioCtx.createOscillator();
+  const gain2 = audioCtx.createGain();
+  osc2.connect(gain2); gain2.connect(audioCtx.destination);
+  osc2.type = 'sine';
+  osc2.frequency.setValueAtTime(40, audioCtx.currentTime);
+  gain2.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+  osc2.start(); osc2.stop(audioCtx.currentTime + 1.2);
+}
+
+function playWin() {
+  if (!audioCtx || !soundEnabled) return;
+  [[523,0],[659,0.15],[784,0.30],[1047,0.45]].forEach(([f,d]) => {
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = f;
+    g.gain.setValueAtTime(0, audioCtx.currentTime+d);
+    g.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime+d+0.05);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+d+0.35);
+    osc.start(audioCtx.currentTime+d);
+    osc.stop(audioCtx.currentTime+d+0.4);
+  });
+}
+
+// ============================================================
+// CIPHER MODULE — 6 reflex ciphers
+// ============================================================
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+const MORSE = {'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..'};
+
+// Precise Pigpen cipher paths (from code repo — SVG-based)
+const PIGPEN_PATHS = {
+  'A':'M35,10 L35,35 L10,35',
+  'B':'M10,10 L10,35 L35,35 L35,10',
+  'C':'M10,10 L10,35 L35,35',
+  'D':'M10,10 L35,10 L35,35 L10,35',
+  'E':'M10,10 L35,10 L35,35 L10,35 Z',
+  'F':'M35,10 L10,10 L10,35 L35,35',
+  'G':'M35,35 L35,10 L10,10',
+  'H':'M10,35 L10,10 L35,10 L35,35',
+  'I':'M10,35 L10,10 L35,10',
+  'J':['M35,10 L35,35 L10,35',true],
+  'K':['M10,10 L10,35 L35,35 L35,10',true],
+  'L':['M10,10 L10,35 L35,35',true],
+  'M':['M10,10 L35,10 L35,35 L10,35',true],
+  'N':['M10,10 L35,10 L35,35 L10,35 Z',true],
+  'O':['M35,10 L10,10 L10,35 L35,35',true],
+  'P':['M35,35 L35,10 L10,10',true],
+  'Q':['M10,35 L10,10 L35,10 L35,35',true],
+  'R':['M10,35 L10,10 L35,10',true],
+  'S':'M10,10 L22.5,22.5 L35,10',
+  'T':'M35,10 L22.5,22.5 L35,35',
+  'U':'M10,35 L22.5,22.5 L35,35',
+  'V':'M10,10 L22.5,22.5 L10,35',
+  'W':['M10,10 L22.5,22.5 L35,10',true,{x:22.5,y:15}],
+  'X':['M35,10 L22.5,22.5 L35,35',true,{x:30,y:22.5}],
+  'Y':['M10,35 L22.5,22.5 L35,35',true,{x:22.5,y:30}],
+  'Z':['M10,10 L22.5,22.5 L10,35',true,{x:15,y:22.5}]
+};
+
+// Semaphore flag angles (from code repo — precise positioning)
+const SEM_ANGLES = {
+  'A':[180,225],'B':[180,270],'C':[180,315],'D':[180,0],
+  'E':[0,45],'F':[0,90],'G':[0,135],
+  'H':[225,270],'I':[225,315],
+  'J':[90,0],
+  'K':[225,0],'L':[225,45],'M':[225,90],'N':[225,135],
+  'O':[270,315],'P':[270,0],'Q':[270,45],'R':[270,90],
+  'S':[270,135],
+  'T':[315,0],'U':[315,45],
+  'V':[0,90],
+  'W':[45,90],'X':[45,135],
+  'Y':[315,90],
+  'Z':[135,90]
+};
+
+const BRAILLE_DOTS = {'A':[1],'B':[1,2],'C':[1,4],'D':[1,4,5],'E':[1,5],'F':[1,2,4],'G':[1,2,4,5],'H':[1,2,5],'I':[2,4],'J':[2,4,5],'K':[1,3],'L':[1,2,3],'M':[1,3,4],'N':[1,3,4,5],'O':[1,3,5],'P':[1,2,3,4],'Q':[1,2,3,4,5],'R':[1,2,3,5],'S':[2,3,4],'T':[2,3,4,5],'U':[1,3,6],'V':[1,2,3,6],'W':[2,4,5,6],'X':[1,3,4,6],'Y':[1,3,4,5,6],'Z':[1,3,5,6]};
+
+const GRID_KEY = 'SCOUT';
+function encodeGrid(letter) {
+  if (letter === ' ') return '/';
+  const i = 'ABCDEFGHIKLMNOPQRSTUVWXY'.indexOf(letter);
+  if (i === -1) return letter;
+  return GRID_KEY[i % 5] + GRID_KEY[Math.floor(i / 5)];
+}
+
+const PHONE_T9 = {'A':'2-1','B':'2-2','C':'2-3','D':'3-1','E':'3-2','F':'3-3','G':'4-1','H':'4-2','I':'4-3','J':'5-1','K':'5-2','L':'5-3','M':'6-1','N':'6-2','O':'6-3','P':'7-1','Q':'7-2','R':'7-3','S':'7-4','T':'8-1','U':'8-2','V':'8-3','W':'9-1','X':'9-2','Y':'9-3','Z':'9-4'};
+
+const CIPHER_LIST = ['MORSE','PIGPEN','BRAILLE','GRID','PHONET9','SEMAPHORE'];
+const CIPHER_LABELS = {MORSE:'摩斯',PIGPEN:'朱高',BRAILLE:'點字',GRID:'座標',PHONET9:'電話 T9',SEMAPHORE:'旗號'};
+const CIPHER_COLORS = {MORSE:'#ffcc00',PIGPEN:'#ff9900',BRAILLE:'#00ff88',GRID:'#ff00ff',PHONET9:'#00d2ff',SEMAPHORE:'#ff66cc'};
+const TRAINING_PATHS = {
+  learn: {goal:12, speed:2, lives:0, time:0, title:'新手學習', button:'開始 12 題學習任務', description:'每次只出一題；答錯會顯示答案，必須再答對才過關。'},
+  mission: {goal:20, speed:5, lives:5, time:0, title:'守城任務', button:'開始 20 題守城任務', description:'使用完整 A–Z 鍵盤，在五格防護失效前完成 20 題。'},
+  endless: {goal:0, speed:6, lives:3, time:0, title:'無限挑戰', button:'開始無限挑戰', description:'敵人會愈來愈快；運用所學挑戰最高分及最長連擊。'}
+};
+const TRAINING_PROGRESS_KEY = 'skw_cipher_training_progress';
+const TRAINING_SETTINGS_KEY = 'skw_cipher_training_settings';
+
+function readStoredJSON(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key)) || fallback; }
+  catch (_) { return fallback; }
+}
+
+const storedSettings = readStoredJSON(TRAINING_SETTINGS_KEY, {});
+let selectedCiphers = Array.isArray(storedSettings.ciphers)
+  ? storedSettings.ciphers.filter(c => CIPHER_LIST.includes(c))
+  : ['MORSE'];
+if (!selectedCiphers.length) selectedCiphers = ['MORSE'];
+let cipherStats = {};  // {cipher: {correct, wrong, weak: {letter: count}}}
+let trainingPath = TRAINING_PATHS[storedSettings.path] ? storedSettings.path : 'learn';
+const initialPath = TRAINING_PATHS[trainingPath];
+const hadStoredPath = Boolean(TRAINING_PATHS[storedSettings.path]);
+let gameSpeed = hadStoredPath && Number.isFinite(storedSettings.speed) ? storedSettings.speed : initialPath.speed;
+let gameLives = hadStoredPath && Number.isFinite(storedSettings.lives) ? storedSettings.lives : initialPath.lives;
+let gameTimeLimit = hadStoredPath && Number.isFinite(storedSettings.time) ? storedSettings.time : initialPath.time;
+let sessionGoal = initialPath.goal;
+let soundEnabled = storedSettings.sound !== false;
+let sessionSaved = false;
+let learningLocked = false;
+let feedbackTimer = null;
+
+function saveTrainingSettings() {
+  localStorage.setItem(TRAINING_SETTINGS_KEY, JSON.stringify({
+    ciphers: selectedCiphers,
+    path: trainingPath,
+    speed: gameSpeed,
+    lives: gameLives,
+    time: gameTimeLimit,
+    sound: soundEnabled
+  }));
+}
+
+function updateProgressSummary() {
+  const progress = readStoredJSON(TRAINING_PROGRESS_KEY, {best:0, sessions:0, lastAccuracy:null});
+  const best = document.getElementById('progress-best');
+  const accuracy = document.getElementById('progress-accuracy');
+  const sessions = document.getElementById('progress-sessions');
+  if (best) best.textContent = Number(progress.best || 0).toLocaleString();
+  if (accuracy) accuracy.textContent = progress.lastAccuracy == null ? '--' : progress.lastAccuracy + '%';
+  if (sessions) sessions.textContent = progress.sessions || 0;
+}
+
+function saveTrainingProgress() {
+  if (sessionSaved) return;
+  const entries = Object.entries(cipherStats).filter(([, stats]) => stats.total > 0);
+  const total = entries.reduce((sum, [, stats]) => sum + stats.total, 0);
+  if (!total && score === 0) return;
+  const correct = entries.reduce((sum, [, stats]) => sum + stats.correct, 0);
+  const progress = readStoredJSON(TRAINING_PROGRESS_KEY, {best:0, sessions:0, byCipher:{}});
+  progress.best = Math.max(Number(progress.best || 0), score);
+  progress.sessions = Number(progress.sessions || 0) + 1;
+  progress.lastScore = score;
+  progress.lastAccuracy = total ? Math.round(correct / total * 100) : 0;
+  progress.byCipher = progress.byCipher || {};
+  entries.forEach(([cipher, stats]) => {
+    const current = progress.byCipher[cipher] || {correct:0, total:0, weak:{}};
+    current.correct += stats.correct;
+    current.total += stats.total;
+    current.weak = {...stats.weak};
+    progress.byCipher[cipher] = current;
+  });
+  localStorage.setItem(TRAINING_PROGRESS_KEY, JSON.stringify(progress));
+  sessionSaved = true;
+  updateProgressSummary();
+}
+
+function getSpeed() { return gameSpeed; }
+
+function setSpeed(val) {
+  gameSpeed = Math.max(1, Math.min(10, Number(val) || 5));
+  const s1 = document.getElementById('speedSlider');
+  const s2 = document.getElementById('speedSliderGame');
+  const v1 = document.getElementById('speedValue');
+  const v2 = document.getElementById('speedValueGame');
+  if (s1) s1.value = gameSpeed;
+  if (s2) s2.value = gameSpeed;
+  if (v1) v1.textContent = gameSpeed;
+  if (v2) v2.textContent = gameSpeed;
+  saveTrainingSettings();
+}
+
+function setLives(val) {
+  gameLives = Math.max(0, Math.min(10, Number(val) || 0));
+  const s1 = document.getElementById('livesSlider');
+  const s2 = document.getElementById('livesSliderGame');
+  const v1 = document.getElementById('livesValue');
+  const v2 = document.getElementById('livesValueGame');
+  const display = gameLives === 0 ? '∞ 無限' : gameLives.toString();
+  if (s1) s1.value = gameLives;
+  if (s2) s2.value = gameLives;
+  if (v1) v1.textContent = display;
+  if (v2) v2.textContent = display;
+  saveTrainingSettings();
+}
+
+function setTime(val) {
+  gameTimeLimit = Math.max(0, Math.min(120, Number(val) || 0));
+  const s1 = document.getElementById('timeSlider');
+  const s2 = document.getElementById('timeSliderGame');
+  const v1 = document.getElementById('timeValue');
+  const v2 = document.getElementById('timeValueGame');
+  const display = gameTimeLimit === 0 ? '∞ 不限' : gameTimeLimit + 's';
+  if (s1) s1.value = gameTimeLimit;
+  if (s2) s2.value = gameTimeLimit;
+  if (v1) v1.textContent = display;
+  if (v2) v2.textContent = display;
+  saveTrainingSettings();
+}
+
+function updateTrainingPathUI() {
+  const profile = TRAINING_PATHS[trainingPath];
+  document.querySelectorAll('[data-path]').forEach(button => {
+    const active = button.dataset.path === trainingPath;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  const startButton = document.getElementById('btn-start-game');
+  const description = document.getElementById('path-description');
+  if (startButton) startButton.textContent = '▶ ' + profile.button;
+  if (description) description.textContent = profile.description;
+}
+
+function setTrainingPath(path, applyDefaults = true) {
+  if (!TRAINING_PATHS[path]) return;
+  trainingPath = path;
+  const profile = TRAINING_PATHS[path];
+  sessionGoal = profile.goal;
+  if (applyDefaults) {
+    setSpeed(profile.speed);
+    setLives(profile.lives);
+    setTime(profile.time);
+  }
+  updateTrainingPathUI();
+  saveTrainingSettings();
+}
+
+function getSpeedMultiplier() {
+  // Speed 1 = 0.5x, Speed 5 = 1.0x, Speed 10 = 2.5x
+  return 0.5 + (gameSpeed - 1) * 0.222;
+}
+
+function getCipherStats(cipher) {
+  if (!cipherStats[cipher]) {
+    const progress = readStoredJSON(TRAINING_PROGRESS_KEY, {byCipher:{}});
+    const rememberedWeak = progress.byCipher?.[cipher]?.weak || {};
+    cipherStats[cipher] = {correct:0, wrong:0, weak:{...rememberedWeak}, total:0};
+  }
+  return cipherStats[cipher];
+}
+
+function encodeCipher(letter, type) {
+  letter = letter.toUpperCase();
+  if (type === 'MORSE') return MORSE[letter] || '?';
+  if (type === 'PIGPEN') return letter;  // shape, not text
+  if (type === 'BRAILLE') return letter;  // dot pattern
+  if (type === 'GRID') return encodeGrid(letter);
+  if (type === 'PHONET9') return PHONE_T9[letter] || '?';
+  if (type === 'SEMAPHORE') return letter;  // angles
+  return letter;
+}
+
+function angleName(angle) {
+  return ({0:'上',45:'右上',90:'右',135:'右下',180:'下',225:'左下',270:'左',315:'左上'})[angle] || angle + '°';
+}
+
+function describeCipherAnswer(threat) {
+  const letter = threat.answer;
+  if (threat.cipher === 'MORSE') return `摩斯 ${MORSE[letter]} 就是 ${letter}（點在前、劃在後的次序很重要）`;
+  if (threat.cipher === 'BRAILLE') return `點字凸點 ${BRAILLE_DOTS[letter].join('、')} 就是 ${letter}`;
+  if (threat.cipher === 'GRID') return `SCOUT 座標 ${encodeGrid(letter)} 就是 ${letter}`;
+  if (threat.cipher === 'PHONET9') return `電話鍵 ${PHONE_T9[letter]} 就是 ${letter}（前面是按鍵，後面是次數）`;
+  if (threat.cipher === 'SEMAPHORE') return `旗號 ${SEM_ANGLES[letter].map(angleName).join('＋')} 就是 ${letter}`;
+  const hasDot = Array.isArray(PIGPEN_PATHS[letter]) && PIGPEN_PATHS[letter][1];
+  return `朱高符號是 ${letter}；留意外框方向${hasDot ? '，而且中間有一點' : '，這個符號沒有點'}`;
+}
+
+function cipherDistance(cipher, answer, candidate) {
+  if (cipher === 'MORSE') {
+    const a = MORSE[answer], b = MORSE[candidate];
+    let distance = Math.abs(a.length - b.length) * 2;
+    for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] !== b[i]) distance++;
+    return distance;
+  }
+  if (cipher === 'BRAILLE') {
+    const a = new Set(BRAILLE_DOTS[answer]), b = new Set(BRAILLE_DOTS[candidate]);
+    return [...a].filter(dot => !b.has(dot)).length + [...b].filter(dot => !a.has(dot)).length;
+  }
+  if (cipher === 'PHONET9') {
+    const [ak, ap] = PHONE_T9[answer].split('-').map(Number), [bk, bp] = PHONE_T9[candidate].split('-').map(Number);
+    return (ak === bk ? 0 : 4) + Math.abs(ap - bp);
+  }
+  if (cipher === 'GRID') {
+    const a = encodeGrid(answer), b = encodeGrid(candidate);
+    return (a[0] === b[0] ? 0 : 2) + (a[1] === b[1] ? 0 : 2);
+  }
+  if (cipher === 'SEMAPHORE') {
+    const a = SEM_ANGLES[answer], b = SEM_ANGLES[candidate];
+    const angleGap = (x, y) => Math.min(Math.abs(x-y), 360-Math.abs(x-y)) / 45;
+    return Math.min(angleGap(a[0],b[0])+angleGap(a[1],b[1]), angleGap(a[0],b[1])+angleGap(a[1],b[0]));
+  }
+  return Math.abs(ALPHABET.indexOf(answer) - ALPHABET.indexOf(candidate));
+}
+
+function createLearningChoices(threat) {
+  if (threat.choices) return threat.choices;
+  const ranked = ALPHABET.filter(letter => letter !== threat.answer)
+    .map(letter => ({letter, score:cipherDistance(threat.cipher, threat.answer, letter) + Math.random() * 1.4}))
+    .sort((a,b) => a.score - b.score)
+    .slice(0, 8);
+  const distractors = [];
+  while (distractors.length < 3 && ranked.length) {
+    const pick = ranked.splice(Math.floor(Math.random() * Math.min(4, ranked.length)), 1)[0];
+    if (pick && !distractors.includes(pick.letter)) distractors.push(pick.letter);
+  }
+  threat.choices = [...distractors, threat.answer].sort(() => Math.random() - .5);
+  return threat.choices;
+}
+
+function getLearningTarget() {
+  return threats.filter(threat => threat.alive).sort((a,b) => b.y - a.y)[0] || null;
+}
+
+function updateChoicePanel(threat) {
+  if (trainingPath !== 'learn') return;
+  const container = document.getElementById('choice-buttons');
+  if (!threat) { container.innerHTML = ''; return; }
+  document.getElementById('choice-cipher-label').textContent = CIPHER_LABELS[threat.cipher];
+  container.innerHTML = '';
+  createLearningChoices(threat).forEach(letter => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'choice-btn';
+    button.textContent = letter;
+    button.dataset.answer = letter;
+    button.setAttribute('aria-label', '選擇答案 ' + letter);
+    button.addEventListener('click', () => answerLetter(letter));
+    container.appendChild(button);
+  });
+}
+
+function showLessonFeedback(threat, correct, guessed = '', hint = false) {
+  clearTimeout(feedbackTimer);
+  const panel = document.getElementById('lesson-feedback');
+  panel.classList.remove('hidden', 'wrong');
+  panel.classList.toggle('wrong', !correct);
+  document.getElementById('lesson-feedback-icon').textContent = correct ? '✓' : (hint ? '💡' : '↻');
+  document.getElementById('lesson-feedback-title').textContent = correct ? `答對了！${threat.answer}` : (hint ? `提示：答案是 ${threat.answer}` : `${guessed} 未正確，答案是 ${threat.answer}`);
+  document.getElementById('lesson-feedback-detail').textContent = describeCipherAnswer(threat) + (correct ? '' : '。看清楚後，再按一次正確答案。');
+  if (!correct) {
+    document.querySelectorAll('.choice-btn').forEach(button => {
+      button.classList.toggle('correct', button.dataset.answer === threat.answer);
+      if (button.dataset.answer === guessed) button.classList.add('wrong');
+    });
+  }
+  feedbackTimer = setTimeout(() => panel.classList.add('hidden'), correct ? 1050 : 2600);
+}
+
+function drawMorse(ctx, letter, x, y, size) {
+  const code = MORSE[letter] || '?';
+  const symbols = code.split('');
+  const totalWidth = symbols.length * size * 0.9;
+  let curX = x - totalWidth / 2;
+  const dotR = size * 0.18;
+  const dashW = size * 0.55;
+  const dashH = size * 0.22;
+
+  ctx.fillStyle = '#ffcc00';
+  ctx.shadowColor = '#ffcc00';
+  ctx.shadowBlur = 6;
+
+  symbols.forEach(s => {
+    if (s === '.') {
+      // Dot — filled circle
+      ctx.beginPath();
+      ctx.arc(curX + dotR, y, dotR, 0, Math.PI * 2);
+      ctx.fill();
+      curX += size * 0.9;
+    } else if (s === '-') {
+      // Dash — rounded rectangle
+      ctx.beginPath();
+      ctx.moveTo(curX, y - dashH / 2);
+      ctx.lineTo(curX + dashW - 3, y - dashH / 2);
+      ctx.arcTo(curX + dashW, y - dashH / 2, curX + dashW, y, 2);
+      ctx.arcTo(curX + dashW, y + dashH / 2, curX + dashW - dashH, y + dashH / 2, 2);
+      ctx.lineTo(curX + dashH / 2, y + dashH / 2);
+      ctx.arcTo(curX, y + dashH / 2, curX, y, 2);
+      ctx.arcTo(curX, y - dashH / 2, curX + dashH / 2, y - dashH / 2, 2);
+      ctx.closePath();
+      ctx.fill();
+      curX += size * 0.9;
+    }
+  });
+  ctx.shadowBlur = 0;
+}
+
+function drawPigpen(ctx, letter, x, y, size) {
+  const data = PIGPEN_PATHS[letter];
+  if (!data) return;
+  const color = '#ff9900';
+  const scale = size / 45;
+  const path = Array.isArray(data) ? data[0] : data;
+  const hasDot = Array.isArray(data) && data[1];
+  const dotPos = (Array.isArray(data) && data[2]) || {x: 22.5, y: 22.5};
+
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 6;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3 * scale;
+  ctx.lineCap = 'round';
+
+  // Draw path
+  ctx.beginPath();
+  const commands = path.split(/(?=[MLZ])/);
+  commands.forEach(cmd => {
+    cmd = cmd.trim();
+    if (!cmd) return;
+    const type = cmd[0];
+    const coords = cmd.slice(1).split(',').map(Number);
+    if (type === 'M') ctx.moveTo(coords[0] * scale + (x - 22.5 * scale), coords[1] * scale + (y - 22.5 * scale));
+    else if (type === 'L') ctx.lineTo(coords[0] * scale + (x - 22.5 * scale), coords[1] * scale + (y - 22.5 * scale));
+    else if (type === 'Z') ctx.closePath();
+  });
+  ctx.stroke();
+
+  // Draw dot if needed
+  if (hasDot) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(dotPos.x * scale + (x - 22.5 * scale), dotPos.y * scale + (y - 22.5 * scale), 3 * scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawBraille(ctx, letter, x, y, size) {
+  const dots = BRAILLE_DOTS[letter] || [];
+  const r = size * 0.25;
+  const sp = size * 0.4;
+  // 6-dot grid 2x3
+  for (let i = 0; i < 6; i++) {
+    const col = i % 2, row = Math.floor(i / 2);
+    const dx = x - sp/2 + col * sp, dy = y - sp + row * sp;
+    ctx.beginPath();
+    ctx.arc(dx, dy, dots.includes(i+1) ? r : r*0.4, 0, Math.PI*2);
+    ctx.fillStyle = dots.includes(i+1) ? '#00ff88' : 'rgba(255,255,255,0.15)';
+    if (dots.includes(i+1)) { ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 6; }
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+function drawGrid(ctx, letter, x, y, size) {
+  const code = encodeGrid(letter);
+  // 2-letter cell
+  const cellW = size * 0.7, cellH = size * 0.5;
+  ctx.strokeStyle = '#ff00ff'; ctx.lineWidth = 2;
+  ctx.shadowColor = '#ff00ff'; ctx.shadowBlur = 6;
+  ctx.strokeRect(x - cellW, y - cellH, cellW * 2, cellH * 2);
+  ctx.fillStyle = '#ff00ff';
+  ctx.font = `900 ${Math.floor(size * 0.5)}px Courier New`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(code, x, y);
+  ctx.shadowBlur = 0;
+}
+
+function drawPhoneT9(ctx, letter, x, y, size) {
+  const code = PHONE_T9[letter] || '?';
+  const [digit, count] = code.split('-');
+  ctx.strokeStyle = '#00d2ff'; ctx.lineWidth = 2;
+  ctx.shadowColor = '#00d2ff'; ctx.shadowBlur = 8;
+  ctx.strokeRect(x - size*0.7, y - size*0.4, size*1.4, size*0.8);
+  // digit
+  ctx.fillStyle = '#00d2ff';
+  ctx.font = `900 ${Math.floor(size * 0.6)}px Courier New`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(digit, x - size*0.5, y);
+  // dashes + count
+  const dashes = '-'.repeat(parseInt(count));
+  ctx.fillText(dashes, x - size*0.2, y);
+  ctx.shadowBlur = 0;
+}
+
+function drawSemaphore(ctx, letter, x, y, size) {
+  const angles = SEM_ANGLES[letter];
+  if (!angles) return;
+  const r = size * 0.9;
+  const color = '#ff66cc';
+  const altColor = '#00d2ff';
+  // person body (stick figure style from code repo)
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+  ctx.shadowColor = color; ctx.shadowBlur = 4;
+  // Head
+  ctx.beginPath(); ctx.arc(x, y - r*0.6, r*0.2, 0, Math.PI*2); ctx.stroke();
+  // Body
+  ctx.beginPath(); ctx.moveTo(x, y - r*0.4); ctx.lineTo(x, y + r*0.3); ctx.stroke();
+  // Legs
+  ctx.beginPath(); ctx.moveTo(x, y + r*0.3); ctx.lineTo(x - r*0.3, y + r*0.7); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y + r*0.3); ctx.lineTo(x + r*0.3, y + r*0.7); ctx.stroke();
+  // Arms (flags from shoulder)
+  angles.forEach((ang, i) => {
+    const rad = (ang - 90) * Math.PI / 180;
+    const fx = x + Math.cos(rad) * r;
+    const fy = (y - r*0.3) + Math.sin(rad) * r;
+    ctx.strokeStyle = i === 0 ? color : altColor;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = ctx.strokeStyle;
+    ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.moveTo(x, y - r*0.3); ctx.lineTo(fx, fy); ctx.stroke();
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.beginPath(); ctx.arc(fx, fy, 3, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+function drawCipherSymbol(ctx, cipher, letter, x, y, size) {
+  ctx.save();
+  switch(cipher) {
+    case 'MORSE': drawMorse(ctx, letter, x, y, size); break;
+    case 'PIGPEN': drawPigpen(ctx, letter, x, y, size); break;
+    case 'BRAILLE': drawBraille(ctx, letter, x, y, size); break;
+    case 'GRID': drawGrid(ctx, letter, x, y, size); break;
+    case 'PHONET9': drawPhoneT9(ctx, letter, x, y, size); break;
+    case 'SEMAPHORE': drawSemaphore(ctx, letter, x, y, size); break;
+  }
+  ctx.restore();
+}
+
+// ============================================================
+// CIPHER SELECTION STATE
+// ============================================================
+function toggleCipher(c) {
+  if (selectedCiphers.includes(c)) {
+    selectedCiphers = selectedCiphers.filter(x => x !== c);
+  } else {
+    selectedCiphers.push(c);
+  }
+  updateCipherSelectionUI();
+  saveTrainingSettings();
+}
+
+function updateCipherSelectionUI() {
+  CIPHER_LIST.forEach(c => {
+    const el = document.getElementById('cipher-toggle-' + c);
+    if (el) {
+      const selected = selectedCiphers.includes(c);
+      el.classList.toggle('on', selected);
+      el.setAttribute('aria-pressed', String(selected));
+    }
+  });
+}
+
+function showCipherSelection() {
+  document.getElementById('screen-start').classList.add('hidden');
+  document.getElementById('screen-cipher-select').classList.remove('hidden');
+  buildCipherGrid();
+  updateCipherSelectionUI();
+  updateTrainingPathUI();
+}
+
+function buildCipherGrid() {
+  const grid = document.getElementById('cipher-grid');
+  if (grid.children.length > 0) return;
+  const descs = {
+    MORSE: '· — 點與劃',
+    PIGPEN: '幾何符號',
+    BRAILLE: '六點組合',
+    GRID: 'SCOUT 座標',
+    PHONET9: '2-1、9-4 按鍵',
+    SEMAPHORE: '雙旗方位',
+  };
+  CIPHER_LIST.forEach(c => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'cipher-toggle' + (selectedCiphers.includes(c) ? ' on' : '');
+    card.id = 'cipher-toggle-' + c;
+    card.setAttribute('aria-pressed', String(selectedCiphers.includes(c)));
+    card.onclick = () => toggleCipher(c);
+    card.innerHTML = `
+      <div class="cipher-toggle-name">${CIPHER_LABELS[c]}</div>
+      <div class="cipher-toggle-desc">${descs[c]}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function selectPreset(arr) {
+  selectedCiphers = arr.slice();
+  updateCipherSelectionUI();
+  saveTrainingSettings();
+}
+
+function toggleSettings() {
+  const body = document.getElementById('settings-body');
+  if (body) body.classList.toggle('open');
+}
+
+function startWithSelectedCiphers() {
+  if (selectedCiphers.length === 0) {
+    alert('請至少選一個密碼!');
+    return;
+  }
+  cipherStats = {};
+  document.getElementById('screen-cipher-select').classList.add('hidden');
+  startGame();
+}
+
+function pickWeightedLetter() {
+  // 50% weak letters, 50% random
+  const weakLetters = [];
+  for (const c of selectedCiphers) {
+    const stats = getCipherStats(c);
+    Object.entries(stats.weak).forEach(([letter, count]) => {
+      if (count >= 1) weakLetters.push({letter, weight: count, cipher: c});
+    });
+  }
+  if (weakLetters.length > 0 && Math.random() < 0.55) {
+    const totalWeight = weakLetters.reduce((sum, item) => sum + Math.min(item.weight, 8), 0);
+    let pick = Math.random() * totalWeight;
+    for (const item of weakLetters) {
+      pick -= Math.min(item.weight, 8);
+      if (pick <= 0) return item.letter;
+    }
+  }
+  return ALPHABET[Math.floor(Math.random() * 26)];
+}
+
+function pickCipher() {
+  return selectedCiphers[Math.floor(Math.random() * selectedCiphers.length)];
+}
+
+// ============================================================
+// GAME ENGINE
+// ============================================================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// GAME STATE
+const STATES = { START: 'start', PLAY: 'play', STAGE_CLEAR: 'stage_clear', GAME_OVER: 'game_over', WIN: 'win' };
+let gameState = STATES.START;
+
+// Endless stage config — used for baseline, but threats never stop spawning
+const STAGES = [
+  { threatCount: 15, spawnInterval: 2.2, speed: 0.6, types: ['hex'] },
+  { threatCount: 15, spawnInterval: 1.8, speed: 0.9, types: ['hex','diamond'] },
+  { threatCount: 15, spawnInterval: 1.5, speed: 1.2, types: ['hex','diamond','triangle'] },
+  { threatCount: 15, spawnInterval: 1.2, speed: 1.5, types: ['hex','diamond','triangle','square'] },
+  { threatCount: 15, spawnInterval: 0.9, speed: 1.9, types: ['hex','diamond','triangle','square','star'] },
+];
+const ENDLESS_TYPES = ['hex','diamond','triangle','square','star'];
+
+let currentStage = 0;
+let score = 0;
+let lives = 3;
+let combo = 0;
+let maxCombo = 0;
+let totalNeutralized = 0;
+let stageNeutralized = 0;
+let stageScore = 0;
+let threats = [];
+let particles = [];
+let codeRain = [];
+let shakeAmount = 0;
+let shakeTimer = 0;
+let spawnTimer = 0;
+let spawnedCount = 0;  // Kept for reference but no longer limits spawning
+let stageConfig = null;
+let gridLines = [];
+let pulseTime = 0;
+let comboDisplayTimer = 0;
+let timeRemaining = 0;
+let timerAccum = 0;
+let lastStageProgression = 0;  // Tracks when we last advanced stage
+let threatTrails = [];  // Trail particles behind enemies
+
+// ============================================================
+// MATRIX CODE RAIN
+// ============================================================
+const MATRIX_CHARS = '01アイウエオカキクケコサシスセソタチツテトナニヌネノ@#$%&<>[]{}αβγδ';
+function initCodeRain() {
+  codeRain = [];
+  const cols = Math.floor(W / 16);
+  for (let i = 0; i < cols; i++) {
+    codeRain.push({
+      x: i * 16 + 8,
+      y: Math.random() * H,
+      speed: 0.5 + Math.random() * 1.5,
+      chars: [],
+      length: 8 + Math.floor(Math.random() * 15),
+      opacity: 0.1 + Math.random() * 0.2
+    });
+    const trail = [];
+    for (let j = 0; j < 20; j++) trail.push(MATRIX_CHARS[Math.floor(Math.random()*MATRIX_CHARS.length)]);
+    codeRain[i].chars = trail;
+  }
+}
+
+function updateCodeRain(dt) {
+  codeRain.forEach(col => {
+    col.y += col.speed * dt * 60;
+    if (col.y > H + col.length * 16) {
+      col.y = -col.length * 16;
+      col.speed = 0.5 + Math.random() * 1.5;
+    }
+    if (Math.random() < 0.02) {
+      const idx = Math.floor(Math.random() * col.chars.length);
+      col.chars[idx] = MATRIX_CHARS[Math.floor(Math.random()*MATRIX_CHARS.length)];
+    }
+  });
+}
+
+function drawCodeRain() {
+  ctx.font = '12px Courier New';
+  codeRain.forEach(col => {
+    for (let i = 0; i < col.length; i++) {
+      const cy = col.y - i * 16;
+      if (cy < -16 || cy > H + 16) continue;
+      const alpha = col.opacity * (1 - i / col.length);
+      if (i === 0) {
+        ctx.fillStyle = `rgba(180,255,220,${alpha * 2})`;
+      } else {
+        ctx.fillStyle = `rgba(0,200,100,${alpha})`;
+      }
+      ctx.fillText(col.chars[i % col.chars.length], col.x, cy);
+    }
+  });
+}
+
+// ============================================================
+// GRID FLOOR
+// ============================================================
+function usesOnScreenKeyboard() {
+  return window.innerWidth <= 800 || window.matchMedia('(pointer: coarse)').matches;
+}
+
+function getFirewallY() {
+  const controlOffset = usesOnScreenKeyboard() ? 205 : 80;
+  return H - Math.max(controlOffset, trainingPath === 'learn' ? 165 : 0);
+}
+
+function drawGrid() {
+  const floorY = getFirewallY();
+  const gridSpacing = 60;
+  const vanishY = floorY - 200;
+
+  ctx.save();
+  // Horizontal lines (perspective)
+  for (let i = 0; i <= 5; i++) {
+    const t = i / 5;
+    const y = floorY - t * 200;
+    const alpha = 0.1 + t * 0.3;
+    const grd = ctx.createLinearGradient(0, y, W, y);
+    grd.addColorStop(0, `rgba(0,255,255,0)`);
+    grd.addColorStop(0.5, `rgba(0,255,255,${alpha})`);
+    grd.addColorStop(1, `rgba(0,255,255,0)`);
+    ctx.strokeStyle = grd;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+
+  // Vertical lines (perspective converge to center)
+  const cx = W / 2;
+  for (let i = -8; i <= 8; i++) {
+    const bx = cx + i * (W / 16);
+    const tx = cx + i * (W / 16) * 0.1;
+    const alpha = 0.1 + 0.15 * (1 - Math.abs(i) / 8);
+    const grd = ctx.createLinearGradient(tx, vanishY, bx, floorY);
+    grd.addColorStop(0, `rgba(0,255,255,0)`);
+    grd.addColorStop(1, `rgba(0,255,255,${alpha})`);
+    ctx.strokeStyle = grd;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(tx, vanishY);
+    ctx.lineTo(bx, floorY);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Firewall barrier glow
+  const pulse = Math.sin(pulseTime * 3) * 0.3 + 0.7;
+  ctx.save();
+  const barrierGrd = ctx.createLinearGradient(0, floorY - 12, 0, floorY + 12);
+  barrierGrd.addColorStop(0, `rgba(0,255,255,0)`);
+  barrierGrd.addColorStop(0.5, `rgba(0,255,255,${0.6 * pulse})`);
+  barrierGrd.addColorStop(1, `rgba(0,255,255,0)`);
+  ctx.fillStyle = barrierGrd;
+  ctx.fillRect(0, floorY - 12, W, 24);
+
+  // Firewall label
+  ctx.fillStyle = `rgba(0,255,255,${0.5 * pulse})`;
+  ctx.font = `${Math.floor(10 + 2 * pulse)}px Courier New`;
+  ctx.textAlign = 'center';
+  ctx.fillText('// FIREWALL ACTIVE //', W / 2, floorY + 30);
+  ctx.restore();
+}
+
+// ============================================================
+// THREAT SHAPES
+// ============================================================
+const THREAT_COLORS = {
+  hex:      { fill: '#ff00ff', stroke: '#ff66ff', glow: '#ff00ff' },
+  diamond:  { fill: '#00ffff', stroke: '#66ffff', glow: '#00ffff' },
+  triangle: { fill: '#ff9900', stroke: '#ffcc44', glow: '#ff9900' },
+  square:   { fill: '#ff0055', stroke: '#ff4488', glow: '#ff0055' },
+  star:     { fill: '#00ff88', stroke: '#66ffaa', glow: '#00ff88' },
+};
+
+const THREAT_LABELS = ['0xA3','NUL','ERR','SYN','ACK','RST','FIN','XSS','SQL','VRS','MWR','0xFF','DDoS'];
+
+// ============================================================
+// NEW CYBERPUNK THREAT SHAPES — Animated
+// ============================================================
+
+function drawSkullThreat(ctx, cx, cy, r, rot, pulse) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rot);
+  const s = r * 0.85;
+  const breathe = 1 + pulse * 0.06;
+
+  // Skull body
+  ctx.scale(breathe, breathe);
+  ctx.beginPath();
+  ctx.ellipse(0, -s*0.25, s*0.6, s*0.55, 0, Math.PI, 0);
+  ctx.lineTo(s*0.5, s*0.15);
+  ctx.lineTo(s*0.35, s*0.35);
+  ctx.lineTo(s*0.15, s*0.25);
+  ctx.lineTo(s*0.05, s*0.4);
+  ctx.lineTo(-s*0.05, s*0.25);
+  ctx.lineTo(-s*0.15, s*0.35);
+  ctx.lineTo(-s*0.35, s*0.15);
+  ctx.lineTo(-s*0.5, s*0.15);
+  ctx.closePath();
+  ctx.fill();
+
+  // Eyes (dark cutouts)
+  ctx.fillStyle = '#000014';
+  ctx.beginPath();
+  ctx.ellipse(-s*0.2, -s*0.25, s*0.12, s*0.15, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(s*0.2, -s*0.25, s*0.12, s*0.15, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Nose (triangle cutout)
+  ctx.beginPath();
+  ctx.moveTo(0, -s*0.05);
+  ctx.lineTo(-s*0.06, s*0.08);
+  ctx.lineTo(s*0.06, s*0.08);
+  ctx.closePath();
+  ctx.fill();
+
+  // Teeth
+  const teethCount = 5;
+  for (let i = 0; i < teethCount; i++) {
+    const tx = (i - (teethCount-1)/2) * s * 0.15;
+    ctx.fillRect(tx - s*0.04, s*0.2, s*0.08, s*0.15);
+  }
+
+  // Crossbones
+  ctx.strokeStyle = ctx.fillStyle;
+  ctx.lineWidth = s * 0.06;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-s*0.7, s*0.5);
+  ctx.lineTo(s*0.7, s*0.7);
+  ctx.moveTo(s*0.7, s*0.5);
+  ctx.lineTo(-s*0.7, s*0.7);
+  ctx.stroke();
+
+  // Bone ends (circles)
+  [[-s*0.7, s*0.5],[s*0.7, s*0.5],[-s*0.7, s*0.7],[s*0.7, s*0.7]].forEach(([bx,by]) => {
+    ctx.beginPath();
+    ctx.arc(bx, by, s*0.08, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  ctx.restore();
+}
+
+function drawVirusThreat(ctx, cx, cy, r, rot, pulse) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rot);
+  const s = r * 0.85;
+  const breathe = 1 + pulse * 0.06;
+  const time = pulseTime;
+
+  ctx.scale(breathe, breathe);
+
+  // Virus body
+  ctx.beginPath();
+  ctx.arc(0, 0, s*0.4, 0, Math.PI*2);
+  ctx.fill();
+
+  // Inner nucleus
+  ctx.fillStyle = '#000014';
+  ctx.beginPath();
+  ctx.arc(0, 0, s*0.2, 0, Math.PI*2);
+  ctx.fill();
+
+  // Nucleus details
+  ctx.fillStyle = ctx.shadowColor;
+  for (let i = 0; i < 3; i++) {
+    const a = (i/3) * Math.PI * 2 + time;
+    ctx.beginPath();
+    ctx.arc(Math.cos(a)*s*0.08, Math.sin(a)*s*0.08, s*0.04, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // Spike proteins (animated)
+  const spikeCount = 10;
+  for (let i = 0; i < spikeCount; i++) {
+    const baseAngle = (i / spikeCount) * Math.PI * 2;
+    const waveAngle = baseAngle + Math.sin(time * 2 + i) * 0.15;
+    const spikeLen = s * (0.5 + Math.sin(time * 3 + i * 0.7) * 0.08);
+
+    // Spike shaft
+    ctx.strokeStyle = ctx.fillStyle;
+    ctx.lineWidth = s * 0.04;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(baseAngle) * s*0.35, Math.sin(baseAngle) * s*0.35);
+    const midX = Math.cos(waveAngle) * spikeLen * 0.7;
+    const midY = Math.sin(waveAngle) * spikeLen * 0.7;
+    ctx.quadraticCurveTo(midX + Math.cos(waveAngle+1)*s*0.05, midY + Math.sin(waveAngle+1)*s*0.05,
+                          Math.cos(waveAngle) * spikeLen, Math.sin(waveAngle) * spikeLen);
+    ctx.stroke();
+
+    // Spike head (circle)
+    ctx.fillStyle = ctx.shadowColor;
+    ctx.beginPath();
+    ctx.arc(Math.cos(waveAngle) * spikeLen, Math.sin(waveAngle) * spikeLen, s*0.07, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawBugThreat(ctx, cx, cy, r, rot, pulse) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rot);
+  const s = r * 0.85;
+  const breathe = 1 + pulse * 0.06;
+  const wiggle = Math.sin(pulseTime * 8) * 0.1;
+
+  ctx.scale(breathe, breathe);
+
+  // Body segments
+  ctx.fillStyle = ctx.fillStyle;
+  // Abdomen (back)
+  ctx.beginPath();
+  ctx.ellipse(0, s*0.3, s*0.35, s*0.35, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Thorax (middle)
+  ctx.beginPath();
+  ctx.ellipse(0, 0, s*0.28, s*0.22, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Head
+  ctx.beginPath();
+  ctx.ellipse(0, -s*0.3, s*0.22, s*0.18, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Shell pattern (lines on abdomen)
+  ctx.strokeStyle = '#000014';
+  ctx.lineWidth = s * 0.03;
+  ctx.beginPath();
+  ctx.moveTo(0, s*0.05);
+  ctx.lineTo(0, s*0.55);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-s*0.25, s*0.2);
+  ctx.lineTo(s*0.25, s*0.2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-s*0.2, s*0.4);
+  ctx.lineTo(s*0.2, s*0.4);
+  ctx.stroke();
+
+  // Eyes (red dots)
+  ctx.fillStyle = ctx.shadowColor;
+  ctx.beginPath();
+  ctx.arc(-s*0.1, -s*0.32, s*0.06, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(s*0.1, -s*0.32, s*0.06, 0, Math.PI*2);
+  ctx.fill();
+
+  // Antennae (wiggling)
+  ctx.strokeStyle = ctx.fillStyle;
+  ctx.lineWidth = s * 0.04;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-s*0.08, -s*0.45);
+  ctx.quadraticCurveTo(-s*0.3+Math.sin(pulseTime*5)*s*0.05, -s*0.7, -s*0.5, -s*0.6);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(s*0.08, -s*0.45);
+  ctx.quadraticCurveTo(s*0.3-Math.sin(pulseTime*5)*s*0.05, -s*0.7, s*0.5, -s*0.6);
+  ctx.stroke();
+
+  // Antenna tips
+  ctx.fillStyle = ctx.shadowColor;
+  ctx.beginPath();
+  ctx.arc(-s*0.5, -s*0.6, s*0.04, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(s*0.5, -s*0.6, s*0.04, 0, Math.PI*2);
+  ctx.fill();
+
+  // Legs (6)
+  const legAngles = [-0.5, 0.1, 0.7];
+  legAngles.forEach((ly, i) => {
+    const y = s * ly;
+    // Left legs
+    ctx.beginPath();
+    ctx.moveTo(-s*0.25, y);
+    ctx.lineTo(-s*0.5, y - s*0.08 + Math.sin(pulseTime*6+i)*s*0.03);
+    ctx.lineTo(-s*0.6, y + s*0.08);
+    ctx.stroke();
+    // Right legs
+    ctx.beginPath();
+    ctx.moveTo(s*0.25, y);
+    ctx.lineTo(s*0.5, y - s*0.08 + Math.sin(pulseTime*6+i+1)*s*0.03);
+    ctx.lineTo(s*0.6, y + s*0.08);
+    ctx.stroke();
+  });
+
+  ctx.restore();
+}
+
+function drawInvaderThreat(ctx, cx, cy, r, rot, pulse) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rot);
+  const s = r * 0.85;
+  const breathe = 1 + pulse * 0.06;
+  const bobY = Math.sin(pulseTime * 4) * s * 0.03;
+  const p = s * 0.065;
+
+  ctx.scale(breathe, breathe);
+  ctx.translate(0, bobY);
+
+  const pixels = [
+    // Top
+    [0,3],[1,3],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[8,3],[9,3],
+    [1,2],[8,2],
+    [1,1],[3,1],[4,1],[5,1],[6,1],[8,1],
+    [0,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[9,0],
+    // Middle body
+    [0,4],[1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],[9,4],
+    [0,5],[9,5],
+    [0,6],[3,6],[6,6],[9,6],
+    [0,7],[2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[9,7],
+    // Legs
+    [1,8],[4,8],[5,8],[8,8],
+    [0,9],[3,9],[6,9],[9,9],
+  ];
+
+  const offsetX = -s * 0.35;
+  const offsetY = -s * 0.45;
+
+  pixels.forEach(([px, py]) => {
+    ctx.fillRect(offsetX + px * p, offsetY + py * p, p * 0.85, p * 0.85);
+  });
+
+  // Eyes (negative space)
+  ctx.fillStyle = '#000014';
+  const eyeSize = p * 0.7;
+  ctx.fillRect(offsetX + 2*p, offsetY + 3*p, eyeSize, eyeSize);
+  ctx.fillRect(offsetX + 7*p, offsetY + 3*p, eyeSize, eyeSize);
+
+  ctx.restore();
+}
+
+function drawLightningThreat(ctx, cx, cy, r, rot, pulse) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rot);
+  const s = r * 0.85;
+  const breathe = 1 + pulse * 0.06;
+
+  ctx.scale(breathe, breathe);
+
+  // Main lightning bolt
+  ctx.beginPath();
+  ctx.moveTo(s*0.05, -s*0.9);
+  ctx.lineTo(-s*0.25, -s*0.1);
+  ctx.lineTo(s*0.05, -s*0.1);
+  ctx.lineTo(-s*0.15, s*0.9);
+  ctx.lineTo(s*0.2, s*0.05);
+  ctx.lineTo(-s*0.05, s*0.05);
+  ctx.closePath();
+  ctx.fill();
+
+  // Electric arcs (animated)
+  ctx.strokeStyle = ctx.fillStyle;
+  ctx.lineWidth = s * 0.05;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const arcTime = pulseTime * 6;
+  const arcs = [
+    { from: [-s*0.25, -s*0.1], to: [-s*0.6, -s*0.4], jags: 3 },
+    { from: [s*0.2, s*0.05], to: [s*0.6, s*0.3], jags: 3 },
+    { from: [-s*0.15, s*0.9], to: [-s*0.5, s*0.8], jags: 2 },
+    { from: [s*0.05, -s*0.1], to: [s*0.5, -s*0.3], jags: 3 },
+  ];
+
+  arcs.forEach((arc, i) => {
+    const phase = arcTime + i * 1.5;
+    const dx = arc.to[0] - arc.from[0];
+    const dy = arc.to[1] - arc.from[1];
+    const len = Math.sqrt(dx*dx + dy*dy);
+    const jitter = s * 0.08 * Math.sin(phase);
+
+    ctx.beginPath();
+    ctx.moveTo(arc.from[0], arc.from[1]);
+
+    for (let j = 1; j <= arc.jags; j++) {
+      const t = j / arc.jags;
+      const mx = arc.from[0] + dx * t;
+      const my = arc.from[1] + dy * t;
+      const zigzag = (j % 2 === 0 ? 1 : -1) * (len * 0.15 + jitter);
+      const perpX = -dy / len * zigzag;
+      const perpY = dx / len * zigzag;
+      ctx.lineTo(mx + perpX, my + perpY);
+    }
+
+    ctx.stroke();
+  });
+
+  // Glow particles around the bolt
+  ctx.fillStyle = ctx.shadowColor;
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2 + arcTime * 0.5;
+    const dist = s * 0.5 + Math.sin(arcTime + i) * s * 0.1;
+    const px = Math.cos(angle) * dist;
+    const py = Math.sin(angle) * dist;
+    const size = s * 0.03 * (1 + Math.sin(arcTime * 2 + i) * 0.5);
+    ctx.beginPath();
+    ctx.arc(px, py, Math.max(1, size), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+// Map threat types to new drawing functions
+const THREAT_DRAW_FUNCS = {
+  hex:      drawSkullThreat,
+  diamond:  drawVirusThreat,
+  triangle: drawBugThreat,
+  square:   drawInvaderThreat,
+  star:     drawLightningThreat,
+};
+
+// Threat type names for display
+const THREAT_TYPE_NAMES = {
+  hex:      '💀 SKULL',
+  diamond:  '🦠 VIRUS',
+  triangle: '🪲 BUG',
+  square:   '👾 INVADER',
+  star:     '⚡ LIGHTNING',
+};
+
+function createThreat(stage) {
+  // Cap stage to highest defined stage for type variety
+  const stageIdx = Math.min(stage, STAGES.length - 1);
+  const cfg = STAGES[stageIdx];
+  const type = cfg.types[Math.floor(Math.random() * cfg.types.length)];
+  const col = THREAT_COLORS[type];
+  const size = trainingPath === 'learn' ? 54 : 32 + Math.random() * 12;
+  const x = trainingPath === 'learn' ? W / 2 : 60 + Math.random() * (W - 120);
+  const cipher = pickCipher();
+  const letter = pickWeightedLetter();
+  const speedMult = getSpeedMultiplier();
+  return {
+    x, y: trainingPath === 'learn' ? Math.max(130, H * .18) : -60,
+    type, size,
+    speed: cfg.speed * speedMult * (trainingPath === 'learn' ? .62 : .8 + Math.random() * .4),
+    fill: col.fill, stroke: col.stroke, glow: col.glow,
+    rotation: 0,
+    rotSpeed: (Math.random() - 0.5) * 2 * speedMult,
+    label: letter,
+    cipher: cipher,
+    answer: letter,
+    pulseOffset: Math.random() * Math.PI * 2,
+    alive: true,
+    wobble: Math.random() * Math.PI * 2,
+    wobbleSpeed: (0.5 + Math.random() * 1.5) * speedMult,
+    wobbleAmp: 10 + Math.random() * 20,
+  };
+}
+
+function drawHex(cx, cy, r, rot) {
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = rot + (i * Math.PI * 2) / 6;
+    const px = cx + r * Math.cos(a);
+    const py = cy + r * Math.sin(a);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+}
+
+function drawDiamond(cx, cy, r, rot) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - r * 1.3);
+  ctx.lineTo(cx + r * 0.8, cy);
+  ctx.lineTo(cx, cy + r * 1.3);
+  ctx.lineTo(cx - r * 0.8, cy);
+  ctx.closePath();
+}
+
+function drawTriangle(cx, cy, r, rot) {
+  ctx.beginPath();
+  for (let i = 0; i < 3; i++) {
+    const a = rot + (i * Math.PI * 2) / 3 - Math.PI / 2;
+    const px = cx + r * Math.cos(a);
+    const py = cy + r * Math.sin(a);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+}
+
+function drawSquare(cx, cy, r, rot) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rot);
+  ctx.beginPath();
+  ctx.rect(-r, -r, r * 2, r * 2);
+  ctx.restore();
+}
+
+function drawStar(cx, cy, r, rot) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = rot + (i * Math.PI) / 5 - Math.PI / 2;
+    const rad = i % 2 === 0 ? r : r * 0.45;
+    const px = cx + rad * Math.cos(a);
+    const py = cy + rad * Math.sin(a);
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+}
+
+function drawThreat(t) {
+  const pulse = 0.7 + 0.3 * Math.sin(pulseTime * 4 + t.pulseOffset);
+  const cipherSize = t.size * 1.0;
+  const enemySize = t.size * 0.85;
+
+  ctx.save();
+
+  // ===== ENEMY (wireframe outline only, no fill) =====
+  ctx.shadowColor = CIPHER_COLORS[t.cipher] || t.glow;
+  ctx.shadowBlur = 15 * pulse;
+  ctx.strokeStyle = CIPHER_COLORS[t.cipher] || t.stroke;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  // Override fill to do nothing — draw only outlines
+  const origFill = CanvasRenderingContext2D.prototype.fill;
+  CanvasRenderingContext2D.prototype.fill = function() {};
+
+  const drawFunc = THREAT_DRAW_FUNCS[t.type];
+  if (drawFunc) {
+    drawFunc(ctx, t.x, t.y, enemySize, t.rotation, t.pulseOffset);
+  }
+
+  // Restore original fill
+  CanvasRenderingContext2D.prototype.fill = origFill;
+
+  ctx.shadowBlur = 0;
+
+  // ===== CIPHER SYMBOL (center, with subtle backing) =====
+  // Small dark backing for cipher readability
+  ctx.fillStyle = 'rgba(0, 5, 16, 0.75)';
+  ctx.fillRect(t.x - cipherSize * 0.55, t.y - cipherSize * 0.4, cipherSize * 1.1, cipherSize * 0.8);
+
+  // Cipher symbol
+  ctx.shadowColor = CIPHER_COLORS[t.cipher] || '#ffffff';
+  ctx.shadowBlur = 8;
+  drawCipherSymbol(ctx, t.cipher, t.answer, t.x, t.y, cipherSize);
+
+  // Cipher label (above enemy)
+  ctx.shadowBlur = 4;
+  ctx.fillStyle = CIPHER_COLORS[t.cipher] || '#ffffff';
+  ctx.font = 'bold 10px Courier New';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(CIPHER_LABELS[t.cipher] || '', t.x, t.y - t.size * 1.5);
+
+  ctx.restore();
+}
+
+// ============================================================
+// PARTICLES
+// ============================================================
+// ============================================================
+// PARTICLES & TRAILS
+// ============================================================
+function spawnParticles(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2 + Math.random() * 0.5;
+    const speed = 2 + Math.random() * 6;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1,
+      decay: 0.02 + Math.random() * 0.03,
+      size: 2 + Math.random() * 4,
+      color,
+      trail: [],
+    });
+  }
+  // Extra sparkles
+  for (let i = 0; i < Math.floor(count / 2); i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1 + Math.random() * 3;
+    particles.push({
+      x: x + (Math.random()-0.5)*20,
+      y: y + (Math.random()-0.5)*20,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1,
+      decay: 0.04 + Math.random() * 0.06,
+      size: 1 + Math.random() * 2,
+      color: '#ffffff',
+      trail: [],
+    });
+  }
+}
+
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.trail.push({x: p.x, y: p.y});
+    if (p.trail.length > 5) p.trail.shift();
+    p.x += p.vx * dt * 60;
+    p.y += p.vy * dt * 60;
+    p.vy += 0.05 * dt * 60; // gravity
+    p.life -= p.decay * dt * 60;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+  // Update threat trails
+  for (let i = threatTrails.length - 1; i >= 0; i--) {
+    const t = threatTrails[i];
+    t.life -= 0.03 * dt * 60;
+    if (t.life <= 0) threatTrails.splice(i, 1);
+  }
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.save();
+    // Trail
+    if (p.trail.length > 1) {
+      for (let i = 1; i < p.trail.length; i++) {
+        const alpha = (i / p.trail.length) * p.life * 0.4;
+        ctx.beginPath();
+        ctx.moveTo(p.trail[i-1].x, p.trail[i-1].y);
+        ctx.lineTo(p.trail[i].x, p.trail[i].y);
+        ctx.strokeStyle = p.color + Math.floor(alpha * 255).toString(16).padStart(2,'0');
+        ctx.lineWidth = p.size * 0.5;
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = p.life;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+function drawThreatTrails() {
+  threatTrails.forEach(t => {
+    ctx.save();
+    ctx.globalAlpha = t.life * 0.25;
+    ctx.shadowColor = t.color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, t.size * t.life, 0, Math.PI * 2);
+    ctx.fillStyle = t.color;
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+// ============================================================
+// FLASH EFFECTS
+// ============================================================
+let flashTimer = 0;
+let flashColor = 'rgba(255,0,255,0.3)';
+
+function triggerFlash(color) {
+  flashTimer = 0.15;
+  flashColor = color;
+}
+
+function drawFlash() {
+  if (flashTimer > 0) {
+    ctx.save();
+    ctx.globalAlpha = flashTimer / 0.15;
+    ctx.fillStyle = flashColor;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+}
+
+// Damage flash overlay
+let damageFlash = 0;
+function drawDamageFlash() {
+  if (damageFlash > 0) {
+    ctx.save();
+    ctx.globalAlpha = damageFlash * 0.5;
+    ctx.fillStyle = '#ff0000';
+    ctx.fillRect(0, 0, W, H);
+    // vignette
+    const grd = ctx.createRadialGradient(W/2, H/2, H*0.2, W/2, H/2, H*0.8);
+    grd.addColorStop(0, 'rgba(255,0,0,0)');
+    grd.addColorStop(1, `rgba(255,0,0,${damageFlash * 0.7})`);
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+}
+
+// ============================================================
+// SCREEN SHAKE
+// ============================================================
+function triggerShake(amount) {
+  shakeAmount = Math.max(shakeAmount, amount);
+  shakeTimer = 0.4;
+}
+
+// ============================================================
+// COMBO DISPLAY
+// ============================================================
+let comboFlashes = [];
+function spawnComboText(x, y, text, color) {
+  comboFlashes.push({ x, y, text, color, life: 1, vy: -1.5 });
+}
+
+function updateComboTexts(dt) {
+  for (let i = comboFlashes.length-1; i>=0; i--) {
+    comboFlashes[i].life -= dt * 1.5;
+    comboFlashes[i].y += comboFlashes[i].vy * dt * 60;
+    if (comboFlashes[i].life <= 0) comboFlashes.splice(i, 1);
+  }
+}
+
+function drawComboTexts() {
+  comboFlashes.forEach(c => {
+    ctx.save();
+    ctx.globalAlpha = c.life;
+    ctx.font = `bold ${Math.floor(18 + (1-c.life)*8)}px Courier New`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = c.color;
+    ctx.shadowColor = c.color;
+    ctx.shadowBlur = 12;
+    ctx.fillText(c.text, c.x, c.y);
+    ctx.restore();
+  });
+}
+
+// ============================================================
+// NEUTRALIZE THREAT (matches by typed letter)
+// ============================================================
+
+
+function playWrongInput() {
+  if (!audioCtx || !soundEnabled) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'square'; osc.frequency.value = 200;
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+}
+
+function checkStageComplete() {
+  if (sessionGoal > 0 && totalNeutralized >= sessionGoal && gameState === STATES.PLAY) {
+    gameState = STATES.WIN;
+    threats = [];
+    updateHUD();
+    setTimeout(() => showWin(), 650);
+  }
+}
+
+// ============================================================
+// DAMAGE
+// ============================================================
+function takeDamage(t) {
+  if (gameLives > 0) {
+    lives--;
+  }
+  combo = 0;
+  shakeAmount = 12;
+  shakeTimer = 0.5;
+  damageFlash = 1;
+  playDamage();
+  triggerFlash('rgba(255,0,0,0.3)');
+  spawnParticles(t.x, getFirewallY(), '#ff0000', 20);
+
+  // Track as wrong/missed for cipher stats (player didn't neutralize in time)
+  if (t.cipher && t.answer) {
+    const stats = getCipherStats(t.cipher);
+    stats.wrong++;
+    stats.total++;
+    stats.weak[t.answer] = (stats.weak[t.answer] || 0) + 2;
+    if (trainingPath === 'learn') {
+      learningLocked = true;
+      showLessonFeedback(t, false, '', true);
+      updateChoicePanel(null);
+      setTimeout(() => { learningLocked = false; }, 850);
+    }
+  }
+
+  updateHUD();
+  if (lives <= 0 && gameLives > 0 && gameState === STATES.PLAY) {
+    gameState = STATES.GAME_OVER;
+    setTimeout(() => showGameOver(), 400);
+  }
+}
+
+// ============================================================
+// HUD
+// ============================================================
+function updateHUD() {
+  document.getElementById('hud-score').textContent = `SCORE: ${score.toString().padStart(6,'0')}`;
+
+  const comboEl = document.getElementById('hud-combo');
+  if (combo > 1) {
+    comboEl.textContent = `COMBO ×${combo}`;
+    comboEl.style.color = combo > 4 ? '#ffff00' : '#ff00ff';
+    comboEl.style.textShadow = `0 0 8px ${combo > 4 ? '#ffff00' : '#ff00ff'}`;
+  } else {
+    comboEl.textContent = '';
+  }
+
+  const shieldsEl = document.getElementById('hud-shields');
+  shieldsEl.innerHTML = '';
+  if (gameLives === 0) {
+    const infinite = document.createElement('span');
+    infinite.className = 'shield-icon';
+    infinite.textContent = '🛡∞';
+    infinite.setAttribute('aria-label', '無限防護');
+    shieldsEl.appendChild(infinite);
+  } else {
+    for (let i = 0; i < Math.min(gameLives, 10); i++) {
+      const s = document.createElement('span');
+      s.className = 'shield-icon' + (i >= lives ? ' dead' : '');
+      s.textContent = '🛡';
+      shieldsEl.appendChild(s);
+    }
+  }
+
+  const pathProfile = TRAINING_PATHS[trainingPath];
+  document.getElementById('hud-stage').textContent = sessionGoal > 0
+    ? `${pathProfile.title} · ${Math.min(totalNeutralized, sessionGoal)} / ${sessionGoal}`
+    : `STAGE ${currentStage + 1} · 無限挑戰`;
+  const attempts = Object.values(cipherStats).reduce((sum, stats) => sum + stats.total, 0);
+  const correct = Object.values(cipherStats).reduce((sum, stats) => sum + stats.correct, 0);
+  const accuracy = attempts ? Math.round(correct / attempts * 100) : 100;
+  const learningProgress = document.getElementById('hud-learning-progress');
+  learningProgress.textContent = `${sessionGoal > 0 ? '任務 '+Math.min(totalNeutralized,sessionGoal)+'/'+sessionGoal+' · ' : ''}準確率 ${accuracy}%`;
+
+  // Timer display
+  if (gameTimeLimit > 0) {
+    const timerEl = document.getElementById('timer-value');
+    if (timerEl) {
+      const mins = Math.floor(timeRemaining / 60);
+      const secs = timeRemaining % 60;
+      const display = mins > 0 ? `${mins}:${secs.toString().padStart(2,'0')}` : `${secs}s`;
+      timerEl.textContent = display;
+      if (timeRemaining <= 10) {
+        timerEl.style.color = '#ff0055';
+        timerEl.style.textShadow = '0 0 10px #ff0055';
+      } else if (timeRemaining <= 30) {
+        timerEl.style.color = '#ff9900';
+        timerEl.style.textShadow = '0 0 10px #ff9900';
+      } else {
+        timerEl.style.color = '#ff6644';
+        timerEl.style.textShadow = '0 0 10px #ff6644';
+      }
+    }
+  }
+}
+
+// ============================================================
+// SCREEN MANAGEMENT
+// ============================================================
+function hideAllScreens() {
+  document.getElementById('screen-start').classList.add('hidden');
+  document.getElementById('screen-stage').classList.add('hidden');
+  document.getElementById('screen-gameover').classList.add('hidden');
+  document.getElementById('screen-win').classList.add('hidden');
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('hud-stage').classList.add('hidden');
+  document.getElementById('hud-learning-progress').classList.add('hidden');
+  document.getElementById('input-overlay').classList.add('hidden');
+  document.getElementById('mobile-keyboard').classList.add('hidden');
+  document.getElementById('choice-panel').classList.add('hidden');
+  document.getElementById('lesson-feedback').classList.add('hidden');
+  document.getElementById('screen-cipher-select').classList.add('hidden');
+  const stw = document.getElementById('settings-toggle-wrap');
+  if (stw) stw.style.display = 'none';
+  const so = document.getElementById('settings-overlay');
+  if (so) so.style.display = 'none';
+  const td = document.getElementById('timer-display');
+  if (td) td.style.display = 'none';
+}
+
+function showGame() {
+  hideAllScreens();
+  document.body.dataset.trainingPath = trainingPath;
+  document.getElementById('hud').classList.remove('hidden');
+  document.getElementById('hud-stage').classList.remove('hidden');
+  document.getElementById('hud-learning-progress').classList.remove('hidden');
+  if (trainingPath === 'learn') {
+    document.getElementById('choice-panel').classList.remove('hidden');
+  } else {
+    document.getElementById('input-overlay').classList.remove('hidden');
+    document.getElementById('mobile-keyboard').classList.remove('hidden');
+  }
+  const stw = document.getElementById('settings-toggle-wrap');
+  if (stw) stw.style.display = 'block';
+  const td = document.getElementById('timer-display');
+  if (td) td.style.display = gameTimeLimit > 0 ? 'block' : 'none';
+  gameState = STATES.PLAY;
+  if (trainingPath !== 'learn') setTimeout(() => document.getElementById('cipher-input').focus(), 50);
+}
+
+function showStageClear() {
+  gameState = STATES.STAGE_CLEAR;
+  playStageClear();
+
+  document.getElementById('screen-stage').classList.remove('hidden');
+  document.getElementById('stage-clear-title').textContent = `STAGE ${currentStage+1} CLEAR`;
+  document.getElementById('stage-stats').innerHTML = `
+    <div><div class="stat-label">階段得分</div><div class="stat-value">${stageScore.toLocaleString()}</div></div>
+    <div><div class="stat-label">成功破解</div><div class="stat-value">${stageNeutralized}</div></div>
+    <div><div class="stat-label">最高連擊</div><div class="stat-value">×${maxCombo}</div></div>
+    <div><div class="stat-label">總分</div><div class="stat-value">${score.toLocaleString()}</div></div>
+  `;
+}
+
+function getSessionSummary() {
+  const entries = Object.entries(cipherStats).filter(([, stats]) => stats.total > 0);
+  const attempts = entries.reduce((sum, [, stats]) => sum + stats.total, 0);
+  const correct = entries.reduce((sum, [, stats]) => sum + stats.correct, 0);
+  const accuracy = attempts ? Math.round(correct / attempts * 100) : 0;
+  const weakest = entries.slice().sort(([,a],[,b]) => (a.correct/a.total) - (b.correct/b.total))[0];
+  let recommendation = '表現穩定，可以加入另一種密碼作混合訓練。';
+  if (weakest) {
+    const [cipher, stats] = weakest;
+    const letters = Object.entries(stats.weak).filter(([,count]) => count > 0).sort((a,b) => b[1]-a[1]).slice(0,4).map(([letter]) => letter);
+    const cipherAccuracy = Math.round(stats.correct / stats.total * 100);
+    if (cipherAccuracy < 90 || letters.length) {
+      recommendation = `下一步：再練 ${CIPHER_LABELS[cipher]}${letters.length ? '，集中 ' + letters.join('、') : ''}。`;
+    }
+  }
+  return {attempts, correct, accuracy, recommendation};
+}
+
+function showGameOver() {
+  if (gameState === STATES.GAME_OVER && sessionSaved) return;
+  gameState = STATES.GAME_OVER;
+  playGameOver();
+  hideAllScreens();
+  saveTrainingProgress();
+  const isTimeout = gameTimeLimit > 0 && timeRemaining <= 0;
+  document.getElementById('screen-gameover').classList.remove('hidden');
+  // Update title based on reason
+  const titleEl = document.getElementById('screen-gameover').querySelector('.neon-title');
+  const subEl = document.getElementById('screen-gameover').querySelector('.neon-subtitle');
+  if (isTimeout) {
+    titleEl.textContent = '時間到！';
+    titleEl.style.color = '#ff9900';
+    titleEl.style.textShadow = '0 0 10px #ff9900, 0 0 30px #ff9900';
+    subEl.textContent = '// 限時任務完成 //';
+  } else {
+    titleEl.textContent = '防火牆失守';
+    titleEl.style.color = '#ff0055';
+    titleEl.style.textShadow = '0 0 10px #ff0055, 0 0 30px #ff0055';
+    subEl.textContent = '// 別放棄，再試一次 //';
+  }
+  const cipherBreakdown = Object.entries(cipherStats)
+    .filter(([c, s]) => s.total > 0)
+    .map(([c, s]) => {
+      const acc = Math.round((s.correct / s.total) * 100);
+      const weak = Object.entries(s.weak).filter(([l, c]) => c >= 2).map(([l]) => l).join(' ') || '—';
+      return `<div><div class="stat-label">${CIPHER_LABELS[c]}</div><div class="stat-value" style="font-size:1.1em;">${acc}% <span style="font-size:0.7em;color:#888;">(弱項：${weak})</span></div></div>`;
+    })
+    .join('');
+  const timeInfo = gameTimeLimit > 0 ? `<div><div class="stat-label">剩餘時間</div><div class="stat-value">${Math.max(0, timeRemaining)}s</div></div>` : '';
+  const summary = getSessionSummary();
+  document.getElementById('gameover-stats').innerHTML = `
+    <div><div class="stat-label">本局得分</div><div class="stat-value">${score.toLocaleString()}</div></div>
+    <div><div class="stat-label">完成進度</div><div class="stat-value">${totalNeutralized}${sessionGoal ? ' / '+sessionGoal : ''}</div></div>
+    ${timeInfo}
+    <div><div class="stat-label">本局準確率</div><div class="stat-value">${summary.accuracy}%</div></div>
+    <div><div class="stat-label">最高連擊</div><div class="stat-value">×${maxCombo}</div></div>
+    <div style="grid-column: 1 / -1; border-top: 1px solid #2a3556; padding-top: 0.8em; margin-top: 0.5em;">
+      <div class="stat-label" style="margin-bottom: 0.5em;">各密碼準確率</div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8em;">${cipherBreakdown || '<div style="color:#888;">未有紀錄</div>'}</div>
+    </div>
+    <div style="grid-column:1/-1;color:#ffcc66;background:rgba(255,153,0,.08);border:1px solid rgba(255,153,0,.25);padding:12px;border-radius:10px;font-size:.82em;line-height:1.5;">💡 ${summary.recommendation}</div>
+  `;
+}
+
+function showWin() {
+  gameState = STATES.WIN;
+  playWin();
+  hideAllScreens();
+  saveTrainingProgress();
+  document.getElementById('screen-win').classList.remove('hidden');
+  // Per-cipher breakdown
+  const cipherBreakdown = Object.entries(cipherStats)
+    .filter(([c, s]) => s.total > 0)
+    .map(([c, s]) => {
+      const acc = Math.round((s.correct / s.total) * 100);
+      const weak = Object.entries(s.weak).filter(([l, c]) => c >= 2).map(([l]) => l).join(' ') || '—';
+      return `<div><div class="stat-label">${CIPHER_LABELS[c]}</div><div class="stat-value" style="font-size:1.1em;">${acc}% <span style="font-size:0.7em;color:#888;">(弱項：${weak})</span></div></div>`;
+    })
+    .join('');
+  const timeInfo = gameTimeLimit > 0 ? `<div><div class="stat-label">剩餘時間</div><div class="stat-value">${timeRemaining}s</div></div>` : '';
+  const summary = getSessionSummary();
+  const rating = summary.accuracy >= 95 ? 'S' : summary.accuracy >= 85 ? 'A' : summary.accuracy >= 70 ? 'B' : 'C';
+  document.getElementById('win-stats').innerHTML = `
+    <div><div class="stat-label">本局得分</div><div class="stat-value">${score.toLocaleString()}</div></div>
+    <div><div class="stat-label">成功破解</div><div class="stat-value">${totalNeutralized}</div></div>
+    <div><div class="stat-label">本局準確率</div><div class="stat-value">${summary.accuracy}%</div></div>
+    <div><div class="stat-label">最高連擊</div><div class="stat-value">×${maxCombo}</div></div>
+    ${timeInfo}
+    <div><div class="stat-label">任務評級</div><div class="stat-value">${rating}</div></div>
+    <div style="grid-column: 1 / -1; border-top: 1px solid #2a3556; padding-top: 0.8em; margin-top: 0.5em;">
+      <div class="stat-label" style="margin-bottom: 0.5em;">各密碼準確率</div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8em;">${cipherBreakdown || '<div style="color:#888;">未有紀錄</div>'}</div>
+    </div>
+    <div style="grid-column:1/-1;color:#77f5c1;background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.22);padding:12px;border-radius:10px;font-size:.82em;line-height:1.5;">🎯 ${summary.recommendation}</div>
+  `;
+}
+
+function startGame() {
+  initAudio();
+  sessionSaved = false;
+  cipherStats = {};
+  sessionGoal = TRAINING_PATHS[trainingPath].goal;
+  learningLocked = false;
+  clearTimeout(feedbackTimer);
+  document.getElementById('lesson-feedback').classList.add('hidden');
+  document.getElementById('choice-buttons').innerHTML = '';
+  score = 0;
+  combo = 0;
+  maxCombo = 0;
+  totalNeutralized = 0;
+  currentStage = 0;
+  threats = [];
+  particles = [];
+  threatTrails = [];
+  comboFlashes = [];
+  timerAccum = 0;
+  inputBuffer = '';
+  document.getElementById('cipher-input').value = '';
+  lives = gameLives === 0 ? 9999 : gameLives;  // 0 = infinite
+  timeRemaining = gameTimeLimit > 0 ? gameTimeLimit : 0;
+  startStage();
+}
+
+function startStage() {
+  stageNeutralized = 0;
+  stageScore = 0;
+  spawnTimer = 0.5;  // First threat comes quickly
+  spawnedCount = 0;
+  threats = [];
+  particles = [];
+  stageConfig = STAGES[Math.min(currentStage, STAGES.length - 1)];
+  lastStageProgression = 0;
+  showGame();
+  updateHUD();
+  // Show timer if time limit is set
+  const timerDisplay = document.getElementById('timer-display');
+  if (timerDisplay) {
+    timerDisplay.style.display = gameTimeLimit > 0 ? 'block' : 'none';
+  }
+}
+
+function nextStage() {
+  currentStage++;
+  document.getElementById('screen-stage').classList.add('hidden');
+  startStage();
+}
+
+function restartGame() {
+  startGame();
+}
+
+// ============================================================
+// INPUT — hardware keyboard + mobile on-screen A–Z keyboard
+// ============================================================
+let inputBuffer = ''
+
+function setFeedback(text, cls) {
+  const fb = document.getElementById('input-feedback');
+  if (!fb) return;
+  fb.textContent = text;
+  fb.className = 'input-feedback ' + cls;
+  setTimeout(() => { fb.textContent = ''; fb.className = 'input-feedback'; }, 600);
+}
+
+function commitInput() {
+  if (!inputBuffer || learningLocked) return;
+  const typed = inputBuffer.toUpperCase();
+  const learningTarget = trainingPath === 'learn' ? getLearningTarget() : null;
+  // Guided mode asks one deliberate question at a time. Challenge modes
+  // retain the faster mechanic where a typed letter can neutralize a match.
+  const matches = learningTarget
+    ? (typed === learningTarget.answer ? [learningTarget] : [])
+    : threats.filter(t => typed.includes(t.answer));
+  if (matches.length > 0) {
+    matches.forEach(t => {
+      threats.splice(threats.indexOf(t), 1);
+      totalNeutralized++;
+      stageNeutralized++;
+      // Track cipher stats
+      const stats = getCipherStats(t.cipher);
+      stats.correct++;
+      stats.total++;
+      if (stats.weak[t.answer]) {
+        stats.weak[t.answer] = Math.max(0, stats.weak[t.answer] - 1);
+        if (stats.weak[t.answer] === 0) delete stats.weak[t.answer];
+      }
+      combo++;
+      if (combo > maxCombo) maxCombo = combo;
+      const multiplier = Math.min(combo, 10);
+      const pts = 100 * multiplier;
+      score += pts;
+      stageScore += pts;
+      const color = CIPHER_COLORS[t.cipher] || t.glow;
+      spawnParticles(t.x, t.y, color, 18 + combo * 2);
+      spawnParticles(t.x, t.y, '#ffffff', 8);
+      playNeutralize();
+      triggerFlash('rgba(0,255,255,0.15)');
+      if (combo > 1) {
+        spawnComboText(t.x, t.y - 20, `×${combo} COMBO!`, combo > 4 ? '#ffff00' : '#ff00ff');
+        if (combo % 3 === 0) playComboUp();
+      } else {
+        spawnComboText(t.x, t.y - 20, `+${pts}`, color);
+      }
+    });
+    setFeedback(`✓ ${typed}`, 'hit');
+    if (navigator.vibrate) navigator.vibrate(22);
+    if (learningTarget) {
+      learningLocked = true;
+      showLessonFeedback(learningTarget, true);
+      updateChoicePanel(null);
+      spawnTimer = .85;
+      setTimeout(() => { learningLocked = false; }, 520);
+    }
+    updateHUD();
+    checkStageComplete();
+  } else {
+    setFeedback(`✕ ${typed}`, 'miss');
+    playWrongInput();
+    if (navigator.vibrate) navigator.vibrate([35, 25, 35]);
+    combo = 0;
+    updateHUD();
+    // Attribute a miss to the threat nearest the firewall, so weak-item
+    // weighting reinforces the answer the player actually failed to decode.
+    const nearest = learningTarget || threats.slice().sort((a, b) => b.y - a.y)[0];
+    if (nearest) {
+      const stats = getCipherStats(nearest.cipher);
+      stats.wrong++;
+      stats.total++;
+      stats.weak[nearest.answer] = (stats.weak[nearest.answer] || 0) + 2;
+      if (trainingPath === 'learn') {
+        learningLocked = true;
+        showLessonFeedback(nearest, false, typed);
+        setTimeout(() => { learningLocked = false; }, 850);
+      }
+    }
+  }
+  inputBuffer = '';
+  document.getElementById('cipher-input').value = '';
+}
+
+function revealHint() {
+  if (gameState !== STATES.PLAY || trainingPath !== 'learn' || learningLocked) return;
+  const target = getLearningTarget();
+  if (!target) return;
+  const stats = getCipherStats(target.cipher);
+  stats.wrong++;
+  stats.total++;
+  stats.weak[target.answer] = (stats.weak[target.answer] || 0) + 2;
+  combo = 0;
+  learningLocked = true;
+  showLessonFeedback(target, false, '', true);
+  updateHUD();
+  setTimeout(() => { learningLocked = false; }, 850);
+}
+
+function answerLetter(letter) {
+  if (gameState !== STATES.PLAY || learningLocked || !/^[A-Z]$/.test(letter)) return;
+  initAudio();
+  inputBuffer = letter;
+  document.getElementById('cipher-input').value = letter;
+  commitInput();
+}
+
+function handleKeyDown(e) {
+  if (e.key === 'F5' || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (gameState !== STATES.PLAY || !/^[a-zA-Z]$/.test(e.key)) return;
+  e.preventDefault();
+  answerLetter(e.key.toUpperCase());
+}
+
+window.addEventListener('keydown', handleKeyDown);
+canvas.addEventListener('click', () => {
+  if (trainingPath !== 'learn') document.getElementById('cipher-input').focus();
+});
+
+function returnToSelection(saveCurrent = false) {
+  if (saveCurrent) saveTrainingProgress();
+  threats = [];
+  gameState = STATES.START;
+  hideAllScreens();
+  const overlay = document.getElementById('settings-overlay');
+  if (overlay) overlay.style.display = 'none';
+  document.getElementById('screen-cipher-select').classList.remove('hidden');
+  buildCipherGrid();
+  updateCipherSelectionUI();
+  updateTrainingPathUI();
+}
+
+function syncSoundButton() {
+  const button = document.getElementById('sound-toggle');
+  button.textContent = soundEnabled ? '🔊 音效' : '🔇 靜音';
+  button.setAttribute('aria-pressed', String(!soundEnabled));
+  button.setAttribute('aria-label', soundEnabled ? '關閉音效' : '開啟音效');
+}
+
+// Build a large, thumb-friendly keyboard instead of opening the phone keyboard.
+const mobileKeyboard = document.getElementById('mobile-keyboard');
+ALPHABET.forEach(letter => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'key-btn';
+  button.textContent = letter;
+  button.setAttribute('aria-label', '答案 ' + letter);
+  button.addEventListener('click', () => answerLetter(letter));
+  mobileKeyboard.appendChild(button);
+});
+
+// Button listeners
+document.querySelectorAll('[data-path]').forEach(button => {
+  button.addEventListener('click', () => setTrainingPath(button.dataset.path, true));
+});
+document.getElementById('btn-hint').addEventListener('click', revealHint);
+document.getElementById('btn-start').addEventListener('click', () => { initAudio(); showCipherSelection(); });
+document.getElementById('btn-start-game').addEventListener('click', () => { initAudio(); startWithSelectedCiphers(); });
+document.getElementById('btn-next-stage').addEventListener('click', () => { initAudio(); nextStage(); });
+document.getElementById('btn-restart').addEventListener('click', () => { initAudio(); startGame(); });
+document.getElementById('btn-play-again').addEventListener('click', () => { initAudio(); startGame(); });
+document.getElementById('btn-reselect').addEventListener('click', () => returnToSelection(false));
+document.getElementById('btn-reselect-win').addEventListener('click', () => returnToSelection(false));
+document.getElementById('btn-end-session').addEventListener('click', () => returnToSelection(true));
+document.getElementById('sound-toggle').addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  if (!soundEnabled && audioCtx) { audioCtx.close(); audioCtx = null; }
+  saveTrainingSettings();
+  syncSoundButton();
+  if (soundEnabled) initAudio();
+});
+document.getElementById('back-home').addEventListener('click', event => {
+  if (gameState === STATES.PLAY && !window.confirm('本局訓練仍在進行，確定返回工具箱？')) event.preventDefault();
+});
+document.getElementById('cipher-input').addEventListener('input', event => {
+  const letter = event.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(-1);
+  if (letter) answerLetter(letter);
+});
+syncSoundButton();
+updateProgressSummary();
+
+// === Settings sliders ===
+function initSlider(id, setFn, parseFn) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', () => setFn(parseFn(el.value)));
+}
+
+initSlider('speedSlider', setSpeed, parseInt);
+initSlider('speedSliderGame', setSpeed, parseInt);
+initSlider('livesSlider', setLives, parseInt);
+initSlider('livesSliderGame', setLives, parseInt);
+initSlider('timeSlider', setTime, parseInt);
+initSlider('timeSliderGame', setTime, parseInt);
+
+// Settings toggle button (in-game)
+const settingsToggle = document.getElementById('btn-settings-toggle');
+const settingsOverlay = document.getElementById('settings-overlay');
+const settingsToggleWrap = document.getElementById('settings-toggle-wrap');
+if (settingsToggle && settingsOverlay) {
+  settingsToggle.addEventListener('click', () => {
+    settingsOverlay.style.display = settingsOverlay.style.display === 'flex' ? 'none' : 'flex';
+  });
+}
+// Click outside settings overlay to close it
+document.addEventListener('click', (e) => {
+  if (settingsOverlay && settingsOverlay.style.display === 'flex' &&
+      !settingsOverlay.contains(e.target) &&
+      e.target !== settingsToggle) {
+    settingsOverlay.style.display = 'none';
+  }
+});
+
+// Restore the member's last training setup.
+setSpeed(gameSpeed);
+setLives(gameLives);
+setTime(gameTimeLimit);
+setTrainingPath(trainingPath, false);
+
+// ============================================================
+// MAIN LOOP
+// ============================================================
+let lastTime = 0;
+function gameLoop(ts) {
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+
+  pulseTime += dt;
+  flashTimer = Math.max(0, flashTimer - dt);
+  damageFlash = Math.max(0, damageFlash - dt * 3);
+
+  // Shake
+  if (shakeTimer > 0) {
+    shakeTimer -= dt;
+    shakeAmount *= 0.88;
+    if (shakeTimer <= 0) shakeAmount = 0;
+  }
+
+  const sx = shakeAmount > 0.5 ? (Math.random()-0.5)*shakeAmount : 0;
+  const sy = shakeAmount > 0.5 ? (Math.random()-0.5)*shakeAmount : 0;
+
+  ctx.save();
+  ctx.translate(sx, sy);
+
+  // Background
+  ctx.fillStyle = '#020a1a';
+  ctx.fillRect(-20, -20, W+40, H+40);
+
+  // Subtle vignette
+  const vig = ctx.createRadialGradient(W/2, H/2, H*0.2, W/2, H/2, H);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, 'rgba(0,0,0,0.6)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(-20, -20, W+40, H+40);
+
+  // Code rain
+  updateCodeRain(dt);
+  drawCodeRain();
+
+  // Grid
+  drawGrid();
+
+  if (gameState === STATES.PLAY) {
+    // Timer countdown
+    if (gameTimeLimit > 0 && timeRemaining > 0) {
+      timerAccum += dt;
+      if (timerAccum >= 1) {
+        timerAccum -= 1;
+        timeRemaining--;
+        updateHUD();
+        if (timeRemaining <= 0 && gameState === STATES.PLAY) {
+          gameState = STATES.GAME_OVER;
+          setTimeout(() => showGameOver(), 400);
+        }
+      }
+    }
+
+    // Guided learning keeps one clear target on screen. Challenge paths
+    // allow overlapping threats to create urgency and retrieval practice.
+    const cfg = STAGES[Math.min(currentStage, STAGES.length - 1)];
+    const speedMult = getSpeedMultiplier();
+    spawnTimer -= dt;
+    const canSpawn = trainingPath === 'learn' ? threats.length === 0 && !learningLocked : true;
+    if (spawnTimer <= 0 && canSpawn) {
+      const newThreat = createThreat(currentStage);
+      threats.push(newThreat);
+      if (trainingPath === 'learn') updateChoicePanel(newThreat);
+      spawnTimer = cfg.spawnInterval * (0.8 + Math.random() * 0.4) / speedMult;
+    }
+
+    // Update threats + spawn trails
+    const floorY = getFirewallY();
+    for (let i = threats.length - 1; i >= 0; i--) {
+      const t = threats[i];
+      // Spawn trail particles behind threat
+      if (Math.random() < 0.6) {
+        threatTrails.push({
+          x: t.x + (Math.random() - 0.5) * t.size * 0.5,
+          y: t.y - t.size * 0.3,
+          life: 1,
+          size: t.size * 0.15 * (0.5 + Math.random() * 0.5),
+          color: CIPHER_COLORS[t.cipher] || t.glow,
+        });
+      }
+
+      // Briefly freeze guided questions after a mistake so the learner can
+      // inspect the symbol and explanation instead of being punished for reading.
+      if (!(trainingPath === 'learn' && learningLocked)) {
+        t.y += t.speed * dt * 60;
+        t.rotation += t.rotSpeed * dt;
+        t.wobble += t.wobbleSpeed * dt;
+        t.x += Math.sin(t.wobble) * 0.3 * dt * 60;
+        t.x = Math.max(t.size + 10, Math.min(W - t.size - 10, t.x));
+      }
+
+      if (t.y >= floorY - t.size / 2) {
+        takeDamage(t);
+        spawnParticles(t.x, floorY, t.glow, 12);
+        threats.splice(i, 1);
+        combo = 0;
+        updateHUD();
+      }
+    }
+
+    // Draw threat trails (behind enemies)
+    drawThreatTrails();
+
+    // Draw threats
+    threats.forEach(drawThreat);
+
+    // ENDLESS stage progression: advance every 15 neutralizations
+    if (stageNeutralized > 0 && stageNeutralized % 15 === 0 && stageNeutralized !== lastStageProgression) {
+      lastStageProgression = stageNeutralized;
+      currentStage++;
+      stageConfig = STAGES[Math.min(currentStage, STAGES.length - 1)];
+      // Increase enemy variety and speed after each learning block.
+      updateHUD();
+      stageScore = 0;
+      // Play stage clear sound
+      playStageClear();
+    }
+  }
+
+  // Particles, combo texts, flash effects
+  updateParticles(dt);
+  drawParticles();
+  updateComboTexts(dt);
+  drawComboTexts();
+  drawFlash();
+  drawDamageFlash();
+
+  ctx.restore();
+
+  requestAnimationFrame(gameLoop);
+}
+
+// Init code rain
+initCodeRain();
+requestAnimationFrame(ts => { lastTime = ts; gameLoop(ts); });
+</script>
+</body>
+</html>
