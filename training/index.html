@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#020a1a">
-<meta name="description" content="SKWSCOUT 密碼防衛戰：用摩斯、旗號、朱高、點字、座標及電話密碼進行遊戲化訓練。">
-<title>密碼防衛戰｜SKWSCOUT 訓練模式</title>
+<meta name="description" content="Scout System 密碼防衛戰：用摩斯、旗號、朱高、點字、座標及電話密碼進行遊戲化訓練。">
+<title>密碼防衛戰｜Scout System 訓練模式</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -427,7 +427,7 @@
   .input-feedback.hit { color: #00ff88; text-shadow: 0 0 6px #00ff88; }
   .input-feedback.miss { color: #ff0055; text-shadow: 0 0 6px #ff0055; }
 
-  /* === SKWSCOUT INTEGRATION & MOBILE CONTROLS === */
+  /* === Scout System INTEGRATION & MOBILE CONTROLS === */
   html, body { width: 100%; height: 100%; height: 100dvh; overscroll-behavior: none; }
   button, a, input { -webkit-tap-highlight-color: transparent; }
   button:focus-visible, a:focus-visible, input:focus-visible {
@@ -470,6 +470,129 @@
   .progress-item { padding: 12px 8px; text-align: center; background: rgba(3,13,34,.94); }
   .progress-label { color: #617795; font-size: 10px; letter-spacing: .08em; }
   .progress-value { color: #00ff88; font-size: 18px; font-weight: 900; margin-top: 5px; }
+  .milestone-bar {
+    width: min(90vw, 480px);
+    margin-top: 12px;
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 204, 0, .35);
+    border-radius: 12px;
+    background: rgba(45, 25, 0, .55);
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    justify-content: center;
+  }
+  .milestone-bar.hidden { display: none !important; }
+  .milestone-label {
+    color: #ffcc66; font-size: 11px; font-weight: 900;
+    letter-spacing: .12em; margin-right: 4px;
+  }
+  .milestone-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 9px; border-radius: 999px;
+    border: 1px solid rgba(255, 204, 0, .45);
+    background: rgba(255, 204, 0, .08);
+    color: #ffdc8a; font-size: 11px; font-weight: 700;
+    letter-spacing: .04em;
+  }
+  .milestone-chip strong { color: #ffe699; font-weight: 900; }
+  .milestone-new-banner {
+    grid-column: 1 / -1;
+    color: #ffe699; background: rgba(255, 204, 0, .12);
+    border: 1px solid rgba(255, 204, 0, .45);
+    padding: 12px; border-radius: 10px;
+    font-size: .9em; line-height: 1.5;
+    text-align: center; letter-spacing: .04em;
+  }
+  .history-chart {
+    grid-column: 1 / -1;
+    margin-top: 6px;
+    padding: 10px;
+    border: 1px solid #2a3556;
+    border-radius: 10px;
+    background: rgba(0, 8, 28, .6);
+  }
+  .history-chart h4 {
+    color: #76f9c4; font-size: 11px;
+    letter-spacing: .14em; margin: 0 0 6px;
+    text-transform: uppercase; font-weight: 900;
+  }
+  .history-chart svg { width: 100%; height: 60px; display: block; }
+  .history-legend {
+    display: flex; gap: 14px; justify-content: center;
+    font-size: 10px; color: #8ea2bb; margin-top: 4px;
+    letter-spacing: .04em;
+  }
+  .history-legend b { color: #fff; font-weight: 900; }
+  .achievement-bar {
+    width: min(90vw, 520px);
+    margin-top: 10px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 153, 0, .35);
+    border-radius: 12px;
+    background: rgba(35, 22, 0, .55);
+  }
+  .achievement-bar.hidden { display: none !important; }
+  .ach-head { color: #ffcc66; font-size: 11px; font-weight: 900; letter-spacing: .12em; text-align: center; }
+  .ach-head b { color: #fff; }
+  .ach-grid { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+  .ach-row { display: grid; grid-template-columns: 50px repeat(3, 1fr); gap: 5px; align-items: center; }
+  .ach-name { color: #cfd8e6; font-size: 11px; font-weight: 900; letter-spacing: .04em; }
+  .ach-tile {
+    text-align: center; font-size: 10px; font-weight: 900;
+    padding: 4px 0; border-radius: 6px; letter-spacing: .04em;
+    border: 1px solid transparent;
+  }
+  .ach-tile.on {
+    color: #ffe699; background: rgba(255, 204, 0, .14);
+    border-color: rgba(255, 204, 0, .55);
+    box-shadow: inset 0 0 6px rgba(255, 204, 0, .25);
+  }
+  .ach-tile.off { color: #4a5b76; background: rgba(20, 30, 50, .5); border-color: #1a2540; }
+  .achievement-banner {
+    grid-column: 1 / -1; color: #ffe699;
+    background: rgba(255, 204, 0, .1);
+    border: 1px solid rgba(255, 204, 0, .45);
+    padding: 10px 12px; border-radius: 10px;
+    font-size: .85em; line-height: 1.5;
+  }
+  .achievement-banner .achievement-title { font-weight: 900; letter-spacing: .04em; }
+  .achievement-banner b { color: #fff; font-weight: 900; }
+  .achievement-banner .achievement-recent { color: #ffd57a; font-size: .85em; margin-top: 4px; }
+  .achievement-new-banner {
+    grid-column: 1 / -1; color: #ffe699;
+    background: rgba(255, 204, 0, .18);
+    border: 2px solid rgba(255, 204, 0, .6);
+    padding: 12px; border-radius: 10px;
+    font-size: .92em; line-height: 1.55; text-align: center;
+    letter-spacing: .04em; font-weight: 900;
+    box-shadow: 0 0 18px rgba(255, 204, 0, .25);
+  }
+  .period-ranking {
+    grid-column: 1 / -1; margin-top: 6px;
+    padding: 10px 12px;
+    border: 1px solid #2a3556; border-radius: 10px;
+    background: rgba(0, 8, 28, .6);
+  }
+  .period-ranking h4 {
+    color: #76f9c4; font-size: 11px; font-weight: 900;
+    letter-spacing: .14em; margin: 0 0 6px; text-transform: uppercase;
+  }
+  .period-row {
+    display: grid;
+    grid-template-columns: 50px 1fr auto;
+    gap: 8px; align-items: center;
+    padding: 6px 4px; border-top: 1px solid #1a2540;
+    font-size: 11px;
+  }
+  .period-row:first-of-type { border-top: none; }
+  .period-name { color: #9cafc8; font-weight: 900; letter-spacing: .04em; }
+  .period-stats { color: #cfd8e6; display: flex; flex-wrap: wrap; gap: 10px; }
+  .period-stats b { color: #fff; font-weight: 900; }
+  .period-trend { font-size: 10px; text-align: right; }
+  .trend-up { color: #76f9c4; }
+  .trend-down { color: #ff739d; }
+  .trend-flat { color: #9cafc8; }
+  .trend-new { color: #ffdc8a; }
+  .trend-none { color: #617795; }
   .selection-step {
     width: min(90%, 720px); margin: 8px 0 7px; color: #6e86a9;
     font-size: 10px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase;
@@ -662,7 +785,7 @@
 <div id="input-overlay" class="hidden">
   <div class="input-zone">
     <div class="input-prompt-label">輸入答案：</div>
-    <input id="cipher-input" type="text" inputmode="none" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="1" placeholder="A-Z" aria-label="輸入密碼代表的英文字母">
+    <input id="cipher-input" type="text" inputmode="none" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="1" placeholder="A-Z" aria-label="輸入密碼代表的英文字母" enterkeyhint="done">
     <div class="input-feedback" id="input-feedback" aria-live="polite"></div>
   </div>
 </div>
@@ -705,6 +828,8 @@
     <div class="progress-item"><div class="progress-label">上次準確率</div><div class="progress-value" id="progress-accuracy">--</div></div>
     <div class="progress-item"><div class="progress-label">完成訓練</div><div class="progress-value" id="progress-sessions">0</div></div>
   </div>
+  <div id="milestone-bar" class="milestone-bar hidden" aria-label="個人里程碑"></div>
+  <div id="achievement-bar" class="achievement-bar hidden" aria-label="完美主義徽章"></div>
   <button class="btn" id="btn-start">開始任務</button>
   <div class="controls-hint">
     建議先玩<span>新手學習</span>，認得符號後再挑戰 A–Z 實戰
@@ -1085,6 +1210,252 @@ function updateProgressSummary() {
   if (sessions) sessions.textContent = progress.sessions || 0;
 }
 
+function updateMilestoneBar() {
+  const bar = document.getElementById('milestone-bar');
+  if (!bar) return;
+  const progress = readStoredJSON(TRAINING_PROGRESS_KEY, {});
+  const milestones = progress.milestones || {};
+  const unlocked = MILESTONE_THRESHOLDS.filter(t => milestones[String(t)]);
+  if (!unlocked.length) {
+    bar.classList.add('hidden');
+    bar.innerHTML = '';
+    return;
+  }
+  bar.classList.remove('hidden');
+  bar.innerHTML = '<span class="milestone-label">🏆 個人里程碑</span>' + unlocked.map(t => {
+    const m = milestones[String(t)];
+    return `<span class="milestone-chip" title="${new Date(m.date).toLocaleString('zh-Hant')} · ${m.ciphers.map(c => CIPHER_LABELS[c] || c).join('+')} · 速度 ${m.speed}">
+      <strong>${t}</strong>題 · ${m.accuracy}% · ${m.score.toLocaleString()}分
+    </span>`;
+  }).join('');
+}
+
+function updateAchievementBar() {
+  const bar = document.getElementById('achievement-bar');
+  if (!bar) return;
+  const data = loadAchievements();
+  const unlocked = Object.keys(data).length;
+  const total = CIPHER_LIST.length * PATHS_FOR_ACHIEVEMENT.length;
+  if (!unlocked) {
+    bar.classList.add('hidden');
+    bar.innerHTML = '';
+    return;
+  }
+  bar.classList.remove('hidden');
+  // Build a compact 6×3 grid (rows = ciphers, cols = paths) so the player
+  // can see exactly which combination is still missing.
+  const cells = CIPHER_LIST.map(cipher => {
+    const tiles = PATHS_FOR_ACHIEVEMENT.map(path => {
+      const meta = data[achievementId(cipher, path)];
+      const label = TRAINING_PATHS[path]?.title || path;
+      return `<span class="ach-tile ${meta ? 'on' : 'off'}" title="${CIPHER_LABELS[cipher]} · ${label}${meta ? ' · ' + new Date(meta.date).toLocaleDateString('zh-Hant') : ' · 未通關'}">${label.slice(0, 2)}</span>`;
+    }).join('');
+    return `<div class="ach-row"><span class="ach-name">${CIPHER_LABELS[cipher]}</span>${tiles}</div>`;
+  }).join('');
+  bar.innerHTML = `
+    <div class="ach-head">🏅 完美主義徽章 <b>${unlocked} / ${total}</b>（每個密碼 + 每個路徑都通關一次）</div>
+    <div class="ach-grid">${cells}</div>
+  `;
+}
+
+// ============================================================
+// PERIODIC RANKING — local comparison of this week / this month against
+// the previous equivalent period. Pure localStorage math, no fake data.
+// ============================================================
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function periodLabel(period) {
+  return period === 'week' ? '本週' : '本月';
+}
+
+function getPeriodRange(date, period) {
+  const d = new Date(date);
+  if (period === 'week') {
+    // Week starts on Monday — better matches Hong Kong training schedules
+    // than the locale default. Day 0 (Sun) is treated as the previous week.
+    const day = d.getDay();
+    const offset = day === 0 ? 6 : day - 1;
+    const start = new Date(d.getFullYear(), d.getMonth(), d.getDate() - offset);
+    const end = new Date(start.getTime() + WEEK_MS);
+    return { start, end };
+  }
+  // month
+  const start = new Date(d.getFullYear(), d.getMonth(), 1);
+  const end = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+  return { start, end };
+}
+
+function summarizeHistory(history, range) {
+  const filtered = history.filter(h => h.date >= range.start.getTime() && h.date < range.end.getTime());
+  if (!filtered.length) {
+    return { sessions: 0, avgScore: 0, bestScore: 0, avgAccuracy: 0, neutralized: 0 };
+  }
+  const total = filtered.reduce((s, h) => s + h.score, 0);
+  const accTotal = filtered.reduce((s, h) => s + h.accuracy, 0);
+  const neutralized = filtered.reduce((s, h) => s + h.neutralized, 0);
+  return {
+    sessions: filtered.length,
+    avgScore: Math.round(total / filtered.length),
+    bestScore: Math.max(...filtered.map(h => h.score)),
+    avgAccuracy: Math.round(accTotal / filtered.length),
+    neutralized
+  };
+}
+
+function renderPeriodicRanking() {
+  const progress = readStoredJSON(TRAINING_PROGRESS_KEY, {});
+  const history = Array.isArray(progress.history) ? progress.history : [];
+  if (history.length < 2) return '';
+  const now = Date.now();
+  const rows = ['week', 'month'].map(period => {
+    const current = getPeriodRange(now, period);
+    const prevEnd = current.start;
+    const prevStart = new Date(prevEnd.getTime() - (period === 'week' ? WEEK_MS : (prevEnd - new Date(prevEnd.getFullYear(), prevEnd.getMonth() - 1, 1))));
+    const currentStats = summarizeHistory(history, current);
+    const prevStats = summarizeHistory(history, { start: prevStart, end: prevEnd });
+    if (!currentStats.sessions && !prevStats.sessions) return '';
+    return `<div class="period-row">
+      <div class="period-name">${periodLabel(period)}</div>
+      <div class="period-stats">
+        <span><b>${currentStats.sessions}</b> 局</span>
+        <span>均分 <b>${currentStats.avgScore.toLocaleString()}</b></span>
+        <span>最高 <b>${currentStats.bestScore.toLocaleString()}</b></span>
+        <span>均準確率 <b>${currentStats.avgAccuracy}%</b></span>
+      </div>
+      <div class="period-trend">${formatTrend(currentStats, prevStats)}</div>
+    </div>`;
+  }).filter(Boolean).join('');
+  if (!rows) return '';
+  return `<div class="period-ranking" aria-label="週月排行">
+    <h4>📅 跟上一段時間比拼</h4>
+    ${rows}
+  </div>`;
+}
+
+function formatTrend(curr, prev) {
+  if (!prev.sessions) return '<span class="trend-new">新開始</span>';
+  if (!curr.sessions) return '<span class="trend-none">本段暫無紀錄</span>';
+  const scoreDelta = Math.round((curr.avgScore - prev.avgScore) / Math.max(prev.avgScore, 1) * 100);
+  const accDelta = curr.avgAccuracy - prev.avgAccuracy;
+  const sessionDelta = curr.sessions - prev.sessions;
+  const sign = scoreDelta > 0 ? '▲' : scoreDelta < 0 ? '▼' : '─';
+  const cls = scoreDelta > 0 ? 'trend-up' : scoreDelta < 0 ? 'trend-down' : 'trend-flat';
+  const parts = [`${sign} ${Math.abs(scoreDelta)}% 均分`];
+  if (Math.abs(accDelta) >= 1) parts.push(`${accDelta > 0 ? '+' : ''}${accDelta}% 準確率`);
+  if (sessionDelta !== 0) parts.push(`${sessionDelta > 0 ? '+' : ''}${sessionDelta} 局`);
+  return `<span class="${cls}">${parts.join(' · ')}</span>`;
+}
+
+// ============================================================
+// PERFECTIONIST ACHIEVEMENTS — every (cipher, path) combination cleared.
+// 6 ciphers × 3 paths = 18 badges. Win screen (>= sessionGoal) flips the bit.
+// ============================================================
+const ACHIEVEMENT_KEY = 'skw_cipher_training_achievements';
+const PATHS_FOR_ACHIEVEMENT = ['learn', 'mission', 'endless'];
+
+function loadAchievements() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(ACHIEVEMENT_KEY)) || {};
+    return raw && typeof raw === 'object' ? raw : {};
+  } catch (_) { return {}; }
+}
+function saveAchievements(data) {
+  localStorage.setItem(ACHIEVEMENT_KEY, JSON.stringify(data));
+}
+function achievementId(cipher, path) { return `${cipher}__${path}`; }
+
+function unlockAchievementsIfCleared() {
+  // Per-path clearance rule: learn/mission clear when goal met; endless
+  // clears when the player survives 50+ threats (a meaningful milestone
+  // for an open-ended mode).
+  const clearedThresholds = { learn: Math.max(sessionGoal, 12), mission: Math.max(sessionGoal, 20), endless: 50 };
+  const threshold = clearedThresholds[trainingPath] || 30;
+  const cleared = totalNeutralized >= threshold && maxCombo > 0;
+  if (!cleared) return [];
+  const data = loadAchievements();
+  const newlyUnlocked = [];
+  const overallAcc = (() => {
+    const total = Object.values(cipherStats).reduce((s, st) => s + st.total, 0);
+    const correct = Object.values(cipherStats).reduce((s, st) => s + st.correct, 0);
+    return total ? Math.round(correct / total * 100) : 0;
+  })();
+  for (const cipher of selectedCiphers) {
+    const id = achievementId(cipher, trainingPath);
+    if (data[id]) continue;
+    data[id] = { date: Date.now(), score, accuracy: overallAcc, neutralized: totalNeutralized };
+    newlyUnlocked.push({ cipher, path: trainingPath, ...data[id] });
+  }
+  if (newlyUnlocked.length) saveAchievements(data);
+  return newlyUnlocked;
+}
+
+function renderAchievementsBanner() {
+  const data = loadAchievements();
+  const total = CIPHER_LIST.length * PATHS_FOR_ACHIEVEMENT.length;
+  const unlocked = Object.keys(data).length;
+  if (!unlocked) return '';
+  const recent = Object.entries(data)
+    .map(([id, meta]) => ({ id, ...meta }))
+    .sort((a, b) => b.date - a.date)
+    .slice(0, 4);
+  const recentText = recent.map(r => {
+    const [cipher, path] = r.id.split('__');
+    return `${CIPHER_LABELS[cipher] || cipher} · ${TRAINING_PATHS[path]?.title || path}`;
+  }).join('、');
+  return `<div class="achievement-banner" aria-label="完美主義徽章">
+    <div class="achievement-title">🏅 完美主義徽章 <b>${unlocked} / ${total}</b></div>
+    <div class="achievement-recent">最近解鎖：${recentText}</div>
+  </div>`;
+}
+
+function renderNewAchievementsBanner(newOnes) {
+  if (!newOnes || !newOnes.length) return '';
+  return `<div class="achievement-new-banner">
+    🎖 全新徽章解鎖！<br>${newOnes.map(a =>
+      `${CIPHER_LABELS[a.cipher]} × ${TRAINING_PATHS[a.path]?.title || a.path}（${a.accuracy}% · ${a.score.toLocaleString()}分）`
+    ).join(' · ')}
+  </div>`;
+}
+
+// ============================================================
+// PERSONAL MILESTONES — "beat your own record" without fake leaderboards.
+// Stored alongside training progress so a single localStorage key holds
+// the full personal history.
+// ============================================================
+const MILESTONE_THRESHOLDS = [25, 50, 100, 200, 500, 1000];
+
+function newMilestoneEntry(sessionMeta) {
+  return {
+    score: sessionMeta.score,
+    accuracy: sessionMeta.accuracy,
+    ciphers: sessionMeta.ciphers.slice(),
+    path: sessionMeta.path,
+    speed: sessionMeta.speed,
+    lives: sessionMeta.lives,
+    time: sessionMeta.time,
+    date: Date.now()
+  };
+}
+
+function recordMilestoneIfCrossed(progress, sessionMeta) {
+  progress.milestones = progress.milestones || {};
+  let crossed = null;
+  for (const threshold of MILESTONE_THRESHOLDS) {
+    const key = String(threshold);
+    const wasReached = !!progress.milestones[key];
+    const nowReached = totalNeutralized >= threshold;
+    if (nowReached && !wasReached) {
+      progress.milestones[key] = newMilestoneEntry(sessionMeta);
+      crossed = threshold;
+    } else if (nowReached && sessionMeta.score > (progress.milestones[key].score || 0)) {
+      // Player already had this milestone but improved the record — keep the best snapshot.
+      progress.milestones[key] = newMilestoneEntry(sessionMeta);
+    }
+  }
+  return crossed;
+}
+
 function saveTrainingProgress() {
   if (sessionSaved) return;
   const entries = Object.entries(cipherStats).filter(([, stats]) => stats.total > 0);
@@ -1104,9 +1475,30 @@ function saveTrainingProgress() {
     current.weak = {...stats.weak};
     progress.byCipher[cipher] = current;
   });
+  // History ring (capped to last 50 sessions) feeds the "vs your average" chart.
+  progress.history = Array.isArray(progress.history) ? progress.history : [];
+  progress.history.push({
+    score,
+    accuracy: progress.lastAccuracy,
+    total,
+    neutralized: totalNeutralized,
+    ciphers: selectedCiphers.slice(),
+    path: trainingPath,
+    date: Date.now()
+  });
+  if (progress.history.length > 50) progress.history = progress.history.slice(-50);
+  // Record milestone (if any) AFTER history is updated so the snapshot is consistent.
+  const sessionMeta = {
+    score, accuracy: progress.lastAccuracy,
+    ciphers: selectedCiphers, path: trainingPath,
+    speed: gameSpeed, lives: gameLives, time: gameTimeLimit
+  };
+  const newMilestone = recordMilestoneIfCrossed(progress, sessionMeta);
+  progress.lastNewMilestone = newMilestone;
   localStorage.setItem(TRAINING_PROGRESS_KEY, JSON.stringify(progress));
   sessionSaved = true;
   updateProgressSummary();
+  updateMilestoneBar();
 }
 
 function getSpeed() { return gameSpeed; }
@@ -2631,6 +3023,47 @@ function getSessionSummary() {
   return {attempts, correct, accuracy, recommendation};
 }
 
+function renderHistoryChart() {
+  const progress = readStoredJSON(TRAINING_PROGRESS_KEY, {});
+  const history = Array.isArray(progress.history) ? progress.history.slice(-10) : [];
+  if (history.length < 2) return '';
+  const w = 320, h = 60, padX = 6, padY = 8;
+  const points = history.map((h, i) => ({
+    x: padX + (w - 2 * padX) * (i / (history.length - 1)),
+    y: padY + (h - 2 * padY) * (1 - h.accuracy / 100),
+    accuracy: h.accuracy
+  }));
+  const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const avg = Math.round(history.reduce((s, h) => s + h.accuracy, 0) / history.length);
+  const last = history[history.length - 1].accuracy;
+  const best = Math.max(...history.map(h => h.accuracy));
+  return `<div class="history-chart" aria-label="近 10 局準確率">
+    <h4>📈 最近 ${history.length} 局</h4>
+    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+      <line x1="${padX}" y1="${padY + (h - 2 * padY) * 0.5}" x2="${w - padX}" y2="${padY + (h - 2 * padY) * 0.5}" stroke="#2a3556" stroke-dasharray="2 4"/>
+      <path d="${path}" fill="none" stroke="#00ff88" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${points.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.4" fill="#00ff88"/>`).join('')}
+    </svg>
+    <div class="history-legend">
+      <span>本局 <b>${last}%</b></span>
+      <span>平均 <b>${avg}%</b></span>
+      <span>最佳 <b>${best}%</b></span>
+    </div>
+  </div>`;
+}
+
+function renderMilestoneBanner() {
+  const progress = readStoredJSON(TRAINING_PROGRESS_KEY, {});
+  if (!progress.lastNewMilestone) return '';
+  const threshold = progress.lastNewMilestone;
+  const m = progress.milestones?.[String(threshold)];
+  if (!m) return '';
+  return `<div class="milestone-new-banner">
+    🎉 解鎖新里程碑：<b>${threshold} 題</b>！<br>
+    準確率 <b>${m.accuracy}%</b> · 得分 <b>${m.score.toLocaleString()}</b> · ${new Date(m.date).toLocaleDateString('zh-Hant')}
+  </div>`;
+}
+
 function showGameOver() {
   if (gameState === STATES.GAME_OVER && sessionSaved) return;
   gameState = STATES.GAME_OVER;
@@ -2669,10 +3102,14 @@ function showGameOver() {
     ${timeInfo}
     <div><div class="stat-label">本局準確率</div><div class="stat-value">${summary.accuracy}%</div></div>
     <div><div class="stat-label">最高連擊</div><div class="stat-value">×${maxCombo}</div></div>
+    ${renderMilestoneBanner()}
+    ${renderAchievementsBanner()}
     <div style="grid-column: 1 / -1; border-top: 1px solid #2a3556; padding-top: 0.8em; margin-top: 0.5em;">
       <div class="stat-label" style="margin-bottom: 0.5em;">各密碼準確率</div>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8em;">${cipherBreakdown || '<div style="color:#888;">未有紀錄</div>'}</div>
     </div>
+    ${renderHistoryChart()}
+    ${renderPeriodicRanking()}
     <div style="grid-column:1/-1;color:#ffcc66;background:rgba(255,153,0,.08);border:1px solid rgba(255,153,0,.25);padding:12px;border-radius:10px;font-size:.82em;line-height:1.5;">💡 ${summary.recommendation}</div>
   `;
 }
@@ -2682,6 +3119,8 @@ function showWin() {
   playWin();
   hideAllScreens();
   saveTrainingProgress();
+  const newAchievements = unlockAchievementsIfCleared();
+  updateAchievementBar();
   document.getElementById('screen-win').classList.remove('hidden');
   // Per-cipher breakdown
   const cipherBreakdown = Object.entries(cipherStats)
@@ -2702,10 +3141,15 @@ function showWin() {
     <div><div class="stat-label">最高連擊</div><div class="stat-value">×${maxCombo}</div></div>
     ${timeInfo}
     <div><div class="stat-label">任務評級</div><div class="stat-value">${rating}</div></div>
+    ${renderNewAchievementsBanner(newAchievements)}
+    ${renderAchievementsBanner()}
+    ${renderMilestoneBanner()}
     <div style="grid-column: 1 / -1; border-top: 1px solid #2a3556; padding-top: 0.8em; margin-top: 0.5em;">
       <div class="stat-label" style="margin-bottom: 0.5em;">各密碼準確率</div>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8em;">${cipherBreakdown || '<div style="color:#888;">未有紀錄</div>'}</div>
     </div>
+    ${renderHistoryChart()}
+    ${renderPeriodicRanking()}
     <div style="grid-column:1/-1;color:#77f5c1;background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.22);padding:12px;border-radius:10px;font-size:.82em;line-height:1.5;">🎯 ${summary.recommendation}</div>
   `;
 }
@@ -2775,6 +3219,26 @@ function setFeedback(text, cls) {
   fb.textContent = text;
   fb.className = 'input-feedback ' + cls;
   setTimeout(() => { fb.textContent = ''; fb.className = 'input-feedback'; }, 600);
+}
+
+// ============================================================
+// INPUT LOCK — training mode only accepts English letters or digits.
+//  - Reject non-alphanumeric input (handles Chinese IME, emoji, paste, etc.)
+//  - Ignore events fired while a CJK / other IME is composing characters
+//  - On touch / narrow screens, keep the native keyboard closed so the
+//    in-game A–Z virtual keyboard is the only input source.
+// ============================================================
+let isComposing = false;
+function sanitizeAsciiLetter(raw) {
+  if (typeof raw !== 'string') return '';
+  // Strip combining marks, keep only the last A–Z / 0–9 character.
+  const cleaned = raw.normalize('NFKD').replace(/[^A-Za-z0-9]/g, '').slice(-1);
+  return cleaned.toUpperCase();
+}
+function rejectAndShowHint(reason) {
+  const el = document.getElementById('cipher-input');
+  if (el) el.value = '';
+  setFeedback(reason || 'A–Z / 0–9', 'miss');
 }
 
 function commitInput() {
@@ -2869,18 +3333,29 @@ function revealHint() {
 }
 
 function answerLetter(letter) {
-  if (gameState !== STATES.PLAY || learningLocked || !/^[A-Z]$/.test(letter)) return;
+  if (gameState !== STATES.PLAY || learningLocked) return;
+  const sanitized = sanitizeAsciiLetter(letter);
+  if (!sanitized) {
+    rejectAndShowHint('只接受 A–Z / 0–9');
+    return;
+  }
   initAudio();
-  inputBuffer = letter;
-  document.getElementById('cipher-input').value = letter;
+  inputBuffer = sanitized;
+  const inputEl = document.getElementById('cipher-input');
+  if (inputEl) inputEl.value = sanitized;
   commitInput();
 }
 
 function handleKeyDown(e) {
   if (e.key === 'F5' || e.metaKey || e.ctrlKey || e.altKey) return;
-  if (gameState !== STATES.PLAY || !/^[a-zA-Z]$/.test(e.key)) return;
+  // While a CJK / other IME is composing, ignore every keypress so the
+  // candidate window cannot leak Chinese characters into the game.
+  if (e.isComposing || isComposing) return;
+  if (gameState !== STATES.PLAY) return;
+  if (e.key.length !== 1) return;
+  if (!/^[a-zA-Z0-9]$/.test(e.key)) return;
   e.preventDefault();
-  answerLetter(e.key.toUpperCase());
+  answerLetter(e.key);
 }
 
 window.addEventListener('keydown', handleKeyDown);
@@ -2943,12 +3418,83 @@ document.getElementById('sound-toggle').addEventListener('click', () => {
 document.getElementById('back-home').addEventListener('click', event => {
   if (gameState === STATES.PLAY && !window.confirm('本局訓練仍在進行，確定返回工具箱？')) event.preventDefault();
 });
-document.getElementById('cipher-input').addEventListener('input', event => {
-  const letter = event.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(-1);
-  if (letter) answerLetter(letter);
+// --- cipher-input hardening ---
+const cipherInput = document.getElementById('cipher-input');
+cipherInput.addEventListener('compositionstart', () => { isComposing = true; });
+cipherInput.addEventListener('compositionend', event => {
+  isComposing = false;
+  // After IME finishes, sanitize whatever ended up in the field.
+  if (gameState !== STATES.PLAY) { event.target.value = ''; return; }
+  const sanitized = sanitizeAsciiLetter(event.target.value);
+  if (!sanitized) {
+    event.target.value = '';
+    rejectAndShowHint('請用英文/數字');
+    return;
+  }
+  event.target.value = sanitized;
+  answerLetter(sanitized);
+});
+cipherInput.addEventListener('input', event => {
+  // Skip events that arrive during IME composition; compositionend will
+  // handle the final value once the user picks a candidate.
+  if (isComposing) return;
+  const raw = event.target.value;
+  if (!raw) return;
+  const sanitized = sanitizeAsciiLetter(raw);
+  if (raw !== sanitized) {
+    // The user typed / pasted something outside A–Z / 0–9 — strip it and warn.
+    event.target.value = sanitized;
+    if (!sanitized) {
+      rejectAndShowHint('只接受 A–Z / 0–9');
+      return;
+    }
+  }
+  if (gameState !== STATES.PLAY) { event.target.value = ''; return; }
+  answerLetter(sanitized);
+});
+// Block contextmenu / drag & drop / paste to prevent any non-ASCII sneaking in.
+cipherInput.addEventListener('paste', event => {
+  event.preventDefault();
+  const text = (event.clipboardData || window.clipboardData)?.getData('text') || '';
+  const sanitized = sanitizeAsciiLetter(text);
+  if (!sanitized) rejectAndShowHint('只接受 A–Z / 0–9');
+  else { cipherInput.value = sanitized; answerLetter(sanitized); }
+});
+cipherInput.addEventListener('drop', event => event.preventDefault());
+cipherInput.addEventListener('beforeinput', event => {
+  // Reject IME / composition insertions entirely so Chinese never lands in the field.
+  if (event.inputType && /composition|insertFromPaste|insertFromDrop/.test(event.inputType)) {
+    if (event.inputType.startsWith('insert')) {
+      const data = event.data || '';
+      if (!/^[a-zA-Z0-9]$/.test(data)) {
+        event.preventDefault();
+        rejectAndShowHint('只接受 A–Z / 0–9');
+      }
+    }
+  }
+});
+// On touch / narrow devices, keep the native keyboard closed so the
+// on-screen A–Z virtual keyboard is the only path.
+function lockNativeKeyboard() {
+  if (!cipherInput) return;
+  const touch = window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 800;
+  if (touch) {
+    cipherInput.setAttribute('readonly', 'readonly');
+    cipherInput.setAttribute('inputmode', 'none');
+  } else {
+    cipherInput.removeAttribute('readonly');
+    cipherInput.setAttribute('inputmode', 'latin');
+  }
+}
+lockNativeKeyboard();
+window.addEventListener('resize', lockNativeKeyboard);
+cipherInput.addEventListener('focus', event => {
+  if (cipherInput.hasAttribute('readonly')) event.target.blur();
 });
 syncSoundButton();
 updateProgressSummary();
+updateMilestoneBar();
+updateAchievementBar();
 
 // === Settings sliders ===
 function initSlider(id, setFn, parseFn) {
