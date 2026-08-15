@@ -67,31 +67,14 @@
           <h2 id="currentModeTitle">編碼工具</h2>
         </div>
       </div>
-      <button id="btnExportPDF" class="header-action"><span aria-hidden="true">🖨</span> <span class="header-action-label">列印試卷</span></button>
+      <div class="flex items-center gap-2">
+        <button id="btnPrintAnswers" class="header-action header-action--answer hidden" type="button"><span aria-hidden="true">📋</span> <span class="header-action-label">列印答案</span></button>
+        <button id="btnExportPDF" class="header-action"><span aria-hidden="true">🖨</span> <span class="header-action-label">列印試卷</span></button>
+      </div>
     </header>
 
     <!-- 1. Editor Mode -->
     <main class="max-w-6xl mx-auto px-6 py-4 space-y-8 no-print" id="editorView" tabindex="-1">
-      <section class="learning-hero" aria-labelledby="heroTitle">
-        <div class="hero-copy">
-          <p class="eyebrow">LEARN · DECODE · PLAY</p>
-          <h1 id="heroTitle">由看懂密碼，<br><span>到守住童軍基地。</span></h1>
-          <p>先用工具探索 13 種密碼，再由「四選一學習」升級至「守城實戰」。系統會記住錯題，讓弱項重複出現。</p>
-          <div class="hero-actions">
-            <a class="primary-cta" href="training/">開始密碼防衛戰 <span aria-hidden="true">→</span></a>
-            <button class="secondary-cta" type="button" data-scroll-to-input>先試試編碼</button>
-          </div>
-        </div>
-        <div class="mission-card" aria-label="訓練模式個人紀錄">
-          <div class="mission-orbit" aria-hidden="true"><span>⚜</span></div>
-          <div>
-            <p>個人最佳</p>
-            <strong id="trainingBestScore">0</strong>
-            <small id="trainingLastResult">尚未開始訓練</small>
-          </div>
-        </div>
-      </section>
-
       <section class="skw-card composer-card" id="messageComposer">
         <div class="composer-heading">
           <div>
@@ -221,6 +204,14 @@
                     <input type="range" id="projSpeed" min="100" max="5000" step="100" value="1200" class="w-32 accent-[var(--skw-gold)]">
                     <span id="projSpeedVal" class="text-xs text-[var(--skw-gold)] font-black">1.2s</span>
                 </div>
+                <div class="flex items-center gap-2 border-l border-white/10 pl-4">
+                    <span class="text-xs font-bold text-slate-400">揭示答案：</span>
+                    <select id="revealMode" class="bg-black/60 text-white text-xs border border-white/20 rounded px-2 py-1">
+                        <option value="none" selected>不揭示（領袖口頭）</option>
+                        <option value="perQ">每題揭示</option>
+                        <option value="end">總揭示（最後一題後）</option>
+                    </select>
+                </div>
             </div>
           </div>
           <button id="btnProjectTest" class="bg-amber-600 text-white px-8 py-3 rounded-2xl font-black shadow-xl hover:scale-105 transition-all">📽️ 進入投影模式</button>
@@ -283,6 +274,7 @@
         <div id="projCounter" class="text-[var(--skw-gold)] font-black text-2xl min-w-[100px] text-center">1 / 1</div>
         <button id="btnProjNext" class="bg-white/10 p-4 rounded-full text-white text-2xl hover:bg-white/20">→</button>
         <button id="btnProjPlay" class="ml-2 bg-sky-500 text-white px-8 py-3 rounded-2xl font-black text-base hidden shadow-2xl">開始輪播</button>
+        <button id="btnProjReveal" class="ml-2 bg-amber-500 text-black px-8 py-3 rounded-2xl font-black text-base hidden shadow-2xl">💡 揭示答案</button>
       </div>
       <!-- FIX #1: 速度滑桿移到投影畫面底部 -->
       <div class="flex items-center gap-4 bg-black/40 px-6 py-3 rounded-2xl border border-white/5">
@@ -298,18 +290,34 @@
 
   <!-- Print View - FIX #2: 修正白頁及被cut問題 -->
   <div id="printView" class="hidden">
-    <div class="print-header">
-      <div class="print-title-area">
-        <h1 class="print-title">筲箕灣區童軍密碼考核試卷</h1>
-        <p class="print-subtitle">SKWSCOUT Cipher Examination 2026</p>
+    <div id="printExamSheet">
+      <div class="print-header">
+        <div class="print-title-area">
+          <h1 class="print-title">童軍密碼考核試卷</h1>
+          <p class="print-subtitle">Scout System Cipher Examination 2026</p>
+        </div>
+        <div class="print-info-area">
+          <p>姓名: __________________</p>
+          <p>日期: __________________</p>
+        </div>
       </div>
-      <div class="print-info-area">
-        <p>姓名: __________________</p>
-        <p>日期: __________________</p>
-      </div>
+      <div id="printQuestions" class="print-questions-container"></div>
+      <div class="print-footer">COPY RIGHT 2026 Scout System</div>
     </div>
-    <div id="printQuestions" class="print-questions-container"></div>
-    <div class="print-footer">COPY RIGHT 2026 Scout System</div>
+    <div id="printAnswerSheet" class="hidden">
+      <div class="print-header print-header--answer">
+        <div class="print-title-area">
+          <h1 class="print-title">試卷參考答案</h1>
+          <p class="print-subtitle">Scout System Cipher Answer Key · 領袖專用</p>
+        </div>
+        <div class="print-info-area">
+          <p>列印日期: <span id="printAnswerDate"></span></p>
+          <p>共 <span id="printAnswerCount">0</span> 題</p>
+        </div>
+      </div>
+      <div id="printAnswers" class="print-answers-container"></div>
+      <div class="print-footer print-footer--answer">COPY RIGHT 2026 Scout System · CONFIDENTIAL · 領袖專用</div>
+    </div>
   </div>
 
   <script type="module" src="/js/app.js"></script>

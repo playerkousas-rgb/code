@@ -36,9 +36,27 @@ const showToast = (m) => {
 
 // ===================== GET SPEED =====================
 function getSpeed() {
+  // Per-question speed is the source of truth in the test-paper flow.
+  // The top-level slider is still used while editing a question so the
+  // change can be previewed before the user saves.
   var s = document.getElementById('projSpeedOverlay');
   if(!s || s.value === undefined) s = document.getElementById('projSpeed');
   return s ? parseInt(s.value) : 1200;
+}
+
+function getSemStyle() {
+  var s = document.getElementById('semPrintStyle');
+  return s ? s.value : 'stick';
+}
+
+function qSpeed(q) {
+  return (q && Number.isFinite(Number(q.speed))) ? Number(q.speed) : 1200;
+}
+function qSemStyle(q) {
+  return (q && (q.semStyle === 'doll' || q.semStyle === 'stick')) ? q.semStyle : 'stick';
+}
+function qDirection(q) {
+  return (q && q.direction === 'decode') ? 'decode' : 'encode';
 }
 
 // ===================== RENDERERS =====================
@@ -88,12 +106,29 @@ function getEncoded(text, type, key, shift) {
   }
 }
 
+// ===== REVEAL MODE (Kahoot-style answer reveal in the projection flow) =====
+//   none  — leader runs the show verbally, no answer shown by the app
+//   perQ  — the projection displays the correct answer after each question
+//           has been answered; the leader advances manually
+//   end   — answers stay hidden until the very last question; then the
+//           entire answer key is shown on the projection overlay
+const REVEAL_MODES = ['none', 'perQ', 'end'];
+const REVEAL_MODE_LABELS = { none: '不揭示', perQ: '每題揭示', end: '總揭示' };
+function getRevealMode() {
+  var s = document.getElementById('revealMode');
+  return (s && REVEAL_MODES.indexOf(s.value) >= 0) ? s.value : 'none';
+}
+
 // ===================== PROJECTION =====================
+let projRevealed = false;  // Tracks whether the current question's answer
+                           // is being shown on the projection overlay. The
+                           // next-question button clears it again.
 function clearProj() {
   clearInterval(projTimer); projTimer=null;
   if(audioCtx){audioCtx.close();audioCtx=null;}
   if(natoTimer){clearInterval(natoTimer);natoTimer=null;window.speechSynthesis&&window.speechSynthesis.cancel();}
   var pb=$('btnProjPlay'); if(pb) pb.classList.add('hidden');
+  var rb=$('btnProjReveal'); if(rb) rb.classList.add('hidden');
 }
 
 function showProjection() {
@@ -104,20 +139,94 @@ function showProjection() {
   var hasAudio=(q.type==='Morse'||q.type==='NATO')&&q.display==='audio';
   var pb=$('btnProjPlay');
   if(hasCarousel||hasAudio){if(pb)pb.classList.remove('hidden');if(pb)pb.textContent=q.display==='audio'?'🔊 播放音訊':'▶ 開始輪播';}
+  // Reset the per-question reveal flag every time we land on a new
+  // question; the leader has to press the reveal button again to show
+  // the answer for this one.
+  projRevealed=false;
+  // The reveal button only appears when the leader opted into per-Q or
+  // "end" mode in the test-paper toolbar. "none" hides it entirely so
+  // the show stays leader-driven.
+  var rb=$('btnProjReveal');
+  var mode=getRevealMode();
+  if(mode==='perQ'){if(rb)rb.classList.remove('hidden');if(rb)rb.textContent='💡 揭示答案';}
+  else if(rb)rb.classList.add('hidden');
   renderProjStatic(q);
 }
 
 function renderProjStatic(q) {
-  var c=$('projectionContent'), u=q.text.toUpperCase(), h='';
-  if(q.display==='static'||(q.type!=='Morse'&&q.type!=='Semaphore'&&q.type!=='NATO')) {
+  var c=$('projectionContent'), u=q.text.toUpperCase(), h='', semStyle=qSemStyle(q), dir=qDirection(q);
+  // Decode direction: show the original English and ask the audience to
+  // write the cipher down, instead of flashing the encoded symbol.
+  if(dir==='decode' && q.type!=='Morse' && q.type!=='NATO' && q.type!=='Semaphore') {
+    h=`<div class="text-[9vw] font-black text-white text-center">${escapeHTML(u)}</div><div class="mt-6 text-sky-300 text-2xl font-black">↑ 請用 ${escapeHTML(q.type)} 表示 ↑</div>`;
+  } else if(q.display==='static'||(q.type!=='Morse'&&q.type!=='Semaphore'&&q.type!=='NATO')) {
     if(q.type==='Morse') h=`<div class="text-[7vw] font-mono tracking-widest text-[var(--skw-gold)]">${escapeHTML(getEncoded(q.text,'Morse'))}</div>`;
-    else if(q.type==='Semaphore'){var s=$('semPrintStyle').value;h=`<div class="flex flex-wrap justify-center gap-6">${u.split('').map(c=>c===' '?'<div class="w-16"></div>':(s==='doll'?renderDoll(c,120):renderStickFigure(c,"white",120))).join('')}</div>`;}
+    else if(q.type==='Semaphore'){h=`<div class="flex flex-wrap justify-center gap-6">${u.split('').map(c=>c===' '?'<div class="w-16"></div>':(semStyle==='doll'?renderDoll(c,120):renderStickFigure(c,"white",120))).join('')}</div>`;}
     else if(q.type==='Braille') h=`<div class="flex flex-wrap justify-center gap-10 scale-[2.5]">${u.split('').map(c=>c===' '?'<div class="w-10"></div>':renderBraille(c)).join('')}</div>`;
     else if(q.type==='Pigpen') h=`<div class="flex flex-wrap justify-center gap-10 scale-[3]">${u.split('').map(c=>c===' '?'<div class="w-10"></div>':renderPigpenSVG(c)).join('')}</div>`;
     else if(q.type==='NATO') h=`<div class="text-[5vw] font-black text-white text-center leading-relaxed">${getEncoded(q.text,'NATO').split(' ').map(w=>`<span class="inline-block mx-2 px-6 py-2 bg-white/5 rounded-2xl">${escapeHTML(w)}</span>`).join('')}</div>`;
     else h=`<div class="text-[9vw] font-black text-white text-center">${escapeHTML(getEncoded(q.text,q.type))}</div>`;
   } else { h=`<div class="text-slate-600 text-3xl font-black">${q.display==='audio'?'聽力考核項目':'點擊下方開始輪播'}</div>`; }
   c.innerHTML=`<div class="animate-in w-full text-center">${h}</div>`;
+}
+
+// Render just the answer for a single question, used by the per-Q reveal
+// and the final full-key screen. Reuses the same per-question style and
+// direction flags so the reveal matches the question's own settings.
+function renderProjAnswer(q) {
+  var c=$('projectionContent'), u=q.text.toUpperCase(), semStyle=qSemStyle(q), dir=qDirection(q);
+  var labelMap={"Morse":"摩斯","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高","Grid":"座標","Phone":"電話","Caesar":"凱撒","Atbash":"反射","Reverse":"倒序","NATO":"NATO","Cangjie":"倉頡","Quick":"速成"};
+  var label=labelMap[q.type]||q.type;
+  var symbol;
+  // Audio questions can't show a static symbol — show a stylised card
+  // pointing the leader at the audio playback button instead.
+  if((q.type==='Morse'||q.type==='NATO') && q.display==='audio') {
+    symbol='<div class="text-[5vw] text-amber-300 font-black">🔊 聲音播放（請按下方「開始輪播」）</div>';
+  } else if(dir==='decode') {
+    // For decode questions the answer is the encoded cipher of the
+    // original text — reuse the same renderer as the static question
+    // but bound to the encoded output, not the English.
+    var encodedText=getEncoded(q.text, q.type);
+    if(q.type==='Semaphore') symbol=`<div class="flex flex-wrap justify-center gap-6">${u.split('').map(function(ch){return ch===' '?'<div class="w-16"></div>':(semStyle==='doll'?renderDoll(ch,140):renderStickFigure(ch,"#00ff88",140));}).join('')}</div>`;
+    else if(q.type==='Braille') symbol=`<div class="flex flex-wrap justify-center gap-10 scale-[2.5]">${u.split('').map(function(ch){return ch===' '?'<div class="w-10"></div>':renderBraille(ch);}).join('')}</div>`;
+    else if(q.type==='Pigpen') symbol=`<div class="flex flex-wrap justify-center gap-10 scale-[3]">${u.split('').map(function(ch){return ch===' '?'<div class="w-10"></div>':renderPigpenSVG(ch,'#00ff88');}).join('')}</div>`;
+    else symbol=`<div class="text-[7vw] font-mono text-[var(--skw-gold)] text-center">${escapeHTML(encodedText)}</div>`;
+  } else {
+    // Encode direction: the answer is the encoded text the members
+    // were asked to write down.
+    if(q.type==='Morse') symbol=`<div class="text-[7vw] font-mono tracking-widest text-[var(--skw-gold)]">${escapeHTML(getEncoded(q.text,'Morse'))}</div>`;
+    else if(q.type==='Semaphore') symbol=`<div class="flex flex-wrap justify-center gap-6">${u.split('').map(function(ch){return ch===' '?'<div class="w-16"></div>':(semStyle==='doll'?renderDoll(ch,140):renderStickFigure(ch,"#00ff88",140));}).join('')}</div>`;
+    else if(q.type==='Braille') symbol=`<div class="flex flex-wrap justify-center gap-10 scale-[2.5]">${u.split('').map(function(ch){return ch===' '?'<div class="w-10"></div>':renderBraille(ch);}).join('')}</div>`;
+    else if(q.type==='Pigpen') symbol=`<div class="flex flex-wrap justify-center gap-10 scale-[3]">${u.split('').map(function(ch){return ch===' '?'<div class="w-10"></div>':renderPigpenSVG(ch,'#00ff88');}).join('')}</div>`;
+    else if(q.type==='NATO') symbol=`<div class="text-[5vw] font-black text-white text-center leading-relaxed">${getEncoded(q.text,'NATO').split(' ').map(function(w){return `<span class="inline-block mx-2 px-6 py-2 bg-emerald-500/20 border border-emerald-400 rounded-2xl text-emerald-300">${escapeHTML(w)}</span>`}).join('')}</div>`;
+    else symbol=`<div class="text-[7vw] font-mono text-[var(--skw-gold)] text-center">${escapeHTML(getEncoded(q.text,q.type))}</div>`;
+  }
+  c.innerHTML='<div class="animate-in w-full text-center"><div class="text-amber-300 text-3xl font-black tracking-widest mb-4">✓ 參考答案</div><div class="text-2xl text-slate-300 mb-6">題目: '+escapeHTML(u)+' <span class="text-slate-500">('+escapeHTML(label)+')</span></div>'+symbol+'</div>';
+}
+
+// Render the full answer key on the projection overlay. Used at the
+// end of the test when the leader chose the "總揭示" mode.
+function renderProjAnswerKey() {
+  var c=$('projectionContent');
+  var labelMap={"Morse":"摩斯","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高","Grid":"座標","Phone":"電話","Caesar":"凱撒","Atbash":"反射","Reverse":"倒序","NATO":"NATO","Cangjie":"倉頡","Quick":"速成"};
+  var rows=testQuestions.map(function(q,idx){
+    var u=q.text.toUpperCase();
+    var label=labelMap[q.type]||q.type;
+    var encoded;
+    if((q.type==='Morse'||q.type==='NATO')&&q.display==='audio') encoded='（聲音播放）';
+    else encoded=getEncoded(q.text,q.type);
+    var dirTag=q.direction==='decode'?'<span class="text-rose-300 ml-2 text-base">[倒轉]</span>':'';
+    return '<tr class="border-b border-white/10">'
+      + '<td class="text-amber-300 font-black py-3 pr-4 text-2xl align-top">Q'+(idx+1)+'</td>'
+      + '<td class="py-3 pr-4"><div class="text-white font-bold text-xl">'+escapeHTML(u)+dirTag+'</div><div class="text-slate-500 text-sm">'+escapeHTML(label)+'</div></td>'
+      + '<td class="py-3 font-mono text-emerald-300 text-lg">'+escapeHTML(encoded)+'</td>'
+      + '</tr>';
+  }).join('');
+  c.innerHTML='<div class="animate-in w-full max-w-5xl mx-auto">'
+    + '<div class="text-amber-300 text-5xl font-black tracking-widest mb-2 text-center">🏆 試卷參考答案</div>'
+    + '<div class="text-slate-400 text-center mb-8">總共 '+testQuestions.length+' 題 · 領袖專用 · 投影結束後可關閉</div>'
+    + '<table class="w-full">'+rows+'</table>'
+    + '</div>';
 }
 
 // ===================== PLAY MORSE (速度可調) =====================
@@ -175,7 +284,12 @@ function buildReferenceTables() {
   ['1','2:ABC','3:DEF','4:GHI','5:JKL','6:MNO','7:PQRS','8:TUV','9:WXYZ'].forEach(function(k){h+=`<div class="bg-black/40 p-2 rounded text-center"><div class="text-[var(--skw-gold)] font-bold text-sm">${k.split(':')[0]}</div><div class="text-[9px] text-slate-500">${k.split(':')[1]||''}</div></div>`;});
   $('phoneTableWrap').innerHTML=h+'</div>';
   var key=normalizeGridKey($('gridKey').value),alpha="ABCDEFGHIKLMNOPQRSTUVWXY";
-  h=`<tr><th></th>${key.split('').map(function(k){return `<th>${k}</th>`;}).join('')}</tr>`;
+  // Use an explicit <colgroup> so every column (incl. the row-label column)
+  // is the same width. Without this the first cell in each row is squeezed
+  // by the browser while the rest of the table gets stretched, which made
+  // the column under the last key letter look dramatically wider.
+  h='<colgroup><col><col><col><col><col><col></colgroup>';
+  h+=`<tr><th></th>${key.split('').map(function(k){return `<th>${k}</th>`;}).join('')}</tr>`;
   for(var r=0;r<5;r++){h+='<tr><th>'+key[r]+'</th>';for(var c2=0;c2<5;c2++){var ch=alpha[r*5+c2];h+=`<td data-ch="${ch}">${ch}</td>`;}h+='</tr>';}
   $('gridTable').innerHTML=h;
   h='<div class="grid grid-cols-9 gap-2">';
@@ -309,22 +423,11 @@ function syncSpeed() {
   }
 }
 
-function refreshTrainingSummary() {
-  try {
-    var training=JSON.parse(localStorage.getItem('skw_cipher_training_progress')||'{}');
-    if($('trainingBestScore'))$('trainingBestScore').textContent=Number(training.best||0).toLocaleString();
-    if($('trainingLastResult'))$('trainingLastResult').textContent=training.sessions?'上次 '+Number(training.lastAccuracy||0)+'% 準確 · 已完成 '+training.sessions+' 局':'尚未開始訓練';
-  } catch(e) {}
-}
-window.addEventListener('pageshow',refreshTrainingSummary);
-
 // ===================== APP INIT =====================
 document.addEventListener('DOMContentLoaded', function() {
   var draft=localStorage.getItem('skw_message_draft');
   if(draft)$('inputText').value=draft.slice(0,200);
   buildReferenceTables(); buildPigpenGrid(); updateAll();
-
-  refreshTrainingSummary();
 
   var urlParams=new URLSearchParams(window.location.search), joinId=urlParams.get('join');
   var modeTitles={editor:'編碼工具',testpaper:'試卷生成',game:'互動搶答'};
@@ -347,6 +450,11 @@ document.addEventListener('DOMContentLoaded', function() {
     $('testPaperView').classList.toggle('hidden',mode!=='testpaper');
     $('gameView').classList.toggle('hidden',mode!=='game');
     $('currentModeTitle').textContent=modeTitles[mode]||'密碼旗號助手';
+    // The "Print answer key" button only makes sense once a leader is
+    // editing a test paper. Hide it everywhere else to avoid accidental
+    // presses on an empty test.
+    var answerBtn=$('btnPrintAnswers');
+    if(answerBtn)answerBtn.classList.toggle('hidden',mode!=='testpaper');
     if(mode==='testpaper')renderTestList();
     if(mode==='game')initGameHost();
     closeSidebar();
@@ -368,7 +476,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   $('inputText').oninput=updateAll;
   document.querySelectorAll('[data-sample]').forEach(function(button){button.onclick=function(){$('inputText').value=this.dataset.sample;updateAll();$('inputText').focus();};});
-  document.querySelector('[data-scroll-to-input]').onclick=function(){$('messageComposer').scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){$('inputText').focus();},350);};
+  var scrollBtn=document.querySelector('[data-scroll-to-input]');if(scrollBtn){scrollBtn.onclick=function(){$('messageComposer').scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){$('inputText').focus();},350);};}
   $('btnClearInput').onclick=function(){$('inputText').value='';updateAll();$('inputText').focus();};
   $('btnAddToTest').onclick=function(){
     var value=$('inputText').value.trim();
@@ -387,27 +495,50 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // PROJECTION
   $('btnProjectTest').onclick=function(){if(testQuestions.length){currentProjIdx=0;showProjection();}};
-  $('btnProjNext').onclick=function(){if(currentProjIdx<testQuestions.length-1){currentProjIdx++;showProjection();}};
+  $('btnProjNext').onclick=function(){
+    if(currentProjIdx<testQuestions.length-1){
+      currentProjIdx++;
+      showProjection();
+    } else if(getRevealMode()==='end'){
+      // End-of-test: when "總揭示" is on, the next button after the
+      // last question replaces the question view with the full key.
+      var rb=$('btnProjReveal'); if(rb) rb.classList.add('hidden');
+      renderProjAnswerKey();
+    } else {
+      showToast('已是最後一題');
+    }
+  };
   $('btnProjPrev').onclick=function(){if(currentProjIdx>0){currentProjIdx--;showProjection();}};
   $('btnExitProjection').onclick=function(){$('projectionOverlay').style.display='none';clearProj();};
+
+  // Per-question reveal button. Pressing it swaps the projection content
+  // from the question to the answer; the button text changes so the
+  // leader can press it again to go back to the question if they want
+  // to quiz the audience first.
+  $('btnProjReveal').onclick=function(){
+    var q=testQuestions[currentProjIdx]; if(!q)return;
+    projRevealed=!projRevealed;
+    if(projRevealed){renderProjAnswer(q);this.textContent='↩ 回到題目';}
+    else {renderProjStatic(q);this.textContent='💡 揭示答案';}
+  };
 
   // PLAY BUTTON
   $('btnProjPlay').onclick=function(){
     var q=testQuestions[currentProjIdx]; if(!q)return;
-    var text=q.text.toUpperCase(), speed=getSpeed();
+    var text=q.text.toUpperCase(), speed=qSpeed(q), semStyle=qSemStyle(q);
     if(q.display==='audio'){
       if(q.type==='Morse'){playMorse(text,speed);return;}
       if(q.type==='NATO'){playNatoAudio(text,speed);return;}
       return;
     }
-    var i=0, style=$('semPrintStyle').value;
+    var i=0;
     clearInterval(projTimer);
     projTimer=setInterval(function(){
       if(i>=text.length){clearInterval(projTimer);return;}
       var c=text[i],h='';
       if(q.type==='Morse') h=`<div class="text-[25vw] font-mono text-[var(--skw-gold)]">${escapeHTML(MORSE_CODE[c]||c)}</div>`;
       else if(q.type==='NATO') h=`<div class="text-[12vw] font-black text-white">${escapeHTML(NATO_MAP[c]||c)}</div>`;
-      else h=(style==='doll'?renderDoll(c,450):renderStickFigure(c,"white",450));
+      else h=(semStyle==='doll'?renderDoll(c,450):renderStickFigure(c,"white",450));
       $('projectionContent').innerHTML=`<div class="animate-in flex flex-col items-center">${h}<div class="mt-16 text-slate-500 font-bold text-2xl">字母 ${i+1} / ${text.length}</div></div>`;
       i++;
     },speed);
@@ -416,19 +547,76 @@ document.addEventListener('DOMContentLoaded', function() {
   // ===== PRINT =====
   $('btnExportPDF').onclick=function(){
     if(!testQuestions.length)return alert('請先加入題目');
-    var style=$('semPrintStyle').value;
+    var defaultStyle=getSemStyle();
     $('printQuestions').innerHTML=testQuestions.map(function(q,idx){
-      var upper=q.text.toUpperCase(),encoded='';
+      var upper=q.text.toUpperCase();
+      var semStyle=qSemStyle(q);
+      var style=semStyle||defaultStyle;
+      var dir=qDirection(q);
+      var encoded='';
+      var promptLine='';
+      // Reverse direction: show the English on the page and ask the
+      // member to write the cipher symbols down.
+      if(dir==='decode') {
+        var labelMap={"Morse":"摩斯密碼","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高密碼","Grid":"座標密碼","Phone":"電話密碼","Caesar":"凱撒位移","Atbash":"反射密碼","Reverse":"倒序密碼","NATO":"NATO","Cangjie":"倉頡","Quick":"速成"};
+        var label=labelMap[q.type]||q.type;
+        encoded=`<span class="text-2xl font-mono">${escapeHTML(upper)}</span>`;
+        promptLine='<div class="text-base text-gray-600 mt-1">↑ 請用 ' + escapeHTML(label) + ' 表示 ↑</div>';
+        var heading='<b>Q' + (idx+1) + '. 將以下文字寫成 ' + escapeHTML(q.type) + '：</b>';
+        return `<div class="print-question">${heading}${promptLine}<div class="mt-6 flex items-center justify-center">${encoded}</div><div class="mt-10 border-b border-black w-full h-8"></div></div>`;
+      }
       if(q.type==='Semaphore') encoded=`<div class="flex flex-wrap gap-4 justify-center">${upper.split('').map(function(c){return c===' '?'<div class="w-8"></div>':(style==='doll'?`<img src="images/${SEMAPHORE_MAP[c]}" class="w-16 h-16 border border-black p-0.5">`:renderStickFigure(c,"black",60));}).join('')}</div>`;
       else if(q.type==='Braille') encoded=`<div class="flex flex-wrap gap-4 justify-center">${upper.split('').map(function(c){return c===' '?'<div class="w-8"></div>':renderBraille(c);}).join('')}</div>`;
       else if(q.type==='Pigpen') encoded=`<div class="flex flex-wrap gap-4 justify-center">${upper.split('').map(function(c){return c===' '?'<div class="w-8"></div>':renderPigpenSVG(c,"#000");}).join('')}</div>`;
       else if(q.type==='NATO') encoded=q.display==='audio'?'<span class="text-xl italic">（聽力考核項目）</span>':`<div class="text-lg font-bold text-center">${escapeHTML(upper.split('').map(function(c){return c===' '?'  ':NATO_MAP[c]||c;}).join(' '))}</div>`;
       else if(q.type==='Morse'&&q.display==='audio') encoded='<span class="text-xl italic">（聽力考核項目）</span>';
       else encoded=`<span class="text-2xl font-mono">${escapeHTML(getEncoded(q.text,q.type))}</span>`;
-      return `<div class="print-question"><b>Q${idx+1}. 翻譯以下密碼 (${q.type}):</b><div class="mt-6 flex items-center justify-center">${encoded}</div><div class="mt-10 border-b border-black w-full h-8"></div></div>`;
+      return `<div class="print-question"><b>Q${idx+1}. 翻譯以下密碼 (${q.type})：</b><div class="mt-6 flex items-center justify-center">${encoded}</div><div class="mt-10 border-b border-black w-full h-8"></div></div>`;
     }).join('');
+    // Print the exam sheet only — the answer sheet is hidden by default
+    // and only shown when its own button fires.
+    document.body.removeAttribute('data-print-mode');
     setTimeout(function(){window.print();},200);
   };
+
+  // Render the answer key contents into #printAnswers and trigger the
+  // print dialog. We tag the body so the print CSS knows to swap which
+  // sub-sheet of #printView is shown — the exam sheet stays hidden.
+  $('btnPrintAnswers').onclick=function(){
+    if(!testQuestions.length)return alert('請先加入題目');
+    var labelMap={"Morse":"摩斯密碼","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高密碼","Grid":"座標密碼","Phone":"電話密碼","Caesar":"凱撒位移","Atbash":"反射密碼","Reverse":"倒序密碼","NATO":"NATO","Cangjie":"倉頡","Quick":"速成"};
+    $('printAnswerCount').textContent=testQuestions.length;
+    $('printAnswerDate').textContent=new Date().toLocaleDateString('zh-Hant');
+    $('printAnswers').innerHTML=testQuestions.map(function(q,idx){
+      var upper=q.text.toUpperCase();
+      var dir=qDirection(q);
+      var label=labelMap[q.type]||q.type;
+      // For decode questions the answer is the original ciphertext; for
+      // encode questions the answer is the encoded text the member is
+      // expected to write. Either way we show "original text <-> answer".
+      var cipherValue;
+      if(q.type==='Morse'&&q.display==='audio') cipherValue='（聲音播放）';
+      else if(q.type==='NATO'&&q.display==='audio') cipherValue='（聲音播放）';
+      else cipherValue=getEncoded(q.text,q.type);
+      var directionBadge=dir==='decode'?'<span class="answer-direction">倒轉題</span>':'';
+      return '<div class="print-answer-item">'
+        + '<div class="answer-head">'
+        + '<span class="answer-q">Q'+(idx+1)+'.'+directionBadge+'</span>'
+        + '<span class="answer-meta">'+escapeHTML(label)+' · 速度 '+(q.speed?(q.speed/1000).toFixed(1)+'s':'-')+(q.type==='Semaphore'?' · '+(q.semStyle==='doll'?'貝登堡公仔':'火柴人'):'')+'</span>'
+        + '</div>'
+        + '<div class="answer-pair"><span class="answer-label">'+(dir==='decode'?'原文字':'原文字')+'</span><span class="answer-value">'+escapeHTML(upper)+'</span></div>'
+        + '<div class="answer-pair"><span class="answer-label">參考答案</span><span class="answer-value">'+escapeHTML(cipherValue)+'</span></div>'
+        + '</div>';
+    }).join('');
+    document.body.setAttribute('data-print-mode','answers');
+    setTimeout(function(){window.print();},200);
+  };
+
+  // After the print dialog closes, reset the body attribute so the next
+  // regular print goes back to the exam sheet by default.
+  window.addEventListener('afterprint',function(){
+    document.body.removeAttribute('data-print-mode');
+  });
 
   // ===== BUZZER =====
   $('btnStartGame').onclick=function(){
@@ -475,14 +663,79 @@ function renderTestList() {
     var hasAudio=q.type==='Morse'||q.type==='NATO';
     var typeOptions=Object.entries(labels).map(function(v){return '<option value="'+v[0]+'"'+(q.type===v[0]?' selected':'')+'>'+v[1]+'</option>';}).join('');
     var displayOptions=hasDisplay?`<select data-question-index="${idx}" data-question-field="display" aria-label="第 ${idx+1} 題顯示方式" class="bg-sky-900/40 text-sky-200 text-xs p-3 rounded-lg min-h-11"><option value="static" ${q.display==='static'?'selected':''}>整條顯示</option><option value="carousel" ${q.display==='carousel'?'selected':''}>逐字輪播</option>${hasAudio?'<option value="audio" '+(q.display==='audio'?'selected':'')+'>聲音播放</option>':''}</select>`:'';
-    return `<article class="skw-card flex flex-col md:flex-row justify-between items-stretch md:items-center mb-0 p-5 gap-4"><div class="flex items-center gap-3 flex-wrap min-w-0"><span class="text-[var(--skw-gold)] font-black">Q${idx+1}</span><span class="font-bold break-words flex-1 min-w-[180px]">${escapeHTML(q.text)}</span><select data-question-index="${idx}" data-question-field="type" aria-label="第 ${idx+1} 題密碼類型" class="bg-black/60 text-white text-xs p-3 rounded-lg min-h-11">${typeOptions}</select>${displayOptions}</div><button type="button" data-delete-question="${idx}" class="text-red-300 border border-red-400/20 bg-red-500/10 rounded-lg px-4 min-h-11 text-xs font-bold">刪除</button></article>`;
+    // Per-question toggle group: encode (show cipher) vs decode (show
+    // English, member writes the cipher). Applies to both projection and
+    // the printed test paper.
+    // Per-question settings shown only when they actually apply. The
+    // Semaphore style picker and the carousel/audio speed slider are
+    // specific to Semaphore / carousel-or-audio displays, so they
+    // stay hidden on other cipher types to avoid confusing members.
+    var direction=q.direction||'encode';
+    var semStyle=q.semStyle||'stick';
+    var speed=q.speed||1200;
+    var speedLabel=(speed/1000).toFixed(1)+'s';
+    var directionBlock=`<div class="flex items-center bg-black/40 border border-white/10 rounded-lg overflow-hidden text-xs font-bold" role="group" aria-label="第 ${idx+1} 題方向">
+      <button type="button" data-question-index="${idx}" data-question-field="direction" data-value="encode" class="px-3 py-2 min-h-11 ${direction==='encode'?'bg-[var(--skw-gold)] text-black':'text-slate-400 hover:text-white'}" title="出密碼符號，要成員翻譯">翻譯</button>
+      <button type="button" data-question-index="${idx}" data-question-field="direction" data-value="decode" class="px-3 py-2 min-h-11 ${direction==='decode'?'bg-[var(--skw-gold)] text-black':'text-slate-400 hover:text-white'}" title="出英文，要成員寫出密碼符號">倒轉</button>
+    </div>`;
+    var semStyleOptions=q.type==='Semaphore' ? `<select data-question-index="${idx}" data-question-field="semStyle" aria-label="第 ${idx+1} 題旗號樣式" class="bg-black/60 text-white text-xs p-3 rounded-lg min-h-11">
+      <option value="stick" ${semStyle==='stick'?'selected':''}>火柴人</option>
+      <option value="doll" ${semStyle==='doll'?'selected':''}>貝登堡公仔</option>
+    </select>` : '';
+    var speedControl=hasDisplay ? `<div class="flex items-center gap-2 bg-black/40 border border-white/10 rounded-lg p-2 min-h-11">
+      <span class="text-[10px] text-slate-500 font-bold">⏱</span>
+      <input type="range" min="100" max="5000" step="100" value="${speed}" data-question-index="${idx}" data-question-field="speed" aria-label="第 ${idx+1} 題輪播速度" class="w-24 accent-[var(--skw-gold)]">
+      <span class="text-[11px] text-[var(--skw-gold)] font-black w-9 text-right" data-speed-label-for="${idx}">${speedLabel}</span>
+    </div>` : '';
+    var semLabel=q.type==='Semaphore'?'<span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">旗號</span>':'';
+    var speedLabel2=hasDisplay?'<span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">速度</span>':'';
+    return `<article class="skw-card flex flex-col gap-3 mb-0 p-5">
+      <div class="flex items-center gap-3 flex-wrap min-w-0">
+        <span class="text-[var(--skw-gold)] font-black text-lg shrink-0">Q${idx+1}</span>
+        <span class="font-bold break-words flex-1 min-w-[180px] text-base">${escapeHTML(q.text)}</span>
+        <button type="button" data-delete-question="${idx}" class="text-red-300 border border-red-400/20 bg-red-500/10 rounded-lg px-4 min-h-11 text-xs font-bold ml-auto">刪除</button>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">密碼</span>
+        <select data-question-index="${idx}" data-question-field="type" aria-label="第 ${idx+1} 題密碼類型" class="bg-black/60 text-white text-xs p-3 rounded-lg min-h-11">${typeOptions}</select>
+        ${displayOptions}
+        ${directionBlock}
+      </div>
+      ${(semStyleOptions || speedControl) ? `<div class="flex items-center gap-2 flex-wrap">
+        ${semLabel}${semStyleOptions}
+        ${speedLabel2}${speedControl}
+      </div>` : ''}
+    </article>`;
   }).join('');
-  list.querySelectorAll('[data-question-field]').forEach(function(select){
+  list.querySelectorAll('select[data-question-field]').forEach(function(select){
     select.onchange=function(){
       var index=parseInt(this.dataset.questionIndex),field=this.dataset.questionField;
       if(!testQuestions[index])return;
       testQuestions[index][field]=this.value;
-      if(field==='type')testQuestions[index].display='static';
+      if(field==='type'){testQuestions[index].display='static';}
+      localStorage.setItem('skw_test_questions',JSON.stringify(testQuestions));
+      renderTestList();
+    };
+  });
+  // Per-question speed slider — update the live label and the stored value
+  // on every input tick so the user sees the chosen tempo immediately.
+  list.querySelectorAll('input[data-question-field="speed"]').forEach(function(input){
+    input.oninput=function(){
+      var index=parseInt(this.dataset.questionIndex);
+      if(!testQuestions[index])return;
+      var v=parseInt(this.value);
+      testQuestions[index].speed=v;
+      var label=list.querySelector('[data-speed-label-for="'+index+'"]');
+      if(label)label.textContent=(v/1000).toFixed(1)+'s';
+      localStorage.setItem('skw_test_questions',JSON.stringify(testQuestions));
+    };
+  });
+  // Direction toggle (encode / decode).
+  list.querySelectorAll('button[data-question-field="direction"]').forEach(function(button){
+    button.onclick=function(){
+      var index=parseInt(this.dataset.questionIndex);
+      if(!testQuestions[index])return;
+      testQuestions[index].direction=this.dataset.value;
       localStorage.setItem('skw_test_questions',JSON.stringify(testQuestions));
       renderTestList();
     };
