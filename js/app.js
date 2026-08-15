@@ -36,11 +36,10 @@ const showToast = (m) => {
 
 // ===================== GET SPEED =====================
 function getSpeed() {
-  // Per-question speed is the source of truth in the test-paper flow.
-  // The top-level slider is still used while editing a question so the
-  // change can be previewed before the user saves.
-  var s = document.getElementById('projSpeedOverlay');
-  if(!s || s.value === undefined) s = document.getElementById('projSpeed');
+  // Single source of truth: the toolbar slider on the test-paper page.
+  // Projection, audio playback, and the print answer sheet all read
+  // from here so the tempo stays consistent across every question.
+  var s = document.getElementById('projSpeed');
   return s ? parseInt(s.value) : 1200;
 }
 
@@ -49,9 +48,6 @@ function getSemStyle() {
   return s ? s.value : 'stick';
 }
 
-function qSpeed(q) {
-  return (q && Number.isFinite(Number(q.speed))) ? Number(q.speed) : 1200;
-}
 function qSemStyle(q) {
   return (q && (q.semStyle === 'doll' || q.semStyle === 'stick')) ? q.semStyle : 'stick';
 }
@@ -525,7 +521,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // PLAY BUTTON
   $('btnProjPlay').onclick=function(){
     var q=testQuestions[currentProjIdx]; if(!q)return;
-    var text=q.text.toUpperCase(), speed=qSpeed(q), semStyle=qSemStyle(q);
+    var text=q.text.toUpperCase(), speed=getSpeed(), semStyle=qSemStyle(q);
     if(q.display==='audio'){
       if(q.type==='Morse'){playMorse(text,speed);return;}
       if(q.type==='NATO'){playNatoAudio(text,speed);return;}
@@ -602,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return '<div class="print-answer-item">'
         + '<div class="answer-head">'
         + '<span class="answer-q">Q'+(idx+1)+'.'+directionBadge+'</span>'
-        + '<span class="answer-meta">'+escapeHTML(label)+' · 速度 '+(q.speed?(q.speed/1000).toFixed(1)+'s':'-')+(q.type==='Semaphore'?' · '+(q.semStyle==='doll'?'貝登堡公仔':'火柴人'):'')+'</span>'
+        + '<span class="answer-meta">'+escapeHTML(label)+(q.type==='Semaphore'?' · '+(q.semStyle==='doll'?'貝登堡公仔':'火柴人'):'')+'</span>'
         + '</div>'
         + '<div class="answer-pair"><span class="answer-label">'+(dir==='decode'?'原文字':'原文字')+'</span><span class="answer-value">'+escapeHTML(upper)+'</span></div>'
         + '<div class="answer-pair"><span class="answer-label">參考答案</span><span class="answer-value">'+escapeHTML(cipherValue)+'</span></div>'
@@ -667,13 +663,11 @@ function renderTestList() {
     // English, member writes the cipher). Applies to both projection and
     // the printed test paper.
     // Per-question settings shown only when they actually apply. The
-    // Semaphore style picker and the carousel/audio speed slider are
-    // specific to Semaphore / carousel-or-audio displays, so they
-    // stay hidden on other cipher types to avoid confusing members.
+    // Semaphore style picker is Semaphore-specific; the speed slider
+    // was removed here because projection speed is now controlled
+    // globally in the toolbar at the top of the test-paper page.
     var direction=q.direction||'encode';
     var semStyle=q.semStyle||'stick';
-    var speed=q.speed||1200;
-    var speedLabel=(speed/1000).toFixed(1)+'s';
     var directionBlock=`<div class="flex items-center bg-black/40 border border-white/10 rounded-lg overflow-hidden text-xs font-bold" role="group" aria-label="第 ${idx+1} 題方向">
       <button type="button" data-question-index="${idx}" data-question-field="direction" data-value="encode" class="px-3 py-2 min-h-11 ${direction==='encode'?'bg-[var(--skw-gold)] text-black':'text-slate-400 hover:text-white'}" title="出密碼符號，要成員翻譯">翻譯</button>
       <button type="button" data-question-index="${idx}" data-question-field="direction" data-value="decode" class="px-3 py-2 min-h-11 ${direction==='decode'?'bg-[var(--skw-gold)] text-black':'text-slate-400 hover:text-white'}" title="出英文，要成員寫出密碼符號">倒轉</button>
@@ -682,13 +676,7 @@ function renderTestList() {
       <option value="stick" ${semStyle==='stick'?'selected':''}>火柴人</option>
       <option value="doll" ${semStyle==='doll'?'selected':''}>貝登堡公仔</option>
     </select>` : '';
-    var speedControl=hasDisplay ? `<div class="flex items-center gap-2 bg-black/40 border border-white/10 rounded-lg p-2 min-h-11">
-      <span class="text-[10px] text-slate-500 font-bold">⏱</span>
-      <input type="range" min="100" max="5000" step="100" value="${speed}" data-question-index="${idx}" data-question-field="speed" aria-label="第 ${idx+1} 題輪播速度" class="w-24 accent-[var(--skw-gold)]">
-      <span class="text-[11px] text-[var(--skw-gold)] font-black w-9 text-right" data-speed-label-for="${idx}">${speedLabel}</span>
-    </div>` : '';
     var semLabel=q.type==='Semaphore'?'<span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">旗號</span>':'';
-    var speedLabel2=hasDisplay?'<span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">速度</span>':'';
     return `<article class="skw-card flex flex-col gap-3 mb-0 p-5">
       <div class="flex items-center gap-3 flex-wrap min-w-0">
         <span class="text-[var(--skw-gold)] font-black text-lg shrink-0">Q${idx+1}</span>
@@ -701,9 +689,8 @@ function renderTestList() {
         ${displayOptions}
         ${directionBlock}
       </div>
-      ${(semStyleOptions || speedControl) ? `<div class="flex items-center gap-2 flex-wrap">
+      ${semStyleOptions ? `<div class="flex items-center gap-2 flex-wrap">
         ${semLabel}${semStyleOptions}
-        ${speedLabel2}${speedControl}
       </div>` : ''}
     </article>`;
   }).join('');
@@ -717,20 +704,7 @@ function renderTestList() {
       renderTestList();
     };
   });
-  // Per-question speed slider — update the live label and the stored value
-  // on every input tick so the user sees the chosen tempo immediately.
-  list.querySelectorAll('input[data-question-field="speed"]').forEach(function(input){
-    input.oninput=function(){
-      var index=parseInt(this.dataset.questionIndex);
-      if(!testQuestions[index])return;
-      var v=parseInt(this.value);
-      testQuestions[index].speed=v;
-      var label=list.querySelector('[data-speed-label-for="'+index+'"]');
-      if(label)label.textContent=(v/1000).toFixed(1)+'s';
-      localStorage.setItem('skw_test_questions',JSON.stringify(testQuestions));
-    };
-  });
-  // Direction toggle (encode / decode).
+  // Per-question direction toggle (encode / decode).
   list.querySelectorAll('button[data-question-field="direction"]').forEach(function(button){
     button.onclick=function(){
       var index=parseInt(this.dataset.questionIndex);
