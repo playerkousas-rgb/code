@@ -362,7 +362,7 @@ function projectionDecoderMarkup(q) {
 function updateAll() {
   var v=$('inputText').value,t=v.toUpperCase(),key=normalizeGridKey($('gridKey').value);
   $('outMorse').textContent=getEncoded(v,'Morse');
-  $('outSemaphore').innerHTML=t.split('').map(function(c){return c===' '?'<span class="w-8"></span>':renderStickFigure(c,"#f43f5e",60);}).join('');
+  $('outSemaphore').innerHTML=t.split('').map(function(c){return c===' '?'<span class="w-8"></span>':renderStickFigure(c,"#ffcc00",60);}).join('');
   $('outPhone').textContent=getEncoded(v,'Phone');
   $('outBraille').innerHTML=t.split('').map(function(c){return c===' '?'<span class="w-8"></span>':renderBraille(c);}).join('');
   $('outPigpen').innerHTML=t.split('').map(function(c){return c===' '?'<span class="mx-2">/</span>':renderPigpenSVG(c);}).join('');
