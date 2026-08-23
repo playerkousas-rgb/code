@@ -57,6 +57,15 @@ function qSemStyle(q) {
 function qDirection(q) {
   return (q && q.direction === 'decode') ? 'decode' : 'encode';
 }
+function qNeedsDecoder(q) {
+  return !!(q && q.includeDecoder);
+}
+function setDecoderForType(type, enabled) {
+  // A decoder sheet belongs to a cipher type, not to an individual
+  // question. Ticking any question therefore ticks every question using
+  // that same cipher and still prints just one reference sheet.
+  testQuestions.forEach(function(q){ if(q.type===type) q.includeDecoder=enabled; });
+}
 
 // ===================== RENDERERS =====================
 function renderStickFigure(c, color, size) {
@@ -179,7 +188,7 @@ function renderProjStatic(q) {
   // same question set at two levels without editing every question.
   var hint=getProjectionDifficulty()==='easy'&&dir!=='decode'
     ? `<div class="mt-8 text-sky-200 text-2xl font-black">密碼提示：${escapeHTML(u)}</div>` : '';
-  c.innerHTML=`<div class="animate-in w-full text-center">${h}${hint}</div>`;
+  c.innerHTML=`<div class="animate-in w-full text-center">${h}${hint}${projectionDecoderMarkup(q)}</div>`;
 }
 
 // Render just the answer for a single question, used by the per-Q reveal
@@ -315,32 +324,47 @@ function buildPigpenGrid() {
   g.innerHTML=h;
 }
 
+function decoderSheetMarkup(type) {
+  var letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  var titleMap={Semaphore:'旗號對照表',Morse:'摩斯密碼及英文字母',Braille:'點字對照表',Pigpen:'朱高密碼對照表',Phone:'電話 T9 對照表',Grid:'座標密碼對照表',Caesar:'凱撒位移英文字母表',Atbash:'反射密碼英文字母表',Reverse:'倒序密碼提示',NATO:'NATO 音標對照表',Cangjie:'倉頡字根對照表',Quick:'速成字根對照表'};
+  var noteMap={Semaphore:'每個旗號圖案對應一個英文字母。',Morse:'摩斯密碼對照表；下方英文字母列可用作凱撒／移位解題。',Braille:'點字由左欄 1、2、3 點及右欄 4、5、6 點組成。',Pigpen:'每個朱高圖案對應一個英文字母。',Phone:'按鍵數字加上按壓次數，例如 A 是 21。',Grid:'本表按目前設定的 KEY 編排。',Caesar:'可將兩行字母左右移動，找出位移後的字母。',Atbash:'上、下兩行由頭尾相對，A 對 Z、B 對 Y，如此類推。',Reverse:'將整段文字由後向前閱讀。',NATO:'每個 NATO 音標詞對應一個英文字母。',Cangjie:'字根對照表。',Quick:'字根對照表。'};
+  var items='', extra='';
+  if(type==='Semaphore') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span>${renderStickFigure(ch,'black',54)}</div>`;}).join('');
+  else if(type==='Morse') {
+    items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${MORSE_CODE[ch]}</span></div>`;}).join('');
+    var alphabet=letters.map(function(ch){return `<span>${ch}</span>`;}).join('');
+    extra=`<h3 style="font-size:14pt;margin:20px 0 8px">英文字母移位列</h3><div class="decoder-alphabet">${alphabet}</div><div class="decoder-alphabet">${alphabet}</div>`;
+  } else if(type==='Braille') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span>${renderBraille(ch)}</div>`;}).join('');
+  else if(type==='Pigpen') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span>${renderPigpenSVG(ch,'#000')}</div>`;}).join('');
+  else if(type==='Phone') items=Object.entries(PHONE_GROUPS).map(function(pair){return `<div class="decoder-item"><span class="decoder-letter">${pair[0]}</span><span class="decoder-code">${pair[1].join(' ')}</span></div>`;}).join('');
+  else if(type==='Grid') { var key=normalizeGridKey($('gridKey').value); items=letters.filter(function(ch){return ch!=='Z';}).map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${getEncoded(ch,'Grid',key)}</span></div>`;}).join(''); }
+  else if(type==='NATO') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${NATO_MAP[ch]}</span></div>`;}).join('');
+  else if(type==='Cangjie'||type==='Quick') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${CANGJIE_ROOTS[ch]}</span></div>`;}).join('');
+  else { var normal=letters.map(function(ch){return `<span>${ch}</span>`;}).join(''), reversed=letters.slice().reverse().map(function(ch){return `<span>${ch}</span>`;}).join(''); extra=`<div class="decoder-alphabet">${normal}</div><div class="decoder-alphabet">${type==='Atbash'?reversed:normal}</div>`; }
+  return `<section class="print-decoder-sheet"><h2>解碼紙：${titleMap[type]||type}</h2><p class="decoder-note">${noteMap[type]||'密碼解碼參考。'}</p>${items?`<div class="decoder-grid">${items}</div>`:''}${extra}</section>`;
+}
+
 function buildDecoderSheets() {
   var target=$('printDecoderSheets'); if(!target)return;
-  var letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-  var flagItems=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span>${renderStickFigure(ch,'black',54)}</div>`;}).join('');
-  var morseItems=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${MORSE_CODE[ch]}</span></div>`;}).join('');
-  var brailleItems=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span>${renderBraille(ch)}</div>`;}).join('');
-  var alphabet=letters.map(function(ch){return `<span>${ch}</span>`;}).join('');
-  target.innerHTML=`
-    <section class="print-decoder-sheet">
-      <h2>解碼紙：旗號對照表</h2>
-      <p class="decoder-note">可與試卷分開使用；每個圖案對應一個英文字母。</p>
-      <div class="decoder-grid">${flagItems}</div>
-    </section>
-    <section class="print-decoder-sheet">
-      <h2>解碼紙：摩斯密碼及英文字母</h2>
-      <p class="decoder-note">摩斯密碼對照表；下方英文字母列可用作凱撒位移／移位解題。</p>
-      <div class="decoder-grid">${morseItems}</div>
-      <h3 style="font-size:14pt;margin:20px 0 8px">英文字母移位列</h3>
-      <div class="decoder-alphabet">${alphabet}</div>
-      <div class="decoder-alphabet">${alphabet}</div>
-    </section>
-    <section class="print-decoder-sheet">
-      <h2>解碼紙：點字對照表</h2>
-      <p class="decoder-note">點字由左欄 1、2、3 點及右欄 4、5、6 點組成。</p>
-      <div class="decoder-grid">${brailleItems}</div>
-    </section>`;
+  var types=[];
+  testQuestions.forEach(function(q){if(qNeedsDecoder(q)&&types.indexOf(q.type)===-1)types.push(q.type);});
+  target.innerHTML=types.map(decoderSheetMarkup).join('');
+}
+
+function projectionDecoderMarkup(q) {
+  if(!qNeedsDecoder(q))return '';
+  var letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), type=q.type, content='';
+  if(type==='Semaphore') content=letters.map(function(ch){return `<span class="projection-decoder-item">${renderStickFigure(ch,'white',30)}<b>${ch}</b></span>`;}).join('');
+  else if(type==='Braille') content=letters.map(function(ch){return `<span class="projection-decoder-item">${renderBraille(ch)}<b>${ch}</b></span>`;}).join('');
+  else if(type==='Morse') content=letters.map(function(ch){return `<span class="projection-decoder-item"><b>${ch}</b><small>${MORSE_CODE[ch]}</small></span>`;}).join('');
+  else if(type==='Pigpen') content=letters.map(function(ch){return `<span class="projection-decoder-item">${renderPigpenSVG(ch,'#ffcc00')}<b>${ch}</b></span>`;}).join('');
+  else if(type==='NATO') content=letters.map(function(ch){return `<span class="projection-decoder-item"><b>${ch}</b><small>${NATO_MAP[ch]}</small></span>`;}).join('');
+  else if(type==='Phone') content=Object.entries(PHONE_GROUPS).map(function(pair){return `<span class="projection-decoder-item"><b>${pair[0]}</b><small>${pair[1].join(' ')}</small></span>`;}).join('');
+  else if(type==='Grid') { var key=normalizeGridKey($('gridKey').value); content=letters.filter(function(ch){return ch!=='Z';}).map(function(ch){return `<span class="projection-decoder-item"><b>${ch}</b><small>${getEncoded(ch,'Grid',key)}</small></span>`;}).join(''); }
+  else if(type==='Cangjie'||type==='Quick') content=letters.map(function(ch){return `<span class="projection-decoder-item"><b>${ch}</b><small>${CANGJIE_ROOTS[ch]}</small></span>`;}).join('');
+  else if(type==='Reverse') content='<span class="projection-decoder-message">倒序：將整段文字由最後一個字元開始，逐個向前閱讀。</span>';
+  else { var bottom=(type==='Atbash'?letters.slice().reverse():letters).join(''); content=`<span class="projection-decoder-message"><b>${letters.join('')}</b><br><b>${bottom}</b><br><small>${type==='Caesar'?'將兩列左右移動以找出位移後的字母。':'上、下兩列的相對字母互相對應。'}</small></span>`; }
+  return `<div class="projection-decoder"><p>解碼表 · ${escapeHTML(type)}</p><div class="projection-decoder-grid">${content}</div></div>`;
 }
 
 function updateAll() {
@@ -579,7 +603,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if(q.type==='Morse') h=`<div class="text-[25vw] font-mono text-[var(--skw-gold)]">${escapeHTML(MORSE_CODE[c]||c)}</div>`;
       else if(q.type==='NATO') h=`<div class="text-[12vw] font-black text-white">${escapeHTML(NATO_MAP[c]||c)}</div>`;
       else h=(semStyle==='doll'?renderDoll(c,450):renderStickFigure(c,"white",450));
-      $('projectionContent').innerHTML=`<div class="animate-in flex flex-col items-center">${h}<div class="mt-16 text-slate-500 font-bold text-2xl">字母 ${i+1} / ${text.length}</div></div>`;
+      $('projectionContent').innerHTML=`<div class="animate-in flex flex-col items-center w-full">${h}<div class="mt-8 text-slate-500 font-bold text-2xl">字母 ${i+1} / ${text.length}</div>${projectionDecoderMarkup(q)}</div>`;
       i++;
     },speed);
   };
@@ -714,6 +738,11 @@ function renderTestList() {
     // globally in the toolbar at the top of the test-paper page.
     var direction=q.direction||'encode';
     var semStyle=q.semStyle||'stick';
+    // This checkbox is shared by all questions of the same cipher type.
+    // It prevents duplicate decoder sheets while letting a leader tick any
+    // one of Q1/Q3/Q5 to enable the common Semaphore reference.
+    var decoderEnabled=testQuestions.some(function(question){return question.type===q.type&&qNeedsDecoder(question);});
+    var decoderToggle=`<label class="flex items-center gap-2 text-xs font-bold text-slate-300 bg-emerald-950/30 border border-emerald-300/20 rounded-lg px-3 min-h-11 cursor-pointer"><input type="checkbox" data-decoder-type="${escapeHTML(q.type)}" ${decoderEnabled?'checked':''} class="accent-emerald-400 w-4 h-4">附解碼紙／投影表（同類同步）</label>`;
     var directionBlock=`<div class="flex items-center bg-black/40 border border-white/10 rounded-lg overflow-hidden text-xs font-bold" role="group" aria-label="第 ${idx+1} 題方向">
       <button type="button" data-question-index="${idx}" data-question-field="direction" data-value="encode" class="px-3 py-2 min-h-11 ${direction==='encode'?'bg-[var(--skw-gold)] text-black':'text-slate-400 hover:text-white'}" title="出密碼符號，要成員翻譯">翻譯</button>
       <button type="button" data-question-index="${idx}" data-question-field="direction" data-value="decode" class="px-3 py-2 min-h-11 ${direction==='decode'?'bg-[var(--skw-gold)] text-black':'text-slate-400 hover:text-white'}" title="出英文，要成員寫出密碼符號">倒轉</button>
@@ -734,6 +763,7 @@ function renderTestList() {
         <select data-question-index="${idx}" data-question-field="type" aria-label="第 ${idx+1} 題密碼類型" class="bg-black/60 text-white text-xs p-3 rounded-lg min-h-11">${typeOptions}</select>
         ${displayOptions}
         ${directionBlock}
+        ${decoderToggle}
       </div>
       ${semStyleOptions ? `<div class="flex items-center gap-2 flex-wrap">
         ${semLabel}${semStyleOptions}
@@ -746,6 +776,14 @@ function renderTestList() {
       if(!testQuestions[index])return;
       testQuestions[index][field]=this.value;
       if(field==='type'){testQuestions[index].display='static';}
+      localStorage.setItem('skw_test_questions',JSON.stringify(testQuestions));
+      renderTestList();
+    };
+  });
+  // One decoder selection applies to every question using that cipher.
+  list.querySelectorAll('input[data-decoder-type]').forEach(function(input){
+    input.onchange=function(){
+      setDecoderForType(this.dataset.decoderType,this.checked);
       localStorage.setItem('skw_test_questions',JSON.stringify(testQuestions));
       renderTestList();
     };
