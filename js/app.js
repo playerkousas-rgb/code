@@ -1,7 +1,10 @@
 // ===================== DATA =====================
 const MORSE_CODE = {'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.','0':'-----',' ':'/'};
 const SEMAPHORE_MAP = {'A':'a.png','B':'b.png','C':'c.png','D':'d.png','E':'e.png','F':'f.png','G':'g.png','H':'h.png','I':'i.png','J':'j.png','K':'k.png','L':'l.png','M':'m.png','N':'n.png','O':'o.png','P':'p.png','Q':'q.png','R':'r.png','S':'s.png','T':'t.png','U':'u.png','V':'v.png','W':'w.png','X':'x.png','Y':'y.png','Z':'z.png'};
-const SEM_ANGLES = {'A':[180,225],'B':[180,270],'C':[180,315],'D':[180,0],'E':[0,45],'F':[0,90],'G':[0,135],'H':[225,270],'I':[225,315],'J':[90,0],'K':[225,0],'L':[225,45],'M':[225,90],'N':[225,135],'O':[270,315],'P':[270,0],'Q':[270,45],'R':[270,90],'S':[270,135],'T':[315,0],'U':[315,45],'V':[0,90],'W':[45,90],'X':[45,135],'Y':[315,90],'Z':[135,90]};
+// Standard international semaphore positions, as seen by the reader.
+// 0 = up, 45 = upper-right, 90 = right, …, 180 = down.
+// E/F/G and V are explicitly checked against the standard alphabet chart.
+const SEM_ANGLES = {'A':[180,225],'B':[180,270],'C':[180,315],'D':[180,0],'E':[180,45],'F':[180,90],'G':[180,135],'H':[225,270],'I':[225,315],'J':[90,0],'K':[225,0],'L':[225,45],'M':[225,90],'N':[225,135],'O':[270,315],'P':[270,0],'Q':[270,45],'R':[270,90],'S':[270,135],'T':[315,0],'U':[315,45],'V':[0,135],'W':[45,90],'X':[45,135],'Y':[315,90],'Z':[135,90]};
 const BRAILLE_MAP = {'A':[1],'B':[1,2],'C':[1,4],'D':[1,4,5],'E':[1,5],'F':[1,2,4],'G':[1,2,4,5],'H':[1,2,5],'I':[2,4],'J':[2,4,5],'K':[1,3],'L':[1,2,3],'M':[1,3,4],'N':[1,3,4,5],'O':[1,3,5],'P':[1,2,3,4],'Q':[1,2,3,4,5],'R':[1,2,3,5],'S':[2,3,4],'T':[2,3,4,5],'U':[1,3,6],'V':[1,2,3,6],'W':[2,4,5,6],'X':[1,3,4,6],'Y':[1,3,4,5,6],'Z':[1,3,5,6]};
 const CANGJIE_ROOTS = {'A':'日','B':'月','C':'金','D':'木','E':'水','F':'火','G':'土','H':'竹','I':'戈','J':'十','K':'大','L':'中','M':'一','N':'弓','O':'人','P':'心','Q':'手','R':'口','S':'屍','T':'廿','U':'山','V':'女','W':'田','X':'難','Y':'卜','Z':'重'};
 const NATO_MAP = {'A':'Alpha','B':'Bravo','C':'Charlie','D':'Delta','E':'Echo','F':'Foxtrot','G':'Golf','H':'Hotel','I':'India','J':'Juliett','K':'Kilo','L':'Lima','M':'Mike','N':'November','O':'Oscar','P':'Papa','Q':'Quebec','R':'Romeo','S':'Sierra','T':'Tango','U':'Uniform','V':'Victor','W':'Whiskey','X':'X-ray','Y':'Yankee','Z':'Zulu'};
@@ -54,14 +57,27 @@ function qSemStyle(q) {
 function qDirection(q) {
   return (q && q.direction === 'decode') ? 'decode' : 'encode';
 }
+function qNeedsDecoder(q) {
+  return !!(q && q.includeDecoder);
+}
+function setDecoderForType(type, enabled) {
+  // A decoder sheet belongs to a cipher type, not to an individual
+  // question. Ticking any question therefore ticks every question using
+  // that same cipher and still prints just one reference sheet.
+  testQuestions.forEach(function(q){ if(q.type===type) q.includeDecoder=enabled; });
+}
 
 // ===================== RENDERERS =====================
 function renderStickFigure(c, color, size) {
   color=color||"white"; size=size||80;
   const a = SEM_ANGLES[c.toUpperCase()];
   if(!a) return `<div style="width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:2rem">${escapeHTML(c)}</div>`;
-  var h = `<svg width="${size}" height="${size*1.2}" viewBox="0 0 100 120"><circle cx="50" cy="25" r="10" fill="none" stroke="${color}" stroke-width="4"/><line x1="50" y1="35" x2="50" y2="75" stroke="${color}" stroke-width="4"/><line x1="50" y1="75" x2="35" y2="110" stroke="${color}" stroke-width="4"/><line x1="50" y1="75" x2="65" y2="110" stroke="${color}" stroke-width="4"/>`;
-  a.forEach((ang,i)=>{ var rad=(ang-90)*Math.PI/180; h+=`<line x1="50" y1="45" x2="${50+Math.cos(rad)*45}" y2="${45+Math.sin(rad)*45}" stroke="${color==='white'?(i===0?'#ffcc00':'#00d2ff'):'black'}" stroke-width="6" stroke-linecap="round"/>`; });
+  // Thick body lines and solid flag heads keep both hands visible in a
+  // screenshot.  The print version remains pure black for clean photocopying.
+  var ink=color==='black'?'#000':color;
+  var flagColors=color==='black'?['#000','#000']:['#ffcc00','#22d3ee'];
+  var h = `<svg width="${size}" height="${size*1.2}" viewBox="0 0 100 120" role="img" aria-label="旗號 ${escapeHTML(c.toUpperCase())}"><circle cx="50" cy="24" r="10" fill="${color==='black'?'#fff':'#061b46'}" stroke="${ink}" stroke-width="4"/><line x1="50" y1="35" x2="50" y2="76" stroke="${ink}" stroke-width="5" stroke-linecap="round"/><line x1="50" y1="75" x2="34" y2="110" stroke="${ink}" stroke-width="5" stroke-linecap="round"/><line x1="50" y1="75" x2="66" y2="110" stroke="${ink}" stroke-width="5" stroke-linecap="round"/>`;
+  a.forEach((ang,i)=>{ var rad=(ang-90)*Math.PI/180, x=50+Math.cos(rad)*43, y=45+Math.sin(rad)*43, fx=50+Math.cos(rad)*49, fy=45+Math.sin(rad)*49; h+=`<line x1="50" y1="45" x2="${x}" y2="${y}" stroke="${ink}" stroke-width="7" stroke-linecap="round"/><circle cx="${x}" cy="${y}" r="4" fill="${ink}"/><rect x="${fx-7}" y="${fy-7}" width="14" height="14" rx="1" fill="${flagColors[i]}" stroke="${ink}" stroke-width="2" transform="rotate(${ang} ${fx} ${fy})"/>`; });
   return h+'</svg>';
 }
 
@@ -114,6 +130,10 @@ function getRevealMode() {
   var s = document.getElementById('revealMode');
   return (s && REVEAL_MODES.indexOf(s.value) >= 0) ? s.value : 'none';
 }
+function getProjectionDifficulty() {
+  var s=document.getElementById('projectionDifficulty');
+  return s&&s.value==='easy'?'easy':'hard';
+}
 
 // ===================== PROJECTION =====================
 let projRevealed = false;  // Tracks whether the current question's answer
@@ -163,7 +183,12 @@ function renderProjStatic(q) {
     else if(q.type==='NATO') h=`<div class="text-[5vw] font-black text-white text-center leading-relaxed">${getEncoded(q.text,'NATO').split(' ').map(w=>`<span class="inline-block mx-2 px-6 py-2 bg-white/5 rounded-2xl">${escapeHTML(w)}</span>`).join('')}</div>`;
     else h=`<div class="text-[9vw] font-black text-white text-center">${escapeHTML(getEncoded(q.text,q.type))}</div>`;
   } else { h=`<div class="text-slate-600 text-3xl font-black">${q.display==='audio'?'聽力考核項目':'點擊下方開始輪播'}</div>`; }
-  c.innerHTML=`<div class="animate-in w-full text-center">${h}</div>`;
+  // Easy projection deliberately adds the plaintext password as a visual
+  // hint. Hard projection leaves this out, so leaders can use the exact
+  // same question set at two levels without editing every question.
+  var hint=getProjectionDifficulty()==='easy'&&dir!=='decode'
+    ? `<div class="mt-8 text-sky-200 text-2xl font-black">密碼提示：${escapeHTML(u)}</div>` : '';
+  c.innerHTML=`<div class="animate-in w-full text-center">${h}${hint}${projectionDecoderMarkup(q)}</div>`;
 }
 
 // Render just the answer for a single question, used by the per-Q reveal
@@ -297,6 +322,49 @@ function buildPigpenGrid() {
   var g=$('pigpenGrid'); if(!g)return;
   var h='';"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(function(c){h+=`<div class="flex flex-col items-center gap-1 p-2 bg-black/20 rounded border border-white/5">${renderPigpenSVG(c)}<span class="text-[9px] font-black text-slate-500">${c}</span></div>`;});
   g.innerHTML=h;
+}
+
+function decoderSheetMarkup(type) {
+  var letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  var titleMap={Semaphore:'旗號對照表',Morse:'摩斯密碼及英文字母',Braille:'點字對照表',Pigpen:'朱高密碼對照表',Phone:'電話 T9 對照表',Grid:'座標密碼對照表',Caesar:'凱撒位移英文字母表',Atbash:'反射密碼英文字母表',Reverse:'倒序密碼提示',NATO:'NATO 音標對照表',Cangjie:'倉頡字根對照表',Quick:'速成字根對照表'};
+  var noteMap={Semaphore:'每個旗號圖案對應一個英文字母。',Morse:'摩斯密碼對照表；下方英文字母列可用作凱撒／移位解題。',Braille:'點字由左欄 1、2、3 點及右欄 4、5、6 點組成。',Pigpen:'每個朱高圖案對應一個英文字母。',Phone:'按鍵數字加上按壓次數，例如 A 是 21。',Grid:'本表按目前設定的 KEY 編排。',Caesar:'可將兩行字母左右移動，找出位移後的字母。',Atbash:'上、下兩行由頭尾相對，A 對 Z、B 對 Y，如此類推。',Reverse:'將整段文字由後向前閱讀。',NATO:'每個 NATO 音標詞對應一個英文字母。',Cangjie:'字根對照表。',Quick:'字根對照表。'};
+  var items='', extra='';
+  if(type==='Semaphore') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span>${renderStickFigure(ch,'black',54)}</div>`;}).join('');
+  else if(type==='Morse') {
+    items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${MORSE_CODE[ch]}</span></div>`;}).join('');
+    var alphabet=letters.map(function(ch){return `<span>${ch}</span>`;}).join('');
+    extra=`<h3 style="font-size:14pt;margin:20px 0 8px">英文字母移位列</h3><div class="decoder-alphabet">${alphabet}</div><div class="decoder-alphabet">${alphabet}</div>`;
+  } else if(type==='Braille') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span>${renderBraille(ch)}</div>`;}).join('');
+  else if(type==='Pigpen') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span>${renderPigpenSVG(ch,'#000')}</div>`;}).join('');
+  else if(type==='Phone') items=Object.entries(PHONE_GROUPS).map(function(pair){return `<div class="decoder-item"><span class="decoder-letter">${pair[0]}</span><span class="decoder-code">${pair[1].join(' ')}</span></div>`;}).join('');
+  else if(type==='Grid') { var key=normalizeGridKey($('gridKey').value); items=letters.filter(function(ch){return ch!=='Z';}).map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${getEncoded(ch,'Grid',key)}</span></div>`;}).join(''); }
+  else if(type==='NATO') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${NATO_MAP[ch]}</span></div>`;}).join('');
+  else if(type==='Cangjie'||type==='Quick') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${CANGJIE_ROOTS[ch]}</span></div>`;}).join('');
+  else { var normal=letters.map(function(ch){return `<span>${ch}</span>`;}).join(''), reversed=letters.slice().reverse().map(function(ch){return `<span>${ch}</span>`;}).join(''); extra=`<div class="decoder-alphabet">${normal}</div><div class="decoder-alphabet">${type==='Atbash'?reversed:normal}</div>`; }
+  return `<section class="print-decoder-sheet"><h2>解碼紙：${titleMap[type]||type}</h2><p class="decoder-note">${noteMap[type]||'密碼解碼參考。'}</p>${items?`<div class="decoder-grid">${items}</div>`:''}${extra}</section>`;
+}
+
+function buildDecoderSheets() {
+  var target=$('printDecoderSheets'); if(!target)return;
+  var types=[];
+  testQuestions.forEach(function(q){if(qNeedsDecoder(q)&&types.indexOf(q.type)===-1)types.push(q.type);});
+  target.innerHTML=types.map(decoderSheetMarkup).join('');
+}
+
+function projectionDecoderMarkup(q) {
+  if(!qNeedsDecoder(q))return '';
+  var letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), type=q.type, content='';
+  if(type==='Semaphore') content=letters.map(function(ch){return `<span class="projection-decoder-item">${renderStickFigure(ch,'white',30)}<b>${ch}</b></span>`;}).join('');
+  else if(type==='Braille') content=letters.map(function(ch){return `<span class="projection-decoder-item">${renderBraille(ch)}<b>${ch}</b></span>`;}).join('');
+  else if(type==='Morse') content=letters.map(function(ch){return `<span class="projection-decoder-item"><b>${ch}</b><small>${MORSE_CODE[ch]}</small></span>`;}).join('');
+  else if(type==='Pigpen') content=letters.map(function(ch){return `<span class="projection-decoder-item">${renderPigpenSVG(ch,'#ffcc00')}<b>${ch}</b></span>`;}).join('');
+  else if(type==='NATO') content=letters.map(function(ch){return `<span class="projection-decoder-item"><b>${ch}</b><small>${NATO_MAP[ch]}</small></span>`;}).join('');
+  else if(type==='Phone') content=Object.entries(PHONE_GROUPS).map(function(pair){return `<span class="projection-decoder-item"><b>${pair[0]}</b><small>${pair[1].join(' ')}</small></span>`;}).join('');
+  else if(type==='Grid') { var key=normalizeGridKey($('gridKey').value); content=letters.filter(function(ch){return ch!=='Z';}).map(function(ch){return `<span class="projection-decoder-item"><b>${ch}</b><small>${getEncoded(ch,'Grid',key)}</small></span>`;}).join(''); }
+  else if(type==='Cangjie'||type==='Quick') content=letters.map(function(ch){return `<span class="projection-decoder-item"><b>${ch}</b><small>${CANGJIE_ROOTS[ch]}</small></span>`;}).join('');
+  else if(type==='Reverse') content='<span class="projection-decoder-message">倒序：將整段文字由最後一個字元開始，逐個向前閱讀。</span>';
+  else { var bottom=(type==='Atbash'?letters.slice().reverse():letters).join(''); content=`<span class="projection-decoder-message"><b>${letters.join('')}</b><br><b>${bottom}</b><br><small>${type==='Caesar'?'將兩列左右移動以找出位移後的字母。':'上、下兩列的相對字母互相對應。'}</small></span>`; }
+  return `<div class="projection-decoder"><p>解碼表 · ${escapeHTML(type)}</p><div class="projection-decoder-grid">${content}</div></div>`;
 }
 
 function updateAll() {
@@ -535,7 +603,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if(q.type==='Morse') h=`<div class="text-[25vw] font-mono text-[var(--skw-gold)]">${escapeHTML(MORSE_CODE[c]||c)}</div>`;
       else if(q.type==='NATO') h=`<div class="text-[12vw] font-black text-white">${escapeHTML(NATO_MAP[c]||c)}</div>`;
       else h=(semStyle==='doll'?renderDoll(c,450):renderStickFigure(c,"white",450));
-      $('projectionContent').innerHTML=`<div class="animate-in flex flex-col items-center">${h}<div class="mt-16 text-slate-500 font-bold text-2xl">字母 ${i+1} / ${text.length}</div></div>`;
+      $('projectionContent').innerHTML=`<div class="animate-in flex flex-col items-center w-full">${h}<div class="mt-8 text-slate-500 font-bold text-2xl">字母 ${i+1} / ${text.length}</div>${projectionDecoderMarkup(q)}</div>`;
       i++;
     },speed);
   };
@@ -569,6 +637,8 @@ document.addEventListener('DOMContentLoaded', function() {
       else encoded=`<span class="text-2xl font-mono">${escapeHTML(getEncoded(q.text,q.type))}</span>`;
       return `<div class="print-question"><b>Q${idx+1}. 翻譯以下密碼 (${q.type})：</b><div class="mt-6 flex items-center justify-center">${encoded}</div><div class="mt-10 border-b border-black w-full h-8"></div></div>`;
     }).join('');
+    // Include detachable decoder reference pages immediately after the exam.
+    buildDecoderSheets();
     // Print the exam sheet only — the answer sheet is hidden by default
     // and only shown when its own button fires.
     document.body.removeAttribute('data-print-mode');
@@ -668,6 +738,11 @@ function renderTestList() {
     // globally in the toolbar at the top of the test-paper page.
     var direction=q.direction||'encode';
     var semStyle=q.semStyle||'stick';
+    // This checkbox is shared by all questions of the same cipher type.
+    // It prevents duplicate decoder sheets while letting a leader tick any
+    // one of Q1/Q3/Q5 to enable the common Semaphore reference.
+    var decoderEnabled=testQuestions.some(function(question){return question.type===q.type&&qNeedsDecoder(question);});
+    var decoderToggle=`<label class="flex items-center gap-2 text-xs font-bold text-slate-300 bg-emerald-950/30 border border-emerald-300/20 rounded-lg px-3 min-h-11 cursor-pointer"><input type="checkbox" data-decoder-type="${escapeHTML(q.type)}" ${decoderEnabled?'checked':''} class="accent-emerald-400 w-4 h-4">附解碼紙／投影表（同類同步）</label>`;
     var directionBlock=`<div class="flex items-center bg-black/40 border border-white/10 rounded-lg overflow-hidden text-xs font-bold" role="group" aria-label="第 ${idx+1} 題方向">
       <button type="button" data-question-index="${idx}" data-question-field="direction" data-value="encode" class="px-3 py-2 min-h-11 ${direction==='encode'?'bg-[var(--skw-gold)] text-black':'text-slate-400 hover:text-white'}" title="出密碼符號，要成員翻譯">翻譯</button>
       <button type="button" data-question-index="${idx}" data-question-field="direction" data-value="decode" class="px-3 py-2 min-h-11 ${direction==='decode'?'bg-[var(--skw-gold)] text-black':'text-slate-400 hover:text-white'}" title="出英文，要成員寫出密碼符號">倒轉</button>
@@ -688,6 +763,7 @@ function renderTestList() {
         <select data-question-index="${idx}" data-question-field="type" aria-label="第 ${idx+1} 題密碼類型" class="bg-black/60 text-white text-xs p-3 rounded-lg min-h-11">${typeOptions}</select>
         ${displayOptions}
         ${directionBlock}
+        ${decoderToggle}
       </div>
       ${semStyleOptions ? `<div class="flex items-center gap-2 flex-wrap">
         ${semLabel}${semStyleOptions}
@@ -700,6 +776,14 @@ function renderTestList() {
       if(!testQuestions[index])return;
       testQuestions[index][field]=this.value;
       if(field==='type'){testQuestions[index].display='static';}
+      localStorage.setItem('skw_test_questions',JSON.stringify(testQuestions));
+      renderTestList();
+    };
+  });
+  // One decoder selection applies to every question using that cipher.
+  list.querySelectorAll('input[data-decoder-type]').forEach(function(input){
+    input.onchange=function(){
+      setDecoderForType(this.dataset.decoderType,this.checked);
       localStorage.setItem('skw_test_questions',JSON.stringify(testQuestions));
       renderTestList();
     };

@@ -205,6 +205,13 @@
                     <span id="projSpeedVal" class="text-xs text-[var(--skw-gold)] font-black">1.2s</span>
                 </div>
                 <div class="flex items-center gap-2 border-l border-white/10 pl-4">
+                    <span class="text-xs font-bold text-slate-400">投影難度：</span>
+                    <select id="projectionDifficulty" class="bg-black/60 text-white text-xs border border-white/20 rounded px-2 py-1" aria-label="投影難度">
+                        <option value="easy">簡單版（顯示密碼提示）</option>
+                        <option value="hard" selected>困難版（不顯示密碼提示）</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2 border-l border-white/10 pl-4">
                     <span class="text-xs font-bold text-slate-400">揭示答案：</span>
                     <select id="revealMode" class="bg-black/60 text-white text-xs border border-white/20 rounded px-2 py-1">
                         <option value="none" selected>不揭示（領袖口頭）</option>
@@ -302,6 +309,7 @@
         </div>
       </div>
       <div id="printQuestions" class="print-questions-container"></div>
+      <div id="printDecoderSheets" class="print-decoder-sheets" aria-label="密碼解碼參考紙"></div>
       <div class="print-footer">COPY RIGHT 2026 Scout System</div>
     </div>
     <div id="printAnswerSheet" class="hidden">
