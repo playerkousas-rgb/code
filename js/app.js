@@ -6,14 +6,10 @@ const SEMAPHORE_MAP = {'A':'a.png','B':'b.png','C':'c.png','D':'d.png','E':'e.pn
 // E/F/G and V are explicitly checked against the standard alphabet chart.
 const SEM_ANGLES = {'A':[180,225],'B':[180,270],'C':[180,315],'D':[180,0],'E':[180,45],'F':[180,90],'G':[180,135],'H':[225,270],'I':[225,315],'J':[90,0],'K':[225,0],'L':[225,45],'M':[225,90],'N':[225,135],'O':[270,315],'P':[270,0],'Q':[270,45],'R':[270,90],'S':[270,135],'T':[315,0],'U':[315,45],'V':[0,135],'W':[45,90],'X':[45,135],'Y':[315,90],'Z':[135,90]};
 const BRAILLE_MAP = {'A':[1],'B':[1,2],'C':[1,4],'D':[1,4,5],'E':[1,5],'F':[1,2,4],'G':[1,2,4,5],'H':[1,2,5],'I':[2,4],'J':[2,4,5],'K':[1,3],'L':[1,2,3],'M':[1,3,4],'N':[1,3,4,5],'O':[1,3,5],'P':[1,2,3,4],'Q':[1,2,3,4,5],'R':[1,2,3,5],'S':[2,3,4],'T':[2,3,4,5],'U':[1,3,6],'V':[1,2,3,6],'W':[2,4,5,6],'X':[1,3,4,6],'Y':[1,3,4,5,6],'Z':[1,3,5,6]};
-const CANGJIE_ROOTS = {'A':'日','B':'月','C':'金','D':'木','E':'水','F':'火','G':'土','H':'竹','I':'戈','J':'十','K':'大','L':'中','M':'一','N':'弓','O':'人','P':'心','Q':'手','R':'口','S':'屍','T':'廿','U':'山','V':'女','W':'田','X':'難','Y':'卜','Z':'重'};
 const NATO_MAP = {'A':'Alpha','B':'Bravo','C':'Charlie','D':'Delta','E':'Echo','F':'Foxtrot','G':'Golf','H':'Hotel','I':'India','J':'Juliett','K':'Kilo','L':'Lima','M':'Mike','N':'November','O':'Oscar','P':'Papa','Q':'Quebec','R':'Romeo','S':'Sierra','T':'Tango','U':'Uniform','V':'Victor','W':'Whiskey','X':'X-ray','Y':'Yankee','Z':'Zulu'};
-const PINYIN_MAP = {'A':'ā','B':'bēi','C':'cī','D':'dī','E':'ē','F':'éf','G':'gē','H':'hēi','I':'ī','J':'jiē','K':'kēi','L':'ēl','M':'ēm','N':'ēn','O':'ō','P':'pī','Q':'qiū','R':'ār','S':'ēs','T':'tī','U':'ū','V':'vī','W':'dá bū liú','X':'ēi kè sī','Y':'wāi','Z':'zèi'};
-const JYUTPING_MAP = {'A':'ei1','B':'bi1','C':'si1','D':'di1','E':'i1','F':'ef1','G':'ze1','H':'eik1 si2','I':'aai1','J':'ze1','K':'kei1','L':'e1 lou2','M':'em1','N':'en1','O':'o1','P':'pi1','Q':'kiu1','R':'aa1 lou2','S':'e1 si2','T':'ti1','U':'ju1','V':'wi1','W':'daa1 bou2 liu4','X':'ik1 si2','Y':'waai1','Z':'zei1'};
 const PHONE_LOOKUP = {}; const PHONE_GROUPS = {'2':['A','B','C'],'3':['D','E','F'],'4':['G','H','I'],'5':['J','K','L'],'6':['M','N','O'],'7':['P','Q','R','S'],'8':['T','U','V'],'9':['W','X','Y','Z']};
 for(const [key, letters] of Object.entries(PHONE_GROUPS)) letters.forEach((ch, idx)=>{ PHONE_LOOKUP[ch] = {key, presses: idx+1}; });
 function normalizeGridKey(value){var clean=String(value||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,5);return (clean+'SCOUT').slice(0,5);}
-const CHINESE_DICTIONARY = {'昌':'AA','明':'AB','童':'YT','軍':'BW','海':'EY','山':'U','天':'MK','地':'GP','人':'O'};
 
 // ===================== STATE =====================
 function readStoredQuestions() {
@@ -75,7 +71,7 @@ function renderStickFigure(c, color, size) {
   // Thick body lines and solid flag heads keep both hands visible in a
   // screenshot.  The print version remains pure black for clean photocopying.
   var ink=color==='black'?'#000':color;
-  var flagColors=color==='black'?['#000','#000']:['#ffcc00','#22d3ee'];
+  var flagColors=color==='black'?['#000','#000']:['#f43f5e','#22d3ee'];
   var h = `<svg width="${size}" height="${size*1.2}" viewBox="0 0 100 120" role="img" aria-label="旗號 ${escapeHTML(c.toUpperCase())}"><circle cx="50" cy="24" r="10" fill="${color==='black'?'#fff':'#061b46'}" stroke="${ink}" stroke-width="4"/><line x1="50" y1="35" x2="50" y2="76" stroke="${ink}" stroke-width="5" stroke-linecap="round"/><line x1="50" y1="75" x2="34" y2="110" stroke="${ink}" stroke-width="5" stroke-linecap="round"/><line x1="50" y1="75" x2="66" y2="110" stroke="${ink}" stroke-width="5" stroke-linecap="round"/>`;
   a.forEach((ang,i)=>{ var rad=(ang-90)*Math.PI/180, x=50+Math.cos(rad)*43, y=45+Math.sin(rad)*43, fx=50+Math.cos(rad)*49, fy=45+Math.sin(rad)*49; h+=`<line x1="50" y1="45" x2="${x}" y2="${y}" stroke="${ink}" stroke-width="7" stroke-linecap="round"/><circle cx="${x}" cy="${y}" r="4" fill="${ink}"/><rect x="${fx-7}" y="${fy-7}" width="14" height="14" rx="1" fill="${flagColors[i]}" stroke="${ink}" stroke-width="2" transform="rotate(${ang} ${fx} ${fy})"/>`; });
   return h+'</svg>';
@@ -101,7 +97,6 @@ function renderPigpenSVG(c, color) {
   return `<svg width="40" height="40" viewBox="0 0 45 45"><path d="${path}" fill="none" stroke="${color}" stroke-width="3"/><circle cx="${dp.x}" cy="${dp.y}" r="${dot?3:0}" fill="${color}"/></svg>`;
 }
 
-function encodeChinese(text) { return text.split('').map(c=>CHINESE_DICTIONARY[c]||c).join(' ').toUpperCase(); }
 
 function getEncoded(text, type, key, shift) {
   key=normalizeGridKey(key); shift=Number.isFinite(Number(shift))?Number(shift):3; const t=text.toUpperCase();
@@ -113,7 +108,6 @@ function getEncoded(text, type, key, shift) {
     case 'Atbash': return t.replace(/[A-Z]/g,c=>String.fromCharCode(90-(c.charCodeAt(0)-65)));
     case 'Reverse': return text.split('').reverse().join('').toUpperCase();
     case 'NATO': return t.split('').map(c=>NATO_MAP[c]||c).join(' ');
-    case 'Cangjie': case 'Quick': return encodeChinese(text);
     default: return t;
   }
 }
@@ -196,7 +190,7 @@ function renderProjStatic(q) {
 // direction flags so the reveal matches the question's own settings.
 function renderProjAnswer(q) {
   var c=$('projectionContent'), u=q.text.toUpperCase(), semStyle=qSemStyle(q), dir=qDirection(q);
-  var labelMap={"Morse":"摩斯","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高","Grid":"座標","Phone":"電話","Caesar":"凱撒","Atbash":"反射","Reverse":"倒序","NATO":"NATO","Cangjie":"倉頡","Quick":"速成"};
+  var labelMap={"Morse":"摩斯","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高","Grid":"座標","Phone":"電話","Caesar":"凱撒","Atbash":"反射","Reverse":"倒序","NATO":"NATO"};
   var label=labelMap[q.type]||q.type;
   var symbol;
   // Audio questions can't show a static symbol — show a stylised card
@@ -229,7 +223,7 @@ function renderProjAnswer(q) {
 // end of the test when the leader chose the "總揭示" mode.
 function renderProjAnswerKey() {
   var c=$('projectionContent');
-  var labelMap={"Morse":"摩斯","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高","Grid":"座標","Phone":"電話","Caesar":"凱撒","Atbash":"反射","Reverse":"倒序","NATO":"NATO","Cangjie":"倉頡","Quick":"速成"};
+  var labelMap={"Morse":"摩斯","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高","Grid":"座標","Phone":"電話","Caesar":"凱撒","Atbash":"反射","Reverse":"倒序","NATO":"NATO"};
   var rows=testQuestions.map(function(q,idx){
     var u=q.text.toUpperCase();
     var label=labelMap[q.type]||q.type;
@@ -326,8 +320,8 @@ function buildPigpenGrid() {
 
 function decoderSheetMarkup(type) {
   var letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-  var titleMap={Semaphore:'旗號對照表',Morse:'摩斯密碼及英文字母',Braille:'點字對照表',Pigpen:'朱高密碼對照表',Phone:'電話 T9 對照表',Grid:'座標密碼對照表',Caesar:'凱撒位移英文字母表',Atbash:'反射密碼英文字母表',Reverse:'倒序密碼提示',NATO:'NATO 音標對照表',Cangjie:'倉頡字根對照表',Quick:'速成字根對照表'};
-  var noteMap={Semaphore:'每個旗號圖案對應一個英文字母。',Morse:'摩斯密碼對照表；下方英文字母列可用作凱撒／移位解題。',Braille:'點字由左欄 1、2、3 點及右欄 4、5、6 點組成。',Pigpen:'每個朱高圖案對應一個英文字母。',Phone:'按鍵數字加上按壓次數，例如 A 是 21。',Grid:'本表按目前設定的 KEY 編排。',Caesar:'可將兩行字母左右移動，找出位移後的字母。',Atbash:'上、下兩行由頭尾相對，A 對 Z、B 對 Y，如此類推。',Reverse:'將整段文字由後向前閱讀。',NATO:'每個 NATO 音標詞對應一個英文字母。',Cangjie:'字根對照表。',Quick:'字根對照表。'};
+  var titleMap={Semaphore:'旗號對照表',Morse:'摩斯密碼及英文字母',Braille:'點字對照表',Pigpen:'朱高密碼對照表',Phone:'電話 T9 對照表',Grid:'座標密碼對照表',Caesar:'凱撒位移英文字母表',Atbash:'反射密碼英文字母表',Reverse:'倒序密碼提示',NATO:'NATO 音標對照表'};
+  var noteMap={Semaphore:'每個旗號圖案對應一個英文字母。',Morse:'摩斯密碼對照表；下方英文字母列可用作凱撒／移位解題。',Braille:'點字由左欄 1、2、3 點及右欄 4、5、6 點組成。',Pigpen:'每個朱高圖案對應一個英文字母。',Phone:'按鍵數字加上按壓次數，例如 A 是 21。',Grid:'本表按目前設定的 KEY 編排。',Caesar:'可將兩行字母左右移動，找出位移後的字母。',Atbash:'上、下兩行由頭尾相對，A 對 Z、B 對 Y，如此類推。',Reverse:'將整段文字由後向前閱讀。',NATO:'每個 NATO 音標詞對應一個英文字母。'};
   var items='', extra='';
   if(type==='Semaphore') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span>${renderStickFigure(ch,'black',54)}</div>`;}).join('');
   else if(type==='Morse') {
@@ -339,7 +333,6 @@ function decoderSheetMarkup(type) {
   else if(type==='Phone') items=Object.entries(PHONE_GROUPS).map(function(pair){return `<div class="decoder-item"><span class="decoder-letter">${pair[0]}</span><span class="decoder-code">${pair[1].join(' ')}</span></div>`;}).join('');
   else if(type==='Grid') { var key=normalizeGridKey($('gridKey').value); items=letters.filter(function(ch){return ch!=='Z';}).map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${getEncoded(ch,'Grid',key)}</span></div>`;}).join(''); }
   else if(type==='NATO') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${NATO_MAP[ch]}</span></div>`;}).join('');
-  else if(type==='Cangjie'||type==='Quick') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${CANGJIE_ROOTS[ch]}</span></div>`;}).join('');
   else { var normal=letters.map(function(ch){return `<span>${ch}</span>`;}).join(''), reversed=letters.slice().reverse().map(function(ch){return `<span>${ch}</span>`;}).join(''); extra=`<div class="decoder-alphabet">${normal}</div><div class="decoder-alphabet">${type==='Atbash'?reversed:normal}</div>`; }
   return `<section class="print-decoder-sheet"><h2>解碼紙：${titleMap[type]||type}</h2><p class="decoder-note">${noteMap[type]||'密碼解碼參考。'}</p>${items?`<div class="decoder-grid">${items}</div>`:''}${extra}</section>`;
 }
@@ -361,7 +354,6 @@ function projectionDecoderMarkup(q) {
   else if(type==='NATO') content=letters.map(function(ch){return `<span class="projection-decoder-item"><b>${ch}</b><small>${NATO_MAP[ch]}</small></span>`;}).join('');
   else if(type==='Phone') content=Object.entries(PHONE_GROUPS).map(function(pair){return `<span class="projection-decoder-item"><b>${pair[0]}</b><small>${pair[1].join(' ')}</small></span>`;}).join('');
   else if(type==='Grid') { var key=normalizeGridKey($('gridKey').value); content=letters.filter(function(ch){return ch!=='Z';}).map(function(ch){return `<span class="projection-decoder-item"><b>${ch}</b><small>${getEncoded(ch,'Grid',key)}</small></span>`;}).join(''); }
-  else if(type==='Cangjie'||type==='Quick') content=letters.map(function(ch){return `<span class="projection-decoder-item"><b>${ch}</b><small>${CANGJIE_ROOTS[ch]}</small></span>`;}).join('');
   else if(type==='Reverse') content='<span class="projection-decoder-message">倒序：將整段文字由最後一個字元開始，逐個向前閱讀。</span>';
   else { var bottom=(type==='Atbash'?letters.slice().reverse():letters).join(''); content=`<span class="projection-decoder-message"><b>${letters.join('')}</b><br><b>${bottom}</b><br><small>${type==='Caesar'?'將兩列左右移動以找出位移後的字母。':'上、下兩列的相對字母互相對應。'}</small></span>`; }
   return `<div class="projection-decoder"><p>解碼表 · ${escapeHTML(type)}</p><div class="projection-decoder-grid">${content}</div></div>`;
@@ -370,7 +362,7 @@ function projectionDecoderMarkup(q) {
 function updateAll() {
   var v=$('inputText').value,t=v.toUpperCase(),key=normalizeGridKey($('gridKey').value);
   $('outMorse').textContent=getEncoded(v,'Morse');
-  $('outSemaphore').innerHTML=t.split('').map(function(c){return c===' '?'<span class="w-8"></span>':renderStickFigure(c,"#ffcc00",60);}).join('');
+  $('outSemaphore').innerHTML=t.split('').map(function(c){return c===' '?'<span class="w-8"></span>':renderStickFigure(c,"#f43f5e",60);}).join('');
   $('outPhone').textContent=getEncoded(v,'Phone');
   $('outBraille').innerHTML=t.split('').map(function(c){return c===' '?'<span class="w-8"></span>':renderBraille(c);}).join('');
   $('outPigpen').innerHTML=t.split('').map(function(c){return c===' '?'<span class="mx-2">/</span>':renderPigpenSVG(c);}).join('');
@@ -379,9 +371,6 @@ function updateAll() {
   $('outAtbash').textContent=getEncoded(v,'Atbash');
   $('outReverse').textContent=getEncoded(v,'Reverse');
   $('outNato').textContent=getEncoded(v,'NATO');
-  $('outCangjie').textContent=getEncoded(v,'Cangjie');
-  $('outPinyin').textContent=t.split('').map(function(c){return PINYIN_MAP[c]||c;}).join(' ');
-  $('outJyutping').textContent=t.split('').map(function(c){return JYUTPING_MAP[c]||c;}).join(' ');
   var used=new Set(t.split(''));
   document.querySelectorAll('[data-ch]').forEach(function(cell){cell.classList.toggle('highlight',used.has(cell.dataset.ch));});
   if($('inputCount'))$('inputCount').textContent=v.length+' / 200';
@@ -398,9 +387,6 @@ const COPY_OUTPUTS = {
   outAtbash:function(v){return getEncoded(v,'Atbash');},
   outReverse:function(v){return getEncoded(v,'Reverse');},
   outNato:function(v){return getEncoded(v,'NATO');},
-  outCangjie:function(v){return getEncoded(v,'Cangjie');},
-  outPinyin:function(v){return v.toUpperCase().split('').map(function(c){return PINYIN_MAP[c]||c;}).join(' ');},
-  outJyutping:function(v){return v.toUpperCase().split('').map(function(c){return JYUTPING_MAP[c]||c;}).join(' ');}
 };
 
 function copyText(text) {
@@ -622,7 +608,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Reverse direction: show the English on the page and ask the
       // member to write the cipher symbols down.
       if(dir==='decode') {
-        var labelMap={"Morse":"摩斯密碼","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高密碼","Grid":"座標密碼","Phone":"電話密碼","Caesar":"凱撒位移","Atbash":"反射密碼","Reverse":"倒序密碼","NATO":"NATO","Cangjie":"倉頡","Quick":"速成"};
+        var labelMap={"Morse":"摩斯密碼","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高密碼","Grid":"座標密碼","Phone":"電話密碼","Caesar":"凱撒位移","Atbash":"反射密碼","Reverse":"倒序密碼","NATO":"NATO"};
         var label=labelMap[q.type]||q.type;
         encoded=`<span class="text-2xl font-mono">${escapeHTML(upper)}</span>`;
         promptLine='<div class="text-base text-gray-600 mt-1">↑ 請用 ' + escapeHTML(label) + ' 表示 ↑</div>';
@@ -650,7 +636,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // sub-sheet of #printView is shown — the exam sheet stays hidden.
   $('btnPrintAnswers').onclick=function(){
     if(!testQuestions.length)return alert('請先加入題目');
-    var labelMap={"Morse":"摩斯密碼","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高密碼","Grid":"座標密碼","Phone":"電話密碼","Caesar":"凱撒位移","Atbash":"反射密碼","Reverse":"倒序密碼","NATO":"NATO","Cangjie":"倉頡","Quick":"速成"};
+    var labelMap={"Morse":"摩斯密碼","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高密碼","Grid":"座標密碼","Phone":"電話密碼","Caesar":"凱撒位移","Atbash":"反射密碼","Reverse":"倒序密碼","NATO":"NATO"};
     $('printAnswerCount').textContent=testQuestions.length;
     $('printAnswerDate').textContent=new Date().toLocaleDateString('zh-Hant');
     $('printAnswers').innerHTML=testQuestions.map(function(q,idx){
@@ -719,7 +705,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ===================== TEST LIST =====================
 function renderTestList() {
-  var list=$('testQuestionList'),labels={"Morse":"摩斯密碼","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高密碼","Grid":"座標密碼","Phone":"電話密碼","Caesar":"凱撒位移","Atbash":"反射密碼","Reverse":"倒序密碼","NATO":"NATO","Cangjie":"倉頡","Quick":"速成"};
+  var list=$('testQuestionList'),labels={"Morse":"摩斯密碼","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高密碼","Grid":"座標密碼","Phone":"電話密碼","Caesar":"凱撒位移","Atbash":"反射密碼","Reverse":"倒序密碼","NATO":"NATO"};
   if(!testQuestions.length){
     list.innerHTML='<div class="empty-state"><strong>試卷還未有題目</strong><br>返回「編碼工具」輸入訊息，再按「加入試卷題目」。</div>';
     return;
