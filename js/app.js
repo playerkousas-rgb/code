@@ -1,7 +1,10 @@
 // ===================== DATA =====================
 const MORSE_CODE = {'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.','0':'-----',' ':'/'};
 const SEMAPHORE_MAP = {'A':'a.png','B':'b.png','C':'c.png','D':'d.png','E':'e.png','F':'f.png','G':'g.png','H':'h.png','I':'i.png','J':'j.png','K':'k.png','L':'l.png','M':'m.png','N':'n.png','O':'o.png','P':'p.png','Q':'q.png','R':'r.png','S':'s.png','T':'t.png','U':'u.png','V':'v.png','W':'w.png','X':'x.png','Y':'y.png','Z':'z.png'};
-const SEM_ANGLES = {'A':[180,225],'B':[180,270],'C':[180,315],'D':[180,0],'E':[0,45],'F':[0,90],'G':[0,135],'H':[225,270],'I':[225,315],'J':[90,0],'K':[225,0],'L':[225,45],'M':[225,90],'N':[225,135],'O':[270,315],'P':[270,0],'Q':[270,45],'R':[270,90],'S':[270,135],'T':[315,0],'U':[315,45],'V':[0,90],'W':[45,90],'X':[45,135],'Y':[315,90],'Z':[135,90]};
+// Standard international semaphore positions, as seen by the reader.
+// 0 = up, 45 = upper-right, 90 = right, …, 180 = down.
+// E/F/G and V are explicitly checked against the standard alphabet chart.
+const SEM_ANGLES = {'A':[180,225],'B':[180,270],'C':[180,315],'D':[180,0],'E':[180,45],'F':[180,90],'G':[180,135],'H':[225,270],'I':[225,315],'J':[90,0],'K':[225,0],'L':[225,45],'M':[225,90],'N':[225,135],'O':[270,315],'P':[270,0],'Q':[270,45],'R':[270,90],'S':[270,135],'T':[315,0],'U':[315,45],'V':[0,135],'W':[45,90],'X':[45,135],'Y':[315,90],'Z':[135,90]};
 const BRAILLE_MAP = {'A':[1],'B':[1,2],'C':[1,4],'D':[1,4,5],'E':[1,5],'F':[1,2,4],'G':[1,2,4,5],'H':[1,2,5],'I':[2,4],'J':[2,4,5],'K':[1,3],'L':[1,2,3],'M':[1,3,4],'N':[1,3,4,5],'O':[1,3,5],'P':[1,2,3,4],'Q':[1,2,3,4,5],'R':[1,2,3,5],'S':[2,3,4],'T':[2,3,4,5],'U':[1,3,6],'V':[1,2,3,6],'W':[2,4,5,6],'X':[1,3,4,6],'Y':[1,3,4,5,6],'Z':[1,3,5,6]};
 const CANGJIE_ROOTS = {'A':'日','B':'月','C':'金','D':'木','E':'水','F':'火','G':'土','H':'竹','I':'戈','J':'十','K':'大','L':'中','M':'一','N':'弓','O':'人','P':'心','Q':'手','R':'口','S':'屍','T':'廿','U':'山','V':'女','W':'田','X':'難','Y':'卜','Z':'重'};
 const NATO_MAP = {'A':'Alpha','B':'Bravo','C':'Charlie','D':'Delta','E':'Echo','F':'Foxtrot','G':'Golf','H':'Hotel','I':'India','J':'Juliett','K':'Kilo','L':'Lima','M':'Mike','N':'November','O':'Oscar','P':'Papa','Q':'Quebec','R':'Romeo','S':'Sierra','T':'Tango','U':'Uniform','V':'Victor','W':'Whiskey','X':'X-ray','Y':'Yankee','Z':'Zulu'};
@@ -60,8 +63,12 @@ function renderStickFigure(c, color, size) {
   color=color||"white"; size=size||80;
   const a = SEM_ANGLES[c.toUpperCase()];
   if(!a) return `<div style="width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:2rem">${escapeHTML(c)}</div>`;
-  var h = `<svg width="${size}" height="${size*1.2}" viewBox="0 0 100 120"><circle cx="50" cy="25" r="10" fill="none" stroke="${color}" stroke-width="4"/><line x1="50" y1="35" x2="50" y2="75" stroke="${color}" stroke-width="4"/><line x1="50" y1="75" x2="35" y2="110" stroke="${color}" stroke-width="4"/><line x1="50" y1="75" x2="65" y2="110" stroke="${color}" stroke-width="4"/>`;
-  a.forEach((ang,i)=>{ var rad=(ang-90)*Math.PI/180; h+=`<line x1="50" y1="45" x2="${50+Math.cos(rad)*45}" y2="${45+Math.sin(rad)*45}" stroke="${color==='white'?(i===0?'#ffcc00':'#00d2ff'):'black'}" stroke-width="6" stroke-linecap="round"/>`; });
+  // Thick body lines and solid flag heads keep both hands visible in a
+  // screenshot.  The print version remains pure black for clean photocopying.
+  var ink=color==='black'?'#000':color;
+  var flagColors=color==='black'?['#000','#000']:['#ffcc00','#22d3ee'];
+  var h = `<svg width="${size}" height="${size*1.2}" viewBox="0 0 100 120" role="img" aria-label="旗號 ${escapeHTML(c.toUpperCase())}"><circle cx="50" cy="24" r="10" fill="${color==='black'?'#fff':'#061b46'}" stroke="${ink}" stroke-width="4"/><line x1="50" y1="35" x2="50" y2="76" stroke="${ink}" stroke-width="5" stroke-linecap="round"/><line x1="50" y1="75" x2="34" y2="110" stroke="${ink}" stroke-width="5" stroke-linecap="round"/><line x1="50" y1="75" x2="66" y2="110" stroke="${ink}" stroke-width="5" stroke-linecap="round"/>`;
+  a.forEach((ang,i)=>{ var rad=(ang-90)*Math.PI/180, x=50+Math.cos(rad)*43, y=45+Math.sin(rad)*43, fx=50+Math.cos(rad)*49, fy=45+Math.sin(rad)*49; h+=`<line x1="50" y1="45" x2="${x}" y2="${y}" stroke="${ink}" stroke-width="7" stroke-linecap="round"/><circle cx="${x}" cy="${y}" r="4" fill="${ink}"/><rect x="${fx-7}" y="${fy-7}" width="14" height="14" rx="1" fill="${flagColors[i]}" stroke="${ink}" stroke-width="2" transform="rotate(${ang} ${fx} ${fy})"/>`; });
   return h+'</svg>';
 }
 
@@ -114,6 +121,10 @@ function getRevealMode() {
   var s = document.getElementById('revealMode');
   return (s && REVEAL_MODES.indexOf(s.value) >= 0) ? s.value : 'none';
 }
+function getProjectionDifficulty() {
+  var s=document.getElementById('projectionDifficulty');
+  return s&&s.value==='easy'?'easy':'hard';
+}
 
 // ===================== PROJECTION =====================
 let projRevealed = false;  // Tracks whether the current question's answer
@@ -163,7 +174,12 @@ function renderProjStatic(q) {
     else if(q.type==='NATO') h=`<div class="text-[5vw] font-black text-white text-center leading-relaxed">${getEncoded(q.text,'NATO').split(' ').map(w=>`<span class="inline-block mx-2 px-6 py-2 bg-white/5 rounded-2xl">${escapeHTML(w)}</span>`).join('')}</div>`;
     else h=`<div class="text-[9vw] font-black text-white text-center">${escapeHTML(getEncoded(q.text,q.type))}</div>`;
   } else { h=`<div class="text-slate-600 text-3xl font-black">${q.display==='audio'?'聽力考核項目':'點擊下方開始輪播'}</div>`; }
-  c.innerHTML=`<div class="animate-in w-full text-center">${h}</div>`;
+  // Easy projection deliberately adds the plaintext password as a visual
+  // hint. Hard projection leaves this out, so leaders can use the exact
+  // same question set at two levels without editing every question.
+  var hint=getProjectionDifficulty()==='easy'&&dir!=='decode'
+    ? `<div class="mt-8 text-sky-200 text-2xl font-black">密碼提示：${escapeHTML(u)}</div>` : '';
+  c.innerHTML=`<div class="animate-in w-full text-center">${h}${hint}</div>`;
 }
 
 // Render just the answer for a single question, used by the per-Q reveal
@@ -297,6 +313,34 @@ function buildPigpenGrid() {
   var g=$('pigpenGrid'); if(!g)return;
   var h='';"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(function(c){h+=`<div class="flex flex-col items-center gap-1 p-2 bg-black/20 rounded border border-white/5">${renderPigpenSVG(c)}<span class="text-[9px] font-black text-slate-500">${c}</span></div>`;});
   g.innerHTML=h;
+}
+
+function buildDecoderSheets() {
+  var target=$('printDecoderSheets'); if(!target)return;
+  var letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  var flagItems=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span>${renderStickFigure(ch,'black',54)}</div>`;}).join('');
+  var morseItems=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${MORSE_CODE[ch]}</span></div>`;}).join('');
+  var brailleItems=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span>${renderBraille(ch)}</div>`;}).join('');
+  var alphabet=letters.map(function(ch){return `<span>${ch}</span>`;}).join('');
+  target.innerHTML=`
+    <section class="print-decoder-sheet">
+      <h2>解碼紙：旗號對照表</h2>
+      <p class="decoder-note">可與試卷分開使用；每個圖案對應一個英文字母。</p>
+      <div class="decoder-grid">${flagItems}</div>
+    </section>
+    <section class="print-decoder-sheet">
+      <h2>解碼紙：摩斯密碼及英文字母</h2>
+      <p class="decoder-note">摩斯密碼對照表；下方英文字母列可用作凱撒位移／移位解題。</p>
+      <div class="decoder-grid">${morseItems}</div>
+      <h3 style="font-size:14pt;margin:20px 0 8px">英文字母移位列</h3>
+      <div class="decoder-alphabet">${alphabet}</div>
+      <div class="decoder-alphabet">${alphabet}</div>
+    </section>
+    <section class="print-decoder-sheet">
+      <h2>解碼紙：點字對照表</h2>
+      <p class="decoder-note">點字由左欄 1、2、3 點及右欄 4、5、6 點組成。</p>
+      <div class="decoder-grid">${brailleItems}</div>
+    </section>`;
 }
 
 function updateAll() {
@@ -569,6 +613,8 @@ document.addEventListener('DOMContentLoaded', function() {
       else encoded=`<span class="text-2xl font-mono">${escapeHTML(getEncoded(q.text,q.type))}</span>`;
       return `<div class="print-question"><b>Q${idx+1}. 翻譯以下密碼 (${q.type})：</b><div class="mt-6 flex items-center justify-center">${encoded}</div><div class="mt-10 border-b border-black w-full h-8"></div></div>`;
     }).join('');
+    // Include detachable decoder reference pages immediately after the exam.
+    buildDecoderSheets();
     // Print the exam sheet only — the answer sheet is hidden by default
     // and only shown when its own button fires.
     document.body.removeAttribute('data-print-mode');
