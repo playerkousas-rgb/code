@@ -90,7 +90,7 @@ npm run build   # 同時建置主 App 與 training 多頁入口
 ├── css/style.css           # 主 App 及響應式樣式
 ├── js/app.js               # 編碼、試卷、投影、搶答邏輯
 ├── training/index.html     # 密碼防衛戰（Canvas 單頁遊戲）
-├── images/                 # 旗號及參考圖片
+├── images/                 # 旗號圖片 (a.png - z.png)
 ├── scripts/check-static.mjs
 ├── vite.config.ts          # 主頁 + training 多頁建置
 └── vercel.json

@@ -22,6 +22,37 @@ for (const [file, expectedIds] of Object.entries(requiredIds)) {
     }
   }
 
+  // Verify HTML tag nesting and balance
+  const voidTags = new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr'])
+  const tagRegex = /<\/?([a-zA-Z0-9-]+)(?:\s[^>]*)?\/?>/g
+  const stack = []
+  let tagMatch
+  while ((tagMatch = tagRegex.exec(html)) !== null) {
+    const full = tagMatch[0]
+    const tag = tagMatch[1].toLowerCase()
+    if (voidTags.has(tag) || full.endsWith('/>')) continue
+    if (full.startsWith('</')) {
+      if (stack.length === 0) {
+        console.error(`${file}: unexpected closing tag </${tag}>`)
+        failures++
+      } else {
+        const top = stack.pop()
+        if (top.tag !== tag) {
+          console.error(`${file}: tag mismatch: expected </${top.tag}> from line ${top.line}, found </${tag}>`)
+          failures++
+        }
+      }
+    } else {
+      const line = html.slice(0, tagMatch.index).split('\n').length
+      stack.push({ tag, line })
+    }
+  }
+  while (stack.length > 0) {
+    const unclosed = stack.pop()
+    console.error(`${file}: unclosed tag <${unclosed.tag}> from line ${unclosed.line}`)
+    failures++
+  }
+
   const inlineScripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
     .map((match) => match[1])
     .filter((script) => script.trim())

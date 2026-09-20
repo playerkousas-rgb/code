@@ -168,6 +168,24 @@ body {
 .buzzer-btn:active { transform: scale(0.95); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
 .buzzer-btn.disabled { background: #4a5568; pointer-events: none; opacity: 0.5; }
 
+/* QR Code Display */
+#joinQr {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  min-width: 200px;
+  min-height: 200px;
+}
+#joinQr img,
+#joinQr canvas,
+#joinQr svg {
+  margin: 0 auto;
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 .ref-table th { color: var(--skw-gold); font-size: 10px; padding: 4px; }
 .ref-table td { border: 1px solid var(--skw-border); padding: 6px; text-align: center; font-size: 11px; }
 .ref-table td.highlight { background: rgba(0,210,255,0.2); color: var(--skw-blue-glow); font-weight: 900; }

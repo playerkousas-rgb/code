@@ -411,16 +411,105 @@ function ensureCopyButtons() {
 }
 
 // ===================== PEERJS / BUZZER =====================
+function getJoinUrl(id) {
+  var isFile = window.location.protocol === 'file:' || window.location.origin === 'null';
+  if (isFile) {
+    return '?join=' + encodeURIComponent(id);
+  }
+  return window.location.origin + window.location.pathname + '?join=' + encodeURIComponent(id);
+}
+
+function renderJoinQr(id) {
+  var qr = $('joinQr');
+  if (!qr) return;
+  qr.innerHTML = '';
+
+  var isFileProtocol = window.location.protocol === 'file:' || window.location.origin === 'null';
+  var isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  var joinUrl = getJoinUrl(id);
+
+  var rendered = false;
+  if (typeof QRCode === 'function') {
+    try {
+      new QRCode(qr, {
+        text: joinUrl,
+        width: 160,
+        height: 160,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: (QRCode.CorrectLevel && typeof QRCode.CorrectLevel.M !== 'undefined') ? QRCode.CorrectLevel.M : 0
+      });
+      rendered = true;
+      showToast('QR Code 已生成');
+    } catch(e) {
+      console.warn('QRCode Level M generation failed, retrying with Level L:', e);
+      try {
+        qr.innerHTML = '';
+        new QRCode(qr, {
+          text: joinUrl,
+          width: 160,
+          height: 160,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: (QRCode.CorrectLevel && typeof QRCode.CorrectLevel.L !== 'undefined') ? QRCode.CorrectLevel.L : 1
+        });
+        rendered = true;
+        showToast('QR Code 已生成');
+      } catch(e2) {
+        console.error('QRCode fallback failed:', e2);
+      }
+    }
+  }
+
+  if (!rendered) {
+    qr.innerHTML = '<div class="p-3 text-center"><p class="text-amber-600 text-xs font-bold">QR Code 未能直接繪製</p><p class="text-[10px] text-slate-500 mt-1">請複製下方加入連結或輸入遊戲 ID</p></div>';
+  }
+
+  var helperWrap = $('joinHelperWrap');
+  if (helperWrap) {
+    var localhostNotice = isLocalhost ? '<p class="text-[11px] text-amber-300 text-left bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 mb-3">💡 提示：手機掃描 localhost 無法跨裝置連線。請確保手機與電腦在同一 Wi-Fi，並改以電腦區網 IP（如 http://192.168.x.x:5173）開啟，或直接讓隊員輸入遊戲 ID。</p>' : '';
+    var fileNotice = isFileProtocol ? '<p class="text-[11px] text-rose-300 text-left bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/20 mb-3">⚠️ 提示：目前為本機檔案 (file://) 開啟，手機無法跨裝置連線。請改以本地伺服器或部署網址開啟。</p>' : '';
+
+    helperWrap.innerHTML = localhostNotice + fileNotice
+      + '<div class="flex items-center gap-2 mb-2">'
+      + '<input type="text" readonly value="' + escapeHTML(joinUrl) + '" id="joinUrlInput" class="w-full bg-black/40 text-sky-300 text-xs p-2.5 rounded-xl border border-white/10 font-mono truncate select-all">'
+      + '<button id="btnCopyJoinUrl" type="button" class="shrink-0 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold px-3 py-2.5 rounded-xl transition-all">複製連結</button>'
+      + '</div>';
+
+    var copyBtn = $('btnCopyJoinUrl');
+    if (copyBtn) {
+      copyBtn.onclick = function() {
+        copyText(joinUrl);
+      };
+    }
+  }
+}
+
 function initGameHost() {
-  if(peer)return;
-  if(typeof Peer==='undefined'){showToast('搶答服務未能載入，請檢查網絡');return;}
+  if(peer) {
+    if(myPeerId && $('joinQr') && ($('joinQr').querySelector('p') || !$('joinQr').firstElementChild)) {
+      renderJoinQr(myPeerId);
+    }
+    return;
+  }
+  if(typeof Peer==='undefined'){
+    var qr=$('joinQr');
+    if(qr) qr.innerHTML='<div class="p-3 text-center"><p class="text-rose-400 text-xs font-bold">搶答服務未能載入</p><p class="text-[10px] text-slate-500 mt-1">請檢查網絡或重新整理頁面</p></div>';
+    showToast('搶答服務未能載入，請檢查網絡');
+    return;
+  }
   try{
     peer=new Peer();
     peer.on('open',function(id){
-      myPeerId=id; $('gameIdDisplay').textContent='遊戲 ID: '+id;
-      var qr=$('joinQr'); qr.innerHTML='';
-      try{new QRCode(qr,{text:window.location.origin+window.location.pathname+'?join='+encodeURIComponent(id),width:160,height:160});showToast('QR Code 已生成');}
-      catch(e){qr.innerHTML='<p class="text-slate-400 text-xs">QR Code 載入失敗</p>';}
+      myPeerId=id;
+      if($('gameIdDisplay')) $('gameIdDisplay').textContent='遊戲 ID: '+id;
+      renderJoinQr(id);
+    });
+    peer.on('error', function(err){
+      console.error('Peer error:', err);
+      var qr=$('joinQr');
+      if(qr) qr.innerHTML='<div class="p-3 text-center"><p class="text-rose-400 text-xs font-bold">搶答連線異常</p><p class="text-[10px] text-slate-500 mt-1">'+escapeHTML(err.type||err.message||'無法連接伺服器')+'</p></div>';
+      showToast('搶答連線錯誤');
     });
     peer.on('connection',function(conn){
       connections.push(conn);
@@ -681,33 +770,120 @@ document.addEventListener('DOMContentLoaded', function() {
 
   $('btnJoinConfirm').onclick=function(){
     var name=$('playerName').value.trim().slice(0,24); if(!name)return alert('請輸入姓名');
+    var targetId = joinId || ($('joinGameIdInput') ? $('joinGameIdInput').value.trim() : '') || myPeerId;
+    if(!targetId)return alert('請輸入遊戲 ID');
     myPlayerName=name;
-    if(!joinId&&!myPeerId)return alert('無遊戲 ID');
     try{
-      if(typeof Peer==='undefined'){alert('PeerJS 未載入');return;}
+      if(typeof Peer==='undefined'){alert('PeerJS 未載入，請檢查網絡');return;}
       var mp=new Peer();
       mp.on('open',function(){
-        var conn=mp.connect(joinId||myPeerId); hostConn=conn;
+        var conn=mp.connect(targetId); hostConn=conn;
         conn.on('open',function(){conn.send({type:'join',name:name});$('memberJoinForm').classList.add('hidden');$('memberBuzzer').classList.remove('hidden');$('displayMyName').textContent=name;});
         conn.on('data',function(data){
           if(data.type==='game_open'||(data.type==='state'&&data.gameMode==='open')){gameMode='open';$('buzzStatus').textContent='領袖已開放搶答！快按 BUZZ!';$('btnBuzzer').classList.remove('disabled');$('btnBuzzer').textContent='BUZZ!';}
           else if(data.type==='game_close'||data.type==='state'){gameMode='idle';$('buzzStatus').textContent='等待領袖開放...';$('btnBuzzer').classList.add('disabled');}
           else if(data.type==='buzz_order'&&Array.isArray(data.queue)){var i=data.queue.indexOf(name);$('buzzStatus').textContent=i===0?'你是第 1 名！':(i>=0?(i+1)+' 名':'等待結果...');}
         });
+        conn.on('error',function(){alert('連接搶答房間失敗，請確認遊戲 ID 是否正確。');});
       });
+      mp.on('error',function(err){alert('搶答連線失敗: '+(err.type||'請檢查網絡連線'));});
     }catch(e){alert('連線失敗');}
   };
 
   $('btnBuzzer').onclick=sendBuzz;
   $('shakeToggle').onchange=function(){if(this.checked){startShakeWatcher();showToast('搖一搖已開啟');}else{stopShakeWatcher();}};
-  if(joinId){$('memberView').style.display='flex';}
+  
+  var btnGenSample = $('btnGenerateSampleTest');
+  if(btnGenSample) btnGenSample.onclick = generateSampleQuestions;
+  var btnClearAll = $('btnClearAllQuestions');
+  if(btnClearAll) btnClearAll.onclick = clearAllQuestions;
+  var btnSwitchJoin = $('btnSwitchToMemberJoin');
+  if(btnSwitchJoin) btnSwitchJoin.onclick = function(){ openMemberView(myPeerId); };
+  var btnExitMem = $('btnExitMemberView');
+  if(btnExitMem) btnExitMem.onclick = exitMemberView;
+  var btnLeave = $('btnLeaveGame');
+  if(btnLeave) btnLeave.onclick = function(){
+    if(hostConn){hostConn.close();hostConn=null;}
+    $('memberBuzzer').classList.add('hidden');
+    $('memberJoinForm').classList.remove('hidden');
+  };
+
+  if(joinId){
+    openMemberView(joinId);
+  }
 });
+
+// ===================== SAMPLE TEST & CLEAR =====================
+const SAMPLE_TEST_QUESTIONS = [
+  { text: 'BE PREPARED', type: 'Semaphore', display: 'static', direction: 'encode', semStyle: 'stick', includeDecoder: true },
+  { text: 'SCOUT SYSTEM', type: 'Morse', display: 'static', direction: 'encode', includeDecoder: false },
+  { text: 'HONOUR', type: 'Pigpen', display: 'static', direction: 'encode', includeDecoder: true },
+  { text: 'SERVICE', type: 'Grid', display: 'static', direction: 'encode', includeDecoder: false },
+  { text: 'CAMP FIRE', type: 'Braille', display: 'static', direction: 'decode', includeDecoder: true }
+];
+
+function generateSampleQuestions() {
+  testQuestions = SAMPLE_TEST_QUESTIONS.map(function(q, i){
+    return Object.assign({}, q, { id: Date.now() + i });
+  });
+  localStorage.setItem('skw_test_questions', JSON.stringify(testQuestions));
+  renderTestList();
+  showToast('已生成 5 題考核試卷');
+}
+
+function clearAllQuestions() {
+  if(!testQuestions.length) return showToast('試卷目前沒有題目');
+  if(confirm('確定要清空試卷上的所有題目嗎？')) {
+    testQuestions = [];
+    localStorage.setItem('skw_test_questions', JSON.stringify(testQuestions));
+    renderTestList();
+    showToast('已清空試卷題目');
+  }
+}
+
+function openMemberView(prefillId) {
+  document.querySelectorAll('.mode-btn[data-mode]').forEach(function(button){button.classList.remove('active');});
+  $('editorView').classList.add('hidden');
+  $('testPaperView').classList.add('hidden');
+  $('gameView').classList.add('hidden');
+  $('memberView').classList.remove('hidden');
+  $('memberView').style.display='flex';
+  if(prefillId && $('joinGameIdInput')) {
+    $('joinGameIdInput').value = prefillId;
+  }
+}
+
+function exitMemberView() {
+  $('memberView').classList.add('hidden');
+  $('memberView').style.display='none';
+  if(hostConn){hostConn.close();hostConn=null;}
+  $('memberBuzzer').classList.add('hidden');
+  $('memberJoinForm').classList.remove('hidden');
+  document.querySelectorAll('.mode-btn[data-mode="editor"]').forEach(function(btn){btn.click();});
+}
 
 // ===================== TEST LIST =====================
 function renderTestList() {
   var list=$('testQuestionList'),labels={"Morse":"摩斯密碼","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高密碼","Grid":"座標密碼","Phone":"電話密碼","Caesar":"凱撒位移","Atbash":"反射密碼","Reverse":"倒序密碼","NATO":"NATO"};
+  var badge=$('testQuestionBadge');
+  if(badge) badge.textContent = testQuestions.length + ' 題';
+
   if(!testQuestions.length){
-    list.innerHTML='<div class="empty-state"><strong>試卷還未有題目</strong><br>返回「編碼工具」輸入訊息，再按「加入試卷題目」。</div>';
+    list.innerHTML='<div class="empty-state text-center p-10 bg-black/20 rounded-2xl border border-white/5 space-y-4">'
+      + '<div class="text-4xl mb-1">📝</div>'
+      + '<strong class="text-lg text-white block">試卷還未有題目</strong>'
+      + '<p class="text-slate-400 text-sm max-w-md mx-auto">點擊下方按鈕隨機生成 5 題範例試卷，或返回「編碼工具」輸入自訂訊息加入試卷。</p>'
+      + '<div class="flex flex-wrap justify-center gap-3 pt-2">'
+      + '<button id="btnEmptySampleTest" type="button" class="bg-[var(--skw-gold)] hover:brightness-110 text-black font-black px-6 py-3 rounded-2xl shadow-lg transition-all text-sm">🎲 一鍵生成範例試卷 (5題)</button>'
+      + '<button id="btnEmptyGoEditor" type="button" class="bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-3 rounded-2xl transition-all text-sm">返回編碼工具出題</button>'
+      + '</div>'
+      + '</div>';
+    var emptySampleBtn = $('btnEmptySampleTest');
+    if(emptySampleBtn) emptySampleBtn.onclick = generateSampleQuestions;
+    var emptyEditorBtn = $('btnEmptyGoEditor');
+    if(emptyEditorBtn) emptyEditorBtn.onclick = function(){
+      document.querySelectorAll('.mode-btn[data-mode="editor"]').forEach(function(b){b.click();});
+    };
     return;
   }
   list.innerHTML=testQuestions.map(function(q,idx){
