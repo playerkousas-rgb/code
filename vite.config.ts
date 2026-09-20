@@ -5,11 +5,13 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [
     {
-      name: 'copy-cipher-images',
+      name: 'copy-cipher-assets',
       apply: 'build',
       async writeBundle(options) {
         const outputDirectory = options.dir ?? resolve(process.cwd(), 'dist')
         await cp(resolve(process.cwd(), 'images'), resolve(outputDirectory, 'images'), { recursive: true })
+        await cp(resolve(process.cwd(), 'js/peerjs.min.js'), resolve(outputDirectory, 'js/peerjs.min.js'), { force: true })
+        await cp(resolve(process.cwd(), 'js/qrcode.min.js'), resolve(outputDirectory, 'js/qrcode.min.js'), { force: true })
       },
     },
   ],

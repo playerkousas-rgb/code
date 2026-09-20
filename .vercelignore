@@ -1,0 +1,11 @@
+# Exclude heavy & dev-only files from Vercel deployments
+.git
+.github
+.arena
+.vscode
+.idea
+node_modules
+dist
+scripts
+*.bak
+*.log
