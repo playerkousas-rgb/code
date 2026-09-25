@@ -770,6 +770,90 @@
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
     .scanlines { display: none; }
   }
+
+  /* ============================================================
+     CLOUD — 雲端題庫 + 排行榜（Supabase）UI
+     ============================================================ */
+  .cloud-panel {
+    width: min(92vw, 520px);
+    margin: 4px 0 2px;
+    border: 1px solid #2a3556;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(0,20,45,.72), rgba(0,5,20,.72));
+    box-shadow: 0 0 18px rgba(0,255,255,.08);
+    padding: 10px 12px 12px;
+    font-family: 'Courier New', monospace;
+  }
+  .cloud-head {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 700; letter-spacing: .08em;
+    color: #9fe9ff; text-transform: uppercase;
+  }
+  .cloud-head .cloud-title { flex: 1; color: #9fe9ff; }
+  .cloud-dot { width: 8px; height: 8px; border-radius: 50%; background: #4a5b7a; box-shadow: 0 0 6px currentColor; }
+  .cloud-dot.ready { background: #00ff88; }
+  .cloud-dot.loading { background: #ffcc00; animation: cloudPulse 1s infinite alternate; }
+  .cloud-dot.error { background: #ff0055; }
+  .cloud-dot.off { background: #4a5b7a; }
+  @keyframes cloudPulse { from { opacity: .35; } to { opacity: 1; } }
+  .cloud-status { font-size: 10px; color: #7d8ba6; letter-spacing: .04em; text-transform: none; }
+  .cloud-refresh {
+    background: transparent; border: 1px solid #2a3556; color: #9fe9ff;
+    border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 11px;
+    padding: 2px 7px; min-height: 26px;
+  }
+  .cloud-refresh:hover { border-color: #00ffff; }
+  .cloud-filters { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 6px; }
+  .cloud-chip {
+    background: rgba(0,255,255,.04); border: 1px solid #2a3556; color: #8fa3c0;
+    border-radius: 999px; padding: 3px 9px; font-size: 10px; cursor: pointer;
+    font-family: inherit; min-height: 24px;
+  }
+  .cloud-chip.active { border-color: #00ffff; color: #00ffff; background: rgba(0,255,255,.12); }
+  .cloud-board { display: flex; flex-direction: column; gap: 3px; max-height: 210px; overflow-y: auto; }
+  .cloud-row {
+    display: grid; grid-template-columns: 34px 1fr auto auto; gap: 8px; align-items: center;
+    padding: 4px 6px; border-radius: 7px; font-size: 11px; color: #c8d6ea;
+    background: rgba(255,255,255,.02);
+  }
+  .cloud-row.me { background: rgba(0,255,136,.12); border: 1px solid rgba(0,255,136,.35); color: #eafff5; }
+  .cloud-row .rk { font-weight: 900; color: #ffcc66; text-align: center; }
+  .cloud-row:nth-child(1) .rk { color: #ffd700; text-shadow: 0 0 8px rgba(255,215,0,.6); }
+  .cloud-row .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cloud-row .meta { color: #6f7f9c; font-size: 10px; }
+  .cloud-row .sc { font-weight: 900; color: #00ff88; }
+  .cloud-empty { color: #6f7f9c; font-size: 11px; text-align: center; padding: 10px 0; line-height: 1.6; }
+  .cloud-foot { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 10px; color: #6f7f9c; }
+  .cloud-link { color: #9fe9ff; text-decoration: none; border-bottom: 1px dotted rgba(159,233,255,.5); }
+  .cloud-link:hover { color: #00ffff; }
+  .cloud-setup { display: none; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .cloud-setup.open { display: flex; }
+  .cloud-setup input {
+    width: 100%; background: #050d1e; border: 1px solid #2a3556; color: #dce8f7;
+    border-radius: 6px; padding: 6px 8px; font-family: inherit; font-size: 11px;
+  }
+  .cloud-setup label { color: #7d8ba6; font-size: 10px; letter-spacing: .06em; }
+  .cloud-setup-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .cloud-btn {
+    background: rgba(0,255,255,.08); border: 1px solid #00ffff; color: #00ffff;
+    border-radius: 6px; padding: 5px 10px; font-family: inherit; font-size: 11px;
+    cursor: pointer; min-height: 30px;
+  }
+  .cloud-btn.ghost { border-color: #2a3556; color: #8fa3c0; background: transparent; }
+  .cloud-run-box {
+    grid-column: 1 / -1; margin-top: .6em; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid rgba(0,255,255,.25); background: rgba(0,255,255,.05);
+    font-size: .82em; line-height: 1.6;
+  }
+  .cloud-run-box .cloud-run-title { color: #9fe9ff; font-weight: 900; letter-spacing: .06em; margin-bottom: 4px; }
+  .cloud-run-box .cloud-run-line { color: #cfe0f5; }
+  .cloud-run-box .cloud-run-line b { color: #ffcc66; }
+  .cloud-run-form { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .cloud-run-form input {
+    flex: 1; min-width: 120px; background: #050d1e; border: 1px solid #2a3556; color: #dce8f7;
+    border-radius: 6px; padding: 6px 8px; font-family: inherit; font-size: 12px;
+  }
+  .cloud-muted { color: #6f7f9c; }
 </style>
 </head>
 <body>
@@ -830,6 +914,45 @@
   </div>
   <div id="milestone-bar" class="milestone-bar hidden" aria-label="個人里程碑"></div>
   <div id="achievement-bar" class="achievement-bar hidden" aria-label="完美主義徽章"></div>
+
+  <!-- CLOUD: 雲端題庫 + 排行榜 -->
+  <div id="cloud-panel" class="cloud-panel hidden" aria-label="雲端排行榜">
+    <div class="cloud-head">
+      <span class="cloud-dot off" id="cloud-dot" aria-hidden="true"></span>
+      <span class="cloud-title">☁ 雲端排行榜</span>
+      <span class="cloud-status" id="cloud-status-text">未連線</span>
+      <button class="cloud-refresh" id="btn-cloud-refresh" type="button" aria-label="重新整理排行榜">↻</button>
+    </div>
+    <div class="cloud-filters" id="cloud-filters" role="group" aria-label="排行榜時段">
+      <button class="cloud-chip active" type="button" data-period="all">總榜</button>
+      <button class="cloud-chip" type="button" data-period="month">本月</button>
+      <button class="cloud-chip" type="button" data-period="week">本週</button>
+      <button class="cloud-chip" type="button" data-period="today">今日</button>
+    </div>
+    <div class="cloud-board" id="cloud-board">
+      <div class="cloud-empty">未連線 · 成績暫時只會儲喺呢部機</div>
+    </div>
+    <div class="cloud-foot">
+      <span id="cloud-bank-info">雲端題庫：未連線</span>
+      <a class="cloud-link" href="bank.html">題庫管理／排行榜 →</a>
+      <button class="cloud-chip" type="button" id="btn-cloud-setup-toggle">⚙ 雲端連線</button>
+    </div>
+    <div class="cloud-setup" id="cloud-setup" aria-label="雲端連線設定">
+      <label for="cloud-url">Supabase Project URL</label>
+      <input id="cloud-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://xxxxx.supabase.co">
+      <label for="cloud-key">anon public key（唔好放 service_role key）</label>
+      <input id="cloud-key" type="password" autocomplete="off" spellcheck="false" placeholder="eyJhbGciOi...">
+      <label for="cloud-name">排行榜稱號（最多 12 個字）</label>
+      <input id="cloud-name" type="text" maxlength="12" autocomplete="off" placeholder="例如：筲箕灣 · 阿明">
+      <div class="cloud-setup-actions">
+        <button class="cloud-btn" type="button" id="btn-cloud-save">儲存並連線</button>
+        <button class="cloud-btn ghost" type="button" id="btn-cloud-mock">本機模擬模式</button>
+        <button class="cloud-btn ghost" type="button" id="btn-cloud-clear">清除本機設定</button>
+      </div>
+      <div class="cloud-muted" id="cloud-setup-hint">設定會儲喺呢部機；想全站共用請改 js/cloud-config.js。</div>
+    </div>
+  </div>
+
   <button class="btn" id="btn-start">開始任務</button>
   <div class="controls-hint">
     建議先玩<span>新手學習</span>，認得符號後再挑戰 A–Z 實戰
@@ -981,6 +1104,9 @@
   </div>
 </div>
 
+<!-- CLOUD: 雲端題庫 + 排行榜（Supabase；未設定就自動用本機紀錄） -->
+<script src="../js/cloud-config.js"></script>
+<script src="../js/cloud.js"></script>
 <script>
 // ============================================================
 // AUDIO ENGINE
@@ -1969,6 +2095,348 @@ function pickCipher() {
 }
 
 // ============================================================
+// CLOUD QUESTION BANK
+// 連到雲端題庫就優先出題庫題目（一樣會優先抽玩家錯過嘅字母）；
+// 冇連線／題庫空就自動用返原本嘅隨機字母，玩法完全唔變。
+// ============================================================
+const CLOUD_BANK_USAGE = 0.6;   // 雲端題庫「出場率」，其餘繼續用隨機字母
+let cloudBankHits = 0;
+let cloudBankTotal = 0;
+
+function collectWeakLetters() {
+  const weak = [];
+  for (const cipher of selectedCiphers) {
+    const stats = getCipherStats(cipher);
+    Object.keys(stats.weak || {}).forEach(letter => {
+      if (stats.weak[letter] >= 1) weak.push(letter);
+    });
+  }
+  return weak;
+}
+
+function pickBankQuestion() {
+  cloudBankTotal++;
+  if (!window.CipherCloud || !CipherCloud.isReady()) return null;
+  if (Math.random() > CLOUD_BANK_USAGE) return null;
+  const picked = CipherCloud.pickQuestion(selectedCiphers, collectWeakLetters());
+  if (!picked) return null;
+  cloudBankHits++;
+  return picked;
+}
+
+// ============================================================
+// CLOUD LEADERBOARD — 雲端排行榜（Supabase／本機模擬）
+// 冇連線嘅話成個區塊會自動靜音，遊戲照玩。
+// ============================================================
+const CLOUD_PERIOD_KEY = 'skw_cipher_cloud_period';
+let cloudPeriod = (() => {
+  try { return localStorage.getItem(CLOUD_PERIOD_KEY) || 'all'; } catch (_) { return 'all'; }
+})();
+let cloudBoardRows = [];
+let cloudRunState = { status: 'idle', message: '', result: null };
+
+function cloudAvailable() {
+  return Boolean(window.CipherCloud) && CipherCloud.getMode() !== 'off';
+}
+
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function cloudPathTitle(path) {
+  return (TRAINING_PATHS[path] && TRAINING_PATHS[path].title) || '無限挑戰';
+}
+
+function cloudPeriodLabel(period) {
+  return { all: '總榜', month: '本月', week: '本週', today: '今日' }[period] || '總榜';
+}
+
+function updateCloudStatus(status) {
+  const dot = document.getElementById('cloud-dot');
+  const text = document.getElementById('cloud-status-text');
+  const configured = status && status.mode !== 'off';
+  if (dot) dot.className = 'cloud-dot ' + ({ ready: 'ready', loading: 'loading', error: 'error' }[status.status] || 'off');
+  if (text) text.textContent = status ? status.message : '未連線';
+  ['cloud-filters', 'cloud-board'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = configured ? '' : 'none';
+  });
+  renderCloudBankInfo(status);
+  if (configured) refreshCloudBoard();
+}
+
+function renderCloudBankInfo(status) {
+  const info = document.getElementById('cloud-bank-info');
+  if (!info) return;
+  if (!window.CipherCloud) return;
+  const mode = CipherCloud.getMode();
+  if (mode === 'off') {
+    info.textContent = '雲端題庫：未連線（用緊隨機字母）';
+    return;
+  }
+  const count = CipherCloud.bankCount();
+  const syncAt = CipherCloud.bankSyncedAt();
+  const time = syncAt ? new Date(syncAt).toLocaleTimeString('zh-Hant', { hour: '2-digit', minute: '2-digit' }) : '--';
+  info.textContent = `雲端題庫：${count} 題（${time} 同步）${mode === 'mock' ? ' · 本機模擬' : ''}`;
+}
+
+function renderCloudBoard(rows) {
+  const board = document.getElementById('cloud-board');
+  if (!board) return;
+  if (!rows || !rows.length) {
+    board.innerHTML = '<div class="cloud-empty">暫時未有成績<br>快啲做第一個上榜嘅人！</div>';
+    return;
+  }
+  board.innerHTML = rows.map(row => {
+    const medal = row.rank <= 3 ? ['🥇', '🥈', '🥉'][row.rank - 1] : '#' + row.rank;
+    const ciphers = (row.ciphers || []).map(c => CIPHER_LABELS[c] || c).join('+') || '—';
+    return `<div class="cloud-row${row.is_you ? ' me' : ''}">
+      <span class="rk">${medal}</span>
+      <span class="nm">${escapeHtml(row.player)}<span class="meta"> · ${escapeHtml(ciphers)}</span></span>
+      <span class="meta">${Number(row.accuracy) || 0}% · ×${Number(row.max_combo) || 0}</span>
+      <span class="sc">${Number(row.score || 0).toLocaleString()}</span>
+    </div>`;
+  }).join('');
+}
+
+function refreshCloudBoard() {
+  if (!window.CipherCloud || CipherCloud.getMode() === 'off') {
+    cloudBoardRows = [];
+    renderCloudBoard([]);
+    return Promise.resolve([]);
+  }
+  return CipherCloud.leaderboard({ period: cloudPeriod, limit: 20 }).then(rows => {
+    cloudBoardRows = rows || [];
+    renderCloudBoard(cloudBoardRows);
+    return cloudBoardRows;
+  }).catch(() => {
+    renderCloudBoard([]);
+    return [];
+  });
+}
+
+// ---- 一局完成之後：交成績上雲端 ----
+function renderCloudRunBox() {
+  if (!cloudAvailable()) return '';
+  const name = CipherCloud.getPlayerName() || '';
+  const state = cloudRunState;
+  let line = '';
+  if (state.status === 'sending') line = '⏳ 提交緊成績…';
+  else if (state.status === 'error') line = `❌ ${escapeHtml(state.message)}`;
+  else if (state.status === 'done' && state.result) {
+    const r = state.result;
+    line = `🌐 <b>第 ${r.rank}</b> 名 / 共 ${r.total} 個紀錄 · 前 <b>${r.percentile}%</b>`
+      + (r.personal_best ? ' · 🎉 個人新紀錄！' : ` · 個人最佳 ${Number(r.best || 0).toLocaleString()}`);
+  } else if (name) {
+    line = '按「提交成績」將今局放上排行榜。';
+  } else {
+    line = '填個稱號就可以上排行榜 👇';
+  }
+  const bankNote = cloudBankTotal
+    ? `<div class="cloud-muted">今局 ${cloudBankHits} / ${cloudBankTotal} 題嚟自雲端題庫</div>` : '';
+  const showForm = state.status !== 'done';
+  return `<div class="cloud-run-box" id="cloud-run-box">
+    <div class="cloud-run-title">☁ 雲端排行榜 · ${cloudPathTitle(trainingPath)}</div>
+    <div class="cloud-run-line" id="cloud-run-line">${line}</div>
+    ${bankNote}
+    ${showForm ? `<div class="cloud-run-form">
+      <input id="cloud-run-name" type="text" maxlength="12" autocomplete="off" placeholder="排行榜稱號（最多 12 字）" value="${escapeHtml(name)}">
+      <button class="cloud-btn" type="button" id="btn-cloud-submit">提交成績</button>
+    </div>` : ''}
+  </div>`;
+}
+
+function paintCloudRunBox() {
+  const box = document.getElementById('cloud-run-box');
+  if (!box) return;
+  const line = box.querySelector('#cloud-run-line');
+  const state = cloudRunState;
+  if (!line) return;
+  if (state.status === 'sending') line.innerHTML = '⏳ 提交緊成績…';
+  else if (state.status === 'error') line.innerHTML = `❌ ${escapeHtml(state.message)}`;
+  else if (state.status === 'done' && state.result) {
+    const r = state.result;
+    line.innerHTML = `🌐 <b>第 ${r.rank}</b> 名 / 共 ${r.total} 個紀錄 · 前 <b>${r.percentile}%</b>`
+      + (r.personal_best ? ' · 🎉 個人新紀錄！' : ` · 個人最佳 ${Number(r.best || 0).toLocaleString()}`);
+    const form = box.querySelector('.cloud-run-form');
+    if (form) form.remove();
+  }
+}
+
+function currentRunPayload(nameOverride) {
+  const entries = Object.entries(cipherStats).filter(([, stats]) => stats.total > 0);
+  const attempts = entries.reduce((sum, [, stats]) => sum + stats.total, 0);
+  const correct = entries.reduce((sum, [, stats]) => sum + stats.correct, 0);
+  return {
+    player: nameOverride || (window.CipherCloud ? CipherCloud.getPlayerName() : '') || '',
+    score: Math.round(score),
+    accuracy: attempts ? Math.round(correct / attempts * 100) : 0,
+    neutralized: totalNeutralized,
+    maxCombo: maxCombo,
+    path: trainingPath,
+    ciphers: selectedCiphers.slice(),
+    speed: gameSpeed,
+    lives: gameLives,
+    timeLimit: gameTimeLimit,
+    durationMs: sessionDurationMs || (sessionStartedAt ? Date.now() - sessionStartedAt : 0)
+  };
+}
+
+function submitCloudRun(nameOverride) {
+  if (!cloudAvailable() || cloudRunSubmitted) return Promise.resolve(null);
+  const payload = currentRunPayload(nameOverride);
+  const name = (nameOverride || '').trim();
+  if (name) CipherCloud.setPlayerName(name);
+  if (!CipherCloud.getPlayerName()) {
+    cloudRunState = { status: 'error', message: '請先填排行榜稱號', result: null };
+    paintCloudRunBox();
+    return Promise.resolve(null);
+  }
+  cloudRunState = { status: 'sending', message: '', result: null };
+  paintCloudRunBox();
+  return CipherCloud.submitRun(payload).then(result => {
+    cloudRunSubmitted = true;
+    cloudRunState = { status: 'done', message: '', result: result };
+    paintCloudRunBox();
+    refreshCloudBoard();
+    updateCloudStatus(CipherCloud.getStatus());
+    return result;
+  }).catch(err => {
+    const raw = (err && err.message) || '提交失敗';
+    const friendly = /時間|分數|頻密|合理|數據/.test(raw)
+      ? '呢局過唔到雲端嘅合理性檢查（' + raw + '），本機紀錄照計。'
+      : raw;
+    cloudRunState = { status: 'error', message: friendly, result: null };
+    paintCloudRunBox();
+    return null;
+  });
+}
+
+function autoSubmitCloudRun() {
+  if (!cloudAvailable()) return;
+  if (score <= 0) return;
+  if (!CipherCloud.getPlayerName()) return;
+  submitCloudRun();
+}
+
+// ---- 連線設定 ----
+function loadCloudSetupForm() {
+  if (!window.CipherCloud) return;
+  const cfg = CipherCloud.getConfig();
+  const urlEl = document.getElementById('cloud-url');
+  const keyEl = document.getElementById('cloud-key');
+  const nameEl = document.getElementById('cloud-name');
+  const hintEl = document.getElementById('cloud-setup-hint');
+  if (urlEl) urlEl.value = cfg.url || '';
+  if (keyEl) keyEl.value = cfg.anonKey || '';
+  if (nameEl) nameEl.value = CipherCloud.getPlayerName() || '';
+  if (hintEl) {
+    hintEl.textContent = cfg.source === 'file'
+      ? '網站已經內置雲端設定，呢度可以畀呢部機暫時改。'
+      : '設定會儲喺呢部機；想全站共用請改 js/cloud-config.js。';
+  }
+}
+
+function saveCloudSetupFromForm() {
+  if (!window.CipherCloud) return;
+  const url = (document.getElementById('cloud-url').value || '').trim().replace(/\/+$/, '');
+  const key = (document.getElementById('cloud-key').value || '').trim();
+  const name = (document.getElementById('cloud-name').value || '').trim();
+  const hintEl = document.getElementById('cloud-setup-hint');
+  if (name) CipherCloud.setPlayerName(name);
+  if (!url || !key) {
+    if (hintEl) hintEl.textContent = '⚠ 請填 Project URL 同 anon key（兩個都要）。';
+    return;
+  }
+  if (hintEl) hintEl.textContent = '⏳ 連線中…';
+  CipherCloud.reconfigure({ url: url, anonKey: key, mode: 'auto' }).then(status => {
+    if (hintEl) {
+      hintEl.textContent = status.status === 'ready'
+        ? '✅ 已連線！題庫 ' + CipherCloud.bankCount() + ' 題。'
+        : '⚠ ' + status.message;
+    }
+    updateCloudStatus(status);
+  });
+}
+
+function wireCloudUI() {
+  if (!window.CipherCloud) return;
+  const panel = document.getElementById('cloud-panel');
+  if (panel) panel.classList.remove('hidden');
+
+  const setupToggle = document.getElementById('btn-cloud-setup-toggle');
+  if (setupToggle) {
+    setupToggle.addEventListener('click', () => {
+      const setup = document.getElementById('cloud-setup');
+      const open = setup.classList.toggle('open');
+      if (open) loadCloudSetupForm();
+    });
+  }
+  const saveBtn = document.getElementById('btn-cloud-save');
+  if (saveBtn) saveBtn.addEventListener('click', saveCloudSetupFromForm);
+
+  const mockBtn = document.getElementById('btn-cloud-mock');
+  if (mockBtn) {
+    mockBtn.addEventListener('click', () => {
+      CipherCloud.saveConfig({ mode: 'mock' });
+      CipherCloud.reconfigure().then(updateCloudStatus);
+    });
+  }
+  const clearBtn = document.getElementById('btn-cloud-clear');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      CipherCloud.clearConfig();
+      CipherCloud.reconfigure().then(updateCloudStatus);
+    });
+  }
+  const refreshBtn = document.getElementById('btn-cloud-refresh');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      CipherCloud.refreshQuestions().then(() => {
+        refreshCloudBoard();
+        updateCloudStatus(CipherCloud.getStatus());
+      });
+    });
+  }
+  document.querySelectorAll('#cloud-filters .cloud-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      cloudPeriod = chip.dataset.period || 'all';
+      try { localStorage.setItem(CLOUD_PERIOD_KEY, cloudPeriod); } catch (_) { /* ignore */ }
+      document.querySelectorAll('#cloud-filters .cloud_chip, #cloud-filters .cloud-chip').forEach(c => {
+        c.classList.toggle('active', c === chip);
+      });
+      refreshCloudBoard();
+    });
+    chip.classList.toggle('active', (chip.dataset.period || 'all') === cloudPeriod);
+  });
+
+  // 遊戲結束畫面嘅提交掣（畫面每次都重新 render，所以用事件委派）
+  document.addEventListener('click', event => {
+    const target = event.target;
+    if (target && target.id === 'btn-cloud-submit') {
+      const input = document.getElementById('cloud-run-name');
+      submitCloudRun(input ? input.value : '');
+    }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Enter') return;
+    const target = event.target;
+    if (target && target.id === 'cloud-run-name') {
+      event.preventDefault();
+      submitCloudRun(target.value);
+    }
+  });
+
+  CipherCloud.onStatus(updateCloudStatus);
+  updateCloudStatus(CipherCloud.getStatus());
+}
+
+// ============================================================
 // GAME ENGINE
 // ============================================================
 const canvas = document.getElementById('gameCanvas');
@@ -2002,6 +2470,9 @@ let lives = 3;
 let combo = 0;
 let maxCombo = 0;
 let totalNeutralized = 0;
+let sessionStartedAt = 0;   // 雲端排行榜用：量度一局實際玩咗幾耐（順便做防作弊檢查）
+let sessionDurationMs = 0;
+let cloudRunSubmitted = false;
 let stageNeutralized = 0;
 let stageScore = 0;
 let threats = [];
@@ -2524,12 +2995,15 @@ function createThreat(stage) {
   const col = THREAT_COLORS[type];
   const size = trainingPath === 'learn' ? 54 : 32 + Math.random() * 12;
   const x = trainingPath === 'learn' ? W / 2 : 60 + Math.random() * (W - 120);
-  const cipher = pickCipher();
-  const letter = pickWeightedLetter();
+  const bankQuestion = pickBankQuestion();
+  const cipher = bankQuestion ? bankQuestion.cipher : pickCipher();
+  const letter = bankQuestion ? bankQuestion.answer : pickWeightedLetter();
   const speedMult = getSpeedMultiplier();
   return {
     x, y: trainingPath === 'learn' ? Math.max(130, H * .18) : -60,
     type, size,
+    bankId: bankQuestion ? bankQuestion.id : null,
+    bankHint: bankQuestion ? (bankQuestion.hint || '') : '',
     speed: cfg.speed * speedMult * (trainingPath === 'learn' ? .62 : .8 + Math.random() * .4),
     fill: col.fill, stroke: col.stroke, glow: col.glow,
     rotation: 0,
@@ -3070,6 +3544,7 @@ function showGameOver() {
   playGameOver();
   hideAllScreens();
   saveTrainingProgress();
+  sessionDurationMs = sessionStartedAt ? Date.now() - sessionStartedAt : 0;
   const isTimeout = gameTimeLimit > 0 && timeRemaining <= 0;
   document.getElementById('screen-gameover').classList.remove('hidden');
   // Update title based on reason
@@ -3110,8 +3585,10 @@ function showGameOver() {
     </div>
     ${renderHistoryChart()}
     ${renderPeriodicRanking()}
+    ${renderCloudRunBox()}
     <div style="grid-column:1/-1;color:#ffcc66;background:rgba(255,153,0,.08);border:1px solid rgba(255,153,0,.25);padding:12px;border-radius:10px;font-size:.82em;line-height:1.5;">💡 ${summary.recommendation}</div>
   `;
+  autoSubmitCloudRun();
 }
 
 function showWin() {
@@ -3150,8 +3627,10 @@ function showWin() {
     </div>
     ${renderHistoryChart()}
     ${renderPeriodicRanking()}
+    ${renderCloudRunBox()}
     <div style="grid-column:1/-1;color:#77f5c1;background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.22);padding:12px;border-radius:10px;font-size:.82em;line-height:1.5;">🎯 ${summary.recommendation}</div>
   `;
+  autoSubmitCloudRun();
 }
 
 function startGame() {
@@ -3167,6 +3646,12 @@ function startGame() {
   combo = 0;
   maxCombo = 0;
   totalNeutralized = 0;
+  sessionStartedAt = Date.now();
+  sessionDurationMs = 0;
+  cloudRunSubmitted = false;
+  cloudRunState = { status: 'idle', message: '', result: null };
+  cloudBankHits = 0;
+  cloudBankTotal = 0;
   currentStage = 0;
   threats = [];
   particles = [];
@@ -3495,6 +3980,7 @@ syncSoundButton();
 updateProgressSummary();
 updateMilestoneBar();
 updateAchievementBar();
+wireCloudUI();
 
 // === Settings sliders ===
 function initSlider(id, setFn, parseFn) {

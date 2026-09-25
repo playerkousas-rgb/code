@@ -51,6 +51,47 @@
 
 訓練模式採用內建 Canvas 引擎；遊戲中的旗號以 Canvas 即時繪畫，毋須預載 26 張圖片，減少手機流量。
 
+## ☁ 雲端題庫 + 排行榜（Supabase）
+
+配合 [Supabase](https://supabase.com)（免費方案已足夠）即可把題庫與排行榜搬到雲端，
+讓全區／全團的成員共用同一份題庫，並在「無限挑戰」上互相競爭排名。
+
+### 有咗雲端會多咗啲乜
+
+- **共用題庫**（`question_bank`）：領袖在 `training/bank.html` 新增、批次匯入題目
+  （支援 `答案,提示` 或 `密碼,答案,提示`，亦可由一個詞語如 `SCOUT` 逐個字母開題），
+  遊戲每次出題有 60% 機會由雲端題庫抽取，並照樣優先抽成員錯過的字母。
+- **全球排行榜**（`runs`）：每局完結自動提交分數、準確率、破解數、最高連擊、密碼組合及用時，
+  排行榜以「每位玩家最好一局」計算，可按今日／本週／本月／總榜、路線及密碼篩選。
+- **遊戲內排行榜**：開始畫面即時顯示 Top 20；遊戲結束畫面會顯示
+  「第 N 名 / 共 M 個紀錄 · 前 X%」及是否個人新紀錄。
+- **防作弊**：成績只能經 `submit_run()` RPC 寫入，伺服器會檢查分數與破解數是否合理、
+  每題最少 150ms、同一個 client 一分鐘最多 10 局、一小時最多 60 局。
+- **離線都玩到**：題庫與排行榜均有 localStorage 快取；未能連線時自動退回隨機出題，
+  個人紀錄（最高分、里程碑、徽章）本來就是本機計算，完全不受影響。
+
+### 三步設定
+
+1. 到 [supabase.com](https://supabase.com) 建立免費專案。
+2. 左側 **SQL Editor** → 新增 query → 貼上 `supabase/schema.sql` 全部內容 → **Run**。
+   （會建立 `question_bank`、`runs` 兩個資料表、RLS 政策與 4 個 RPC。）
+3. 左側 **Project Settings → API** 複製 **Project URL** 與 **anon public** key：
+   - 推薦：寫入 `js/cloud-config.js` 後部署，全站所有裝置共用；
+   - 或者：在 `training/bank.html`／訓練開始畫面的「⚙ 雲端連線」貼上，只儲存在該裝置。
+
+> 只可使用 **anon public key**，切勿把 `service_role` key 放到前端。
+
+### 審核與信任模式
+
+成員新增的題目預設為 `pending`（待審核），需在 Supabase Dashboard →
+Table Editor → `question_bank` 把 `status` 改成 `approved` 才會在遊戲出現。
+若只是領袖自己人使用，可執行 `supabase/schema.sql` 最底的「信任模式」SQL，讓題目直接上架。
+
+### 未設定 Supabase 時
+
+按下「本機模擬模式」即可用 localStorage 模擬整條流程（題庫、排行榜、篩選、示範成績），
+方便先試玩或作離線示範；數據只存在該瀏覽器。
+
 ## 手機體驗改善
 
 - 底部四模式導覽及安全區域（safe area）支援
@@ -90,6 +131,11 @@ npm run build   # 同時建置主 App 與 training 多頁入口
 ├── css/style.css           # 主 App 及響應式樣式
 ├── js/app.js               # 編碼、試卷、投影、搶答邏輯
 ├── training/index.html     # 密碼防衛戰（Canvas 單頁遊戲）
+├── training/bank.html      # 雲端題庫管理 + 排行榜（Supabase）
+├── js/cloud.js             # 雲端層：題庫／排行榜／離線快取／本機模擬
+├── js/cloud-config.js      # Supabase URL 與 anon key（部署前填寫）
+├── js/supabase.min.js      # 內置 Supabase JS 客戶端（UMD）
+├── supabase/schema.sql     # 資料表、RLS 政策、submit_run / get_leaderboard 等 RPC
 ├── images/                 # 旗號圖片 (a.png - z.png)
 ├── scripts/check-static.mjs
 ├── vite.config.ts          # 主頁 + training 多頁建置
@@ -109,6 +155,9 @@ npm run build   # 同時建置主 App 與 training 多頁入口
 - `skw_cipher_training_settings`：遊戲設定
 - `skw_cipher_training_progress`：訓練紀錄（最高分、里程碑、週月排行、歷史折線）
 - `skw_cipher_training_achievements`：完美主義徽章（6 密碼 × 3 路徑）
+- `skw_cipher_cloud_config`：雲端連線設定（只在使用「⚙ 雲端連線」時產生）
+- `skw_cipher_cloud_player`：排行榜稱號與隨機 client id（用於限速及標示自己）
+- `skw_cipher_cloud_questions` / `skw_cipher_cloud_board`：雲端題庫與排行榜快取
 
 清除瀏覽器網站資料會一併移除以上紀錄。
 

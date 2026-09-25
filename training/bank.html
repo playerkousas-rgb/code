@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#020a1a">
+<meta name="description" content="Scout System 雲端密碼題庫與排行榜管理（Supabase）">
+<title>雲端題庫 · 排行榜｜Scout System</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: radial-gradient(circle at 50% 0%, #081a35 0%, #020a1a 60%);
+    color: #dce8f7;
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+  a { color: #9fe9ff; }
+  header {
+    position: sticky; top: 0; z-index: 5;
+    background: rgba(2,10,26,.92);
+    border-bottom: 1px solid #1d2942;
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 900; font-size: 15px; letter-spacing: .1em; color: #00ffff; text-shadow: 0 0 10px rgba(0,255,255,.5); }
+  .back-link { font-size: 12px; text-decoration: none; border: 1px solid #2a3556; border-radius: 999px; padding: 5px 12px; }
+  .back-link:hover { border-color: #00ffff; }
+  .pill {
+    margin-left: auto; display: flex; align-items: center; gap: 7px;
+    font-size: 11px; color: #8fa3c0; border: 1px solid #2a3556; border-radius: 999px; padding: 5px 12px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #4a5b7a; }
+  .dot.ready { background: #00ff88; box-shadow: 0 0 8px #00ff88; }
+  .dot.loading { background: #ffcc00; }
+  .dot.error { background: #ff0055; box-shadow: 0 0 8px #ff0055; }
+  main { max-width: 980px; margin: 0 auto; padding: 18px 14px; display: flex; flex-direction: column; gap: 16px; }
+  .card {
+    border: 1px solid #1d2942; border-radius: 14px; padding: 14px 16px;
+    background: linear-gradient(180deg, rgba(0,20,45,.6), rgba(0,5,20,.6));
+    box-shadow: 0 0 18px rgba(0,255,255,.05);
+  }
+  .card h2 { font-size: 13px; letter-spacing: .12em; color: #9fe9ff; text-transform: uppercase; margin-bottom: 10px; }
+  .card p.note { font-size: 11px; color: #7d8ba6; line-height: 1.7; }
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tab {
+    background: rgba(0,255,255,.04); border: 1px solid #2a3556; color: #8fa3c0;
+    border-radius: 999px; padding: 7px 16px; font-family: inherit; font-size: 12px; cursor: pointer; min-height: 34px;
+  }
+  .tab.active { border-color: #00ffff; color: #00ffff; background: rgba(0,255,255,.12); }
+  .grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  label { display: block; font-size: 10px; letter-spacing: .08em; color: #7d8ba6; margin-bottom: 4px; }
+  input, select, textarea {
+    width: 100%; background: #050d1e; border: 1px solid #2a3556; color: #dce8f7;
+    border-radius: 8px; padding: 8px 10px; font-family: inherit; font-size: 13px;
+  }
+  textarea { min-height: 96px; resize: vertical; line-height: 1.6; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #00ffff; }
+  .btn {
+    background: rgba(0,255,255,.08); border: 1px solid #00ffff; color: #00ffff;
+    border-radius: 8px; padding: 8px 14px; font-family: inherit; font-size: 12px; cursor: pointer; min-height: 36px;
+  }
+  .btn:hover { background: rgba(0,255,255,.18); }
+  .btn.ghost { border-color: #2a3556; color: #8fa3c0; background: transparent; }
+  .btn.danger { border-color: #ff6688; color: #ff99aa; background: transparent; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 12px; }
+  .chip {
+    background: rgba(0,255,255,.04); border: 1px solid #2a3556; color: #8fa3c0;
+    border-radius: 999px; padding: 4px 12px; font-family: inherit; font-size: 11px; cursor: pointer; min-height: 28px;
+  }
+  .chip.active { border-color: #00ffff; color: #00ffff; background: rgba(0,255,255,.12); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid #16203a; }
+  th { color: #7d8ba6; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .scroll { max-height: 420px; overflow-y: auto; }
+  .status-tag { font-size: 10px; padding: 2px 7px; border-radius: 999px; border: 1px solid; }
+  .status-tag.approved { color: #00ff88; border-color: rgba(0,255,136,.4); }
+  .status-tag.pending { color: #ffcc00; border-color: rgba(255,204,0,.4); }
+  .status-tag.rejected { color: #ff6688; border-color: rgba(255,102,136,.4); }
+  .empty { color: #6f7f9c; font-size: 12px; text-align: center; padding: 22px 0; line-height: 1.8; }
+  .msg { font-size: 11px; margin-top: 8px; min-height: 16px; color: #7d8ba6; line-height: 1.6; }
+  .msg.ok { color: #00ff88; }
+  .msg.err { color: #ff99aa; }
+  .hidden { display: none !important; }
+  ol, ul { padding-left: 20px; font-size: 12px; line-height: 1.9; color: #b8c8de; }
+  code { background: #050d1e; border: 1px solid #2a3556; border-radius: 5px; padding: 1px 5px; color: #ffcc66; }
+  .kbd-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .kbd {
+    border: 1px solid #2a3556; border-radius: 6px; padding: 3px 8px; font-size: 11px; color: #8fa3c0;
+    cursor: pointer; background: transparent; font-family: inherit;
+  }
+  .kbd:hover { border-color: #00ffff; color: #00ffff; }
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
+    header { padding: 10px 12px; }
+    .pill { margin-left: 0; width: 100%; justify-content: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back-link" href="index.html">← 返回訓練</a>
+  <span class="brand">☁ 雲端題庫 · 排行榜</span>
+  <span class="pill"><span class="dot" id="status-dot"></span><span id="status-text">檢查緊連線…</span></span>
+</header>
+
+<main>
+  <!-- ============ 連線設定 ============ -->
+  <section class="card" id="card-config">
+    <h2>1 · 連線設定</h2>
+    <div class="grid">
+      <div>
+        <label for="cfg-url">Supabase Project URL</label>
+        <input id="cfg-url" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://xxxxx.supabase.co">
+      </div>
+      <div>
+        <label for="cfg-key">anon public key</label>
+        <input id="cfg-key" type="password" autocomplete="off" spellcheck="false" placeholder="eyJhbGciOi...">
+      </div>
+      <div>
+        <label for="cfg-author">領袖／隊伍名（題目作者）</label>
+        <input id="cfg-author" type="text" maxlength="24" autocomplete="off" placeholder="例如：筲箕灣區">
+      </div>
+      <div>
+        <label for="cfg-name">排行榜稱號</label>
+        <input id="cfg-name" type="text" maxlength="12" autocomplete="off" placeholder="例如：阿明">
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <button class="btn" type="button" id="btn-config-save">儲存並連線</button>
+      <button class="btn ghost" type="button" id="btn-config-mock">本機模擬模式</button>
+      <button class="btn ghost" type="button" id="btn-config-clear">清除本機設定</button>
+    </div>
+    <div class="msg" id="config-msg"></div>
+    <p class="note" style="margin-top:10px;">
+      設定會儲喺呢部機嘅 localStorage。想全站（所有成員）共用同一個後端，直接改
+      <code>js/cloud-config.js</code> 再部署就得。<br>
+      只好用 <b>anon public key</b>，千祈唔好貼 service_role key 落瀏覽器。
+    </p>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" type="button" data-tab="bank">📚 雲端題庫</button>
+    <button class="tab" type="button" data-tab="board">🏆 排行榜</button>
+    <button class="tab" type="button" data-tab="help">❓ 設定說明</button>
+  </nav>
+
+  <!-- ============ 題庫 ============ -->
+  <section class="card" id="tab-bank">
+    <h2>📚 雲端題庫</h2>
+    <p class="note">題目答案只可以用 A–Z / 0–9。單字母題（例如 <code>S</code>）會直接喺「密碼防衛戰」出場。</p>
+
+    <div class="grid" style="margin-top:12px;">
+      <div>
+        <label for="q-cipher">密碼類型</label>
+        <select id="q-cipher">
+          <option value="MORSE">摩斯密碼</option>
+          <option value="PIGPEN">朱高密碼</option>
+          <option value="BRAILLE">點字</option>
+          <option value="GRID">SCOUT 座標</option>
+          <option value="PHONET9">電話 T9</option>
+          <option value="SEMAPHORE">旗號</option>
+        </select>
+      </div>
+      <div>
+        <label for="q-answer">答案（A–Z / 0–9）</label>
+        <input id="q-answer" type="text" maxlength="24" autocomplete="off" spellcheck="false" placeholder="S">
+      </div>
+      <div>
+        <label for="q-difficulty">難度 1–5</label>
+        <input id="q-difficulty" type="number" min="1" max="5" step="1" value="1">
+      </div>
+      <div>
+        <label for="q-hint">提示（可選，最多 80 字）</label>
+        <input id="q-hint" type="text" maxlength="80" autocomplete="off" placeholder="例如：三點就係 S">
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <button class="btn" type="button" id="btn-q-add">＋ 加入題庫</button>
+      <button class="btn ghost" type="button" id="btn-q-az">批量加入 A–Z</button>
+      <button class="btn ghost" type="button" id="btn-q-refresh">↻ 重新載入</button>
+    </div>
+    <div class="msg" id="q-msg"></div>
+
+    <div style="margin-top:16px;">
+      <label for="q-bulk">批量新增（每行一題：<code>答案,提示</code> 或 <code>密碼,答案,提示</code>）</label>
+      <textarea id="q-bulk" spellcheck="false" placeholder="S,三點就係 S&#10;O,三劃&#10;MORSE,K,一劃一點"></textarea>
+      <div class="row" style="margin-top:8px;">
+        <button class="btn" type="button" id="btn-q-bulk">批次送出</button>
+        <span class="note" style="font-size:11px;">亦可以打一個詞語（例如 SCOUT）逐個字母開題。</span>
+      </div>
+    </div>
+
+    <div class="chips" id="bank-filters" style="margin-top:18px;">
+      <button class="chip active" type="button" data-cipher="ALL">全部</button>
+      <button class="chip" type="button" data-cipher="MORSE">摩斯</button>
+      <button class="chip" type="button" data-cipher="PIGPEN">朱高</button>
+      <button class="chip" type="button" data-cipher="BRAILLE">點字</button>
+      <button class="chip" type="button" data-cipher="GRID">座標</button>
+      <button class="chip" type="button" data-cipher="PHONET9">T9</button>
+      <button class="chip" type="button" data-cipher="SEMAPHORE">旗號</button>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:74px;">密碼</th>
+            <th style="width:86px;">答案</th>
+            <th>提示</th>
+            <th style="width:74px;">作者</th>
+            <th style="width:66px;">難度</th>
+            <th style="width:56px;" class="num">用過</th>
+            <th style="width:82px;">狀態</th>
+            <th style="width:60px;"></th>
+          </tr>
+        </thead>
+        <tbody id="bank-body"></tbody>
+      </table>
+    </div>
+    <div class="empty hidden" id="bank-empty">未有題目 · 用上面嘅表新增，或者撳「批量加入 A–Z」。</div>
+    <div class="msg" id="bank-msg"></div>
+    <p class="note" style="margin-top:10px;">
+      新題目狀態係 <b>待審核（pending）</b>，要喺 Supabase Dashboard → Table Editor →
+      <code>question_bank</code> 將 <code>status</code> 改做 <code>approved</code> 先會喺遊戲出場。
+      想即刻上架，睇 <code>supabase/schema.sql</code> 最底嘅「信任模式」。
+    </p>
+  </section>
+
+  <!-- ============ 排行榜 ============ -->
+  <section class="card hidden" id="tab-board">
+    <h2>🏆 排行榜（每位玩家計最好嗰局）</h2>
+    <div class="chips" id="board-period">
+      <button class="chip active" type="button" data-period="today">今日</button>
+      <button class="chip" type="button" data-period="week">本週</button>
+      <button class="chip" type="button" data-period="month">本月</button>
+      <button class="chip" type="button" data-period="all">總榜</button>
+    </div>
+    <div class="chips" id="board-path">
+      <button class="chip active" type="button" data-path="">全部路線</button>
+      <button class="chip" type="button" data-path="learn">新手學習</button>
+      <button class="chip" type="button" data-path="mission">守城任務</button>
+      <button class="chip" type="button" data-path="endless">無限挑戰</button>
+    </div>
+    <div class="chips" id="board-cipher">
+      <button class="chip active" type="button" data-cipher="">全部密碼</button>
+      <button class="chip" type="button" data-cipher="MORSE">摩斯</button>
+      <button class="chip" type="button" data-cipher="PIGPEN">朱高</button>
+      <button class="chip" type="button" data-cipher="BRAILLE">點字</button>
+      <button class="chip" type="button" data-cipher="GRID">座標</button>
+      <button class="chip" type="button" data-cipher="PHONET9">T9</button>
+      <button class="chip" type="button" data-cipher="SEMAPHORE">旗號</button>
+    </div>
+    <div class="row" style="margin-bottom:10px;">
+      <button class="btn" type="button" id="btn-board-refresh">↻ 重新載入</button>
+      <button class="btn ghost" type="button" id="btn-board-demo">產生示範成績（模擬模式）</button>
+      <button class="btn danger" type="button" id="btn-board-reset">清空示範成績（模擬模式）</button>
+      <span class="note" id="board-total" style="font-size:11px;"></span>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:56px;">名次</th>
+            <th>稱號</th>
+            <th style="width:96px;">路線</th>
+            <th style="width:80px;" class="num">準確率</th>
+            <th style="width:74px;" class="num">破解</th>
+            <th style="width:70px;" class="num">連擊</th>
+            <th style="width:96px;" class="num">得分</th>
+            <th style="width:92px;">時間</th>
+          </tr>
+        </thead>
+        <tbody id="board-body"></tbody>
+      </table>
+    </div>
+    <div class="empty hidden" id="board-empty">仲未有人上榜。</div>
+    <div class="msg" id="board-msg"></div>
+  </section>
+
+  <!-- ============ 說明 ============ -->
+  <section class="card hidden" id="tab-help">
+    <h2>❓ 設定說明（3 步搞掂）</h2>
+    <ol>
+      <li>去 <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a> 開一個免費專案（Free tier 夠晒用）。</li>
+      <li>Project 開好之後：左邊 <b>SQL Editor</b> → 開新 query → 將 repo 入面
+        <code>supabase/schema.sql</code> 全部內容貼上去 → <b>Run</b>。
+        會建立 <code>question_bank</code>、<code>runs</code> 兩個表、RLS 政策同 4 個 RPC。</li>
+      <li>左邊 <b>Project Settings → API</b> 抄 <b>Project URL</b> 同 <b>anon public</b> key，
+        貼返上面「連線設定」，或者寫入 <code>js/cloud-config.js</code>（推薦，全站共用）。</li>
+    </ol>
+    <h2 style="margin-top:18px;">點樣運作</h2>
+    <ul>
+      <li><b>題庫</b>：遊戲每次出題有 60% 機會由雲端題庫抽（其餘用隨機字母），
+        並且一樣會優先抽玩家錯過嘅字母。冇網絡就自動用返隨機字母。</li>
+      <li><b>排行榜</b>：一局完結會將分數、準確率、破解數、最高連擊、密碼組合、用咗幾耐時間送上去，
+        每位玩家只計最好嗰局。</li>
+      <li><b>防作弊</b>：成績一定要經 <code>submit_run()</code> RPC 寫入，入面檢查分數同破解數係咪合理、
+        每題至少 200ms、同一個 client 一分鐘最多 10 局、一小時最多 60 局，並做埋限速。</li>
+      <li><b>離線</b>：題庫同排行榜都有 localStorage 快取，無網絡時會顯示上次同步嘅內容；
+        個人紀錄（最高分、里程碑、徽章）一向都係本機計，唔受影響。</li>
+      <li><b>唔想開 Supabase 住？</b> 撳「本機模擬模式」，題庫同排行榜會用 localStorage 模擬，
+        可以即刻試到成個流程（數據只喺呢部機）。</li>
+    </ul>
+    <h2 style="margin-top:18px;">成本</h2>
+    <p class="note">Supabase Free tier：500MB 資料庫 + 每月 5GB 流量。一個童軍區嘅密碼題庫（幾百題）同幾萬條成績記錄都係零頭，正常唔使畀錢。</p>
+  </section>
+</main>
+
+<script src="../js/cloud-config.js"></script>
+<script src="../js/cloud.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var CIPHER_LABELS = {
+    MORSE: '摩斯', PIGPEN: '朱高', BRAILLE: '點字',
+    GRID: '座標', PHONET9: 'T9', SEMAPHORE: '旗號'
+  };
+  var PATH_LABELS = { learn: '新手學習', mission: '守城任務', endless: '無限挑戰' };
+  var AUTHOR_KEY = 'skw_cipher_bank_author';
+
+  var bankRows = [];
+  var bankCipher = 'ALL';
+  var boardPeriod = 'all';
+  var boardPath = '';
+  var boardCipher = '';
+
+  function $(id) { return document.getElementById(id); }
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function setMsg(id, text, kind) {
+    var el = $(id);
+    if (!el) return;
+    el.textContent = text || '';
+    el.className = 'msg' + (kind ? ' ' + kind : '');
+  }
+
+  function hasCloud() { return Boolean(window.CipherCloud); }
+
+  // ------------------------------------------------------------------ 狀態
+  function renderStatus(status) {
+    var dot = $('status-dot');
+    var text = $('status-text');
+    if (!dot || !text) return;
+    dot.className = 'dot ' + ({ ready: 'ready', loading: 'loading', error: 'error' }[status.status] || '');
+    text.textContent = status.message || '未連線';
+  }
+
+  // ------------------------------------------------------------------ 設定
+  function loadConfigForm() {
+    if (!hasCloud()) return;
+    var cfg = CipherCloud.getConfig();
+    $('cfg-url').value = cfg.url || '';
+    $('cfg-key').value = cfg.anonKey || '';
+    $('cfg-name').value = CipherCloud.getPlayerName() || '';
+    try {
+      $('cfg-author').value = localStorage.getItem(AUTHOR_KEY) || '';
+    } catch (err) {
+      $('cfg-author').value = '';
+    }
+    setMsg('config-msg', cfg.source === 'file'
+      ? '網站已內置雲端設定，需要嘅話可以喺度暫時改（只影響呢部機）。'
+      : '未設定 · 可以撳「本機模擬模式」即刻試玩。');
+  }
+
+  function getAuthor() {
+    var author = ($('cfg-author').value || '').trim();
+    try { localStorage.setItem(AUTHOR_KEY, author); } catch (err) { /* ignore */ }
+    return author || '匿名領袖';
+  }
+
+  function saveConfig(options) {
+    if (!hasCloud()) return Promise.resolve(null);
+    options = options || {};
+    var url = ($('cfg-url').value || '').trim().replace(/\/+$/, '');
+    var key = ($('cfg-key').value || '').trim();
+    var name = ($('cfg-name').value || '').trim();
+    getAuthor();
+    if (name) CipherCloud.setPlayerName(name);
+    if (options.mock) {
+      CipherCloud.saveConfig({ mode: 'mock' });
+      setMsg('config-msg', '切換去本機模擬模式…');
+      return CipherCloud.reconfigure().then(function (status) {
+        setMsg('config-msg', status.status === 'ready' ? '✅ 本機模擬模式已啟動（數據只喺呢部機）' : '⚠ ' + status.message,
+          status.status === 'ready' ? 'ok' : 'err');
+        refreshAll();
+        return status;
+      });
+    }
+    if (!url || !key) {
+      setMsg('config-msg', '⚠ 請填 Project URL 同 anon key（兩個都要）。', 'err');
+      return Promise.resolve(null);
+    }
+    setMsg('config-msg', '⏳ 連線中…');
+    return CipherCloud.reconfigure({ url: url, anonKey: key, mode: 'auto' }).then(function (status) {
+      setMsg('config-msg', status.status === 'ready'
+        ? '✅ 已連線 · 雲端題庫 ' + CipherCloud.bankCount() + ' 題'
+        : '⚠ ' + status.message, status.status === 'ready' ? 'ok' : 'err');
+      refreshAll();
+      return status;
+    });
+  }
+
+  // ------------------------------------------------------------------ 題庫
+  function refreshBank() {
+    if (!hasCloud() || CipherCloud.getMode() === 'off') {
+      bankRows = [];
+      renderBank();
+      setMsg('bank-msg', '未連線 · 連線之後先可以管理雲端題庫。');
+      return Promise.resolve([]);
+    }
+    setMsg('bank-msg', '載入緊題庫…');
+    return CipherCloud.listQuestions({ status: 'any', limit: 500 }).then(function (rows) {
+      bankRows = rows || [];
+      renderBank();
+      setMsg('bank-msg', '共 ' + bankRows.length + ' 題（已上架 ' +
+        bankRows.filter(function (r) { return r.status === 'approved'; }).length + ' 題）', 'ok');
+      return bankRows;
+    }).catch(function (err) {
+      setMsg('bank-msg', '⚠ 載入失敗：' + ((err && err.message) || '未知錯誤'), 'err');
+      return [];
+    });
+  }
+
+  function renderBank() {
+    var body = $('bank-body');
+    var empty = $('bank-empty');
+    if (!body) return;
+    var rows = bankRows.filter(function (row) {
+      return bankCipher === 'ALL' || row.cipher === bankCipher;
+    });
+    if (!rows.length) {
+      body.innerHTML = '';
+      if (empty) empty.classList.remove('hidden');
+      return;
+    }
+    if (empty) empty.classList.add('hidden');
+    body.innerHTML = rows.map(function (row) {
+      var canDelete = row.status === 'pending';
+      return '<tr>' +
+        '<td>' + (CIPHER_LABELS[row.cipher] || row.cipher) + '</td>' +
+        '<td><b>' + escapeHtml(row.answer) + '</b></td>' +
+        '<td style="color:#8fa3c0;">' + escapeHtml(row.hint || '') + '</td>' +
+        '<td style="color:#8fa3c0;">' + escapeHtml(row.author || '') + '</td>' +
+        '<td>' + (row.difficulty || 1) + '</td>' +
+        '<td class="num">' + (row.plays || 0) + '</td>' +
+        '<td><span class="status-tag ' + escapeHtml(row.status || 'pending') + '">' +
+          ({ approved: '已上架', pending: '待審核', rejected: '已拒' }[row.status] || row.status) +
+        '</span></td>' +
+        '<td>' + (canDelete
+          ? '<button class="chip" type="button" data-delete="' + escapeHtml(row.id) + '">刪</button>'
+          : '') + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function addQuestion(cipher, answer, hint, difficulty) {
+    if (!hasCloud()) return Promise.resolve(null);
+    return CipherCloud.addQuestion({
+      cipher: cipher,
+      answer: answer,
+      hint: hint || '',
+      difficulty: difficulty || 1,
+      author: getAuthor(),
+      tags: []
+    });
+  }
+
+  function submitOne() {
+    var cipher = $('q-cipher').value;
+    var answer = ($('q-answer').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    var hint = ($('q-hint').value || '').trim();
+    var difficulty = parseInt($('q-difficulty').value, 10) || 1;
+    if (!answer) {
+      setMsg('q-msg', '⚠ 請填答案（A–Z / 0–9）。', 'err');
+      return Promise.resolve(null);
+    }
+    if (!hasCloud() || CipherCloud.getMode() === 'off') {
+      setMsg('q-msg', '⚠ 未連線，未有任何嘢送出。', 'err');
+      return Promise.resolve(null);
+    }
+    return addQuestion(cipher, answer, hint, difficulty).then(function () {
+      $('q-answer').value = '';
+      $('q-hint').value = '';
+      setMsg('q-msg', '✅ 已送出「' + cipher + ' · ' + answer + '」等待上架。', 'ok');
+      return refreshBank();
+    }).catch(function (err) {
+      setMsg('q-msg', '⚠ ' + ((err && err.message) || '新增失敗'), 'err');
+      return null;
+    });
+  }
+
+  function submitBulk() {
+    var raw = ($('q-bulk').value || '').trim();
+    if (!raw) {
+      setMsg('q-msg', '⚠ 請輸入批量題目。', 'err');
+      return Promise.resolve(null);
+    }
+    if (!hasCloud() || CipherCloud.getMode() === 'off') {
+      setMsg('q-msg', '⚠ 未連線，未有任何嘢送出。', 'err');
+      return Promise.resolve(null);
+    }
+    var defaultCipher = $('q-cipher').value;
+    var lines = raw.split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean);
+    var jobs = [];
+
+    lines.forEach(function (line) {
+      var parts = line.split(/[,，\t]/).map(function (part) { return part.trim(); }).filter(Boolean);
+      if (!parts.length) return;
+      var cipher = defaultCipher;
+      var answer = '';
+      var hint = '';
+      if (parts.length >= 2 && CIPHER_LABELS[parts[0].toUpperCase()]) {
+        cipher = parts[0].toUpperCase();
+        answer = parts[1];
+        hint = parts.slice(2).join('，');
+      } else {
+        answer = parts[0];
+        hint = parts.slice(1).join('，');
+      }
+      // 一個詞語（例如 SCOUT）會逐個字母開題
+      var chars = answer.toUpperCase().replace(/[^A-Z0-9]/g, '').split('');
+      if (!chars.length) return;
+      chars.forEach(function (char) {
+        jobs.push(addQuestion(cipher, char, hint, 1));
+      });
+    });
+
+    if (!jobs.length) {
+      setMsg('q-msg', '⚠ 搵唔到任何有效題目。', 'err');
+      return Promise.resolve(null);
+    }
+    setMsg('q-msg', '⏳ 送出 ' + jobs.length + ' 題…');
+    return Promise.all(jobs).then(function (results) {
+      var ok = results.filter(Boolean).length;
+      $('q-bulk').value = '';
+      setMsg('q-msg', '✅ 已送出 ' + ok + ' / ' + jobs.length + ' 題（待審核）。', 'ok');
+      return refreshBank();
+    }).catch(function (err) {
+      setMsg('q-msg', '⚠ ' + ((err && err.message) || '批次失敗'), 'err');
+      return null;
+    });
+  }
+
+  function bulkAlphabet() {
+    var cipher = $('q-cipher').value;
+    if (!hasCloud() || CipherCloud.getMode() === 'off') {
+      setMsg('q-msg', '⚠ 未連線，未有任何嘢送出。', 'err');
+      return Promise.resolve(null);
+    }
+    var letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    setMsg('q-msg', '⏳ 送出 26 題…');
+    return Promise.all(letters.map(function (letter) {
+      return addQuestion(cipher, letter, '', 1).catch(function () { return null; });
+    })).then(function (results) {
+      setMsg('q-msg', '✅ 已送出 ' + results.filter(Boolean).length + ' / 26 題（待審核）。', 'ok');
+      return refreshBank();
+    });
+  }
+
+  function removeQuestion(id) {
+    if (!hasCloud()) return Promise.resolve(null);
+    return CipherCloud.deleteQuestion(id, getAuthor()).then(function (ok) {
+      setMsg('bank-msg', ok ? '✅ 已刪除。' : '⚠ 刪唔到（只可以刪自己提交、仲未上架嘅題目）。', ok ? 'ok' : 'err');
+      return refreshBank();
+    });
+  }
+
+  // ------------------------------------------------------------------ 排行榜
+  function refreshBoard() {
+    if (!hasCloud() || CipherCloud.getMode() === 'off') {
+      renderBoard([]);
+      setMsg('board-msg', '未連線 · 連線之後先會見到排行榜。');
+      return Promise.resolve([]);
+    }
+    setMsg('board-msg', '載入緊排行榜…');
+    return CipherCloud.leaderboard({
+      period: boardPeriod,
+      path: boardPath || null,
+      cipher: boardCipher || null,
+      limit: 100
+    }).then(function (rows) {
+      renderBoard(rows || []);
+      setMsg('board-msg', rows && rows.length ? '' : '暫時未有人上榜。');
+      return rows;
+    }).catch(function (err) {
+      setMsg('board-msg', '⚠ 載入失敗：' + ((err && err.message) || '未知錯誤'), 'err');
+      return [];
+    });
+  }
+
+  function renderBoard(rows) {
+    var body = $('board-body');
+    var empty = $('board-empty');
+    var totalEl = $('board-total');
+    if (!body) return;
+    if (!rows || !rows.length) {
+      body.innerHTML = '';
+      if (empty) empty.classList.remove('hidden');
+      if (totalEl) totalEl.textContent = '';
+      return;
+    }
+    if (empty) empty.classList.add('hidden');
+    if (totalEl) totalEl.textContent = '上榜人數：' + (rows[0].total_players || rows.length) + ' 人';
+    body.innerHTML = rows.map(function (row) {
+      var medal = row.rank <= 3 ? ['🥇', '🥈', '🥉'][row.rank - 1] : '#' + row.rank;
+      var created = row.created_at ? new Date(row.created_at) : null;
+      return '<tr class="' + (row.is_you ? 'me' : '') + '">' +
+        '<td><b>' + medal + '</b></td>' +
+        '<td>' + escapeHtml(row.player) + (row.is_you ? ' <span class="status-tag approved">你</span>' : '') + '</td>' +
+        '<td>' + (PATH_LABELS[row.path] || row.path || '—') + '</td>' +
+        '<td class="num">' + (row.accuracy || 0) + '%</td>' +
+        '<td class="num">' + (row.neutralized || 0) + '</td>' +
+        '<td class="num">×' + (row.max_combo || 0) + '</td>' +
+        '<td class="num"><b>' + Number(row.score || 0).toLocaleString() + '</b></td>' +
+        '<td style="color:#7d8ba6;">' + (created ? created.toLocaleDateString('zh-Hant') : '—') + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function seedDemoRuns() {
+    if (!hasCloud() || CipherCloud.getMode() !== 'mock') {
+      setMsg('board-msg', '⚠ 示範成績只可以喺本機模擬模式產生。', 'err');
+      return Promise.resolve(null);
+    }
+    var names = ['示範·阿明', '示範·小美', '示範·浩然', '示範·家怡', '示範·志偉'];
+    var ciphers = [['MORSE'], ['MORSE', 'PIGPEN'], ['SEMAPHORE'], ['MORSE', 'BRAILLE', 'GRID']];
+    var rows = [];
+    for (var i = 0; i < 18; i++) {
+      var neutralized = 8 + Math.floor(Math.random() * 60);
+      rows.push({
+        player: names[i % names.length],
+        client_id: 'demo-' + (i % names.length),
+        score: neutralized * 100 + Math.floor(Math.random() * 1200),
+        accuracy: 55 + Math.floor(Math.random() * 45),
+        neutralized: neutralized,
+        max_combo: 2 + Math.floor(Math.random() * 18),
+        path: ['learn', 'mission', 'endless'][i % 3],
+        ciphers: ciphers[i % ciphers.length],
+        duration_ms: neutralized * 1500
+      });
+    }
+    return CipherCloud.mockSeedRuns(rows).then(function () {
+      setMsg('board-msg', '✅ 已產生 ' + rows.length + ' 條示範成績。', 'ok');
+      return refreshBoard();
+    });
+  }
+
+  function resetDemoRuns() {
+    if (!hasCloud() || CipherCloud.getMode() !== 'mock') {
+      setMsg('board-msg', '⚠ 只可以喺本機模擬模式清空。', 'err');
+      return Promise.resolve(null);
+    }
+    return CipherCloud.mockReset(true).then(function () {
+      setMsg('board-msg', '✅ 示範成績已清空。', 'ok');
+      return refreshBoard();
+    });
+  }
+
+  // ------------------------------------------------------------------ 分頁
+  function switchTab(name) {
+    ['bank', 'board', 'help'].forEach(function (key) {
+      var el = $('tab-' + key);
+      if (el) el.classList.toggle('hidden', key !== name);
+    });
+    document.querySelectorAll('.tab').forEach(function (tab) {
+      tab.classList.toggle('active', tab.dataset.tab === name);
+    });
+    if (name === 'board') refreshBoard();
+    if (name === 'bank') refreshBank();
+  }
+
+  function refreshAll() {
+    refreshBank();
+    refreshBoard();
+  }
+
+  // ------------------------------------------------------------------ 綁定
+  function wire() {
+    if (!hasCloud()) {
+      setMsg('config-msg', '⚠ 雲端模組載入失敗（js/cloud.js）。', 'err');
+      return;
+    }
+
+    document.querySelectorAll('.tab').forEach(function (tab) {
+      tab.addEventListener('click', function () { switchTab(tab.dataset.tab); });
+    });
+
+    $('btn-config-save').addEventListener('click', function () { saveConfig(); });
+    $('btn-config-mock').addEventListener('click', function () { saveConfig({ mock: true }); });
+    $('btn-config-clear').addEventListener('click', function () {
+      CipherCloud.clearConfig();
+      CipherCloud.reconfigure().then(function (status) {
+        loadConfigForm();
+        setMsg('config-msg', '已清除本機設定。');
+        renderStatus(status);
+        refreshAll();
+      });
+    });
+
+    $('btn-q-add').addEventListener('click', function () { submitOne(); });
+    $('btn-q-bulk').addEventListener('click', function () { submitBulk(); });
+    $('btn-q-az').addEventListener('click', function () { bulkAlphabet(); });
+    $('btn-q-refresh').addEventListener('click', function () { refreshBank(); });
+    $('q-answer').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') submitOne();
+    });
+
+    $('bank-filters').addEventListener('click', function (event) {
+      var chip = event.target.closest('.chip');
+      if (!chip || !chip.dataset.cipher) return;
+      bankCipher = chip.dataset.cipher;
+      document.querySelectorAll('#bank-filters .chip').forEach(function (item) {
+        item.classList.toggle('active', item === chip);
+      });
+      renderBank();
+    });
+
+    $('bank-body').addEventListener('click', function (event) {
+      var button = event.target.closest('[data-delete]');
+      if (!button) return;
+      removeQuestion(button.dataset.delete);
+    });
+
+    function chipGroup(id, key, apply) {
+      $(id).addEventListener('click', function (event) {
+        var chip = event.target.closest('.chip');
+        if (!chip) return;
+        document.querySelectorAll('#' + id + ' .chip').forEach(function (item) {
+          item.classList.toggle('active', item === chip);
+        });
+        apply(chip.dataset[key] || '');
+        refreshBoard();
+      });
+    }
+    chipGroup('board-period', 'period', function (value) { boardPeriod = value || 'all'; });
+    chipGroup('board-path', 'path', function (value) { boardPath = value; });
+    chipGroup('board-cipher', 'cipher', function (value) { boardCipher = value; });
+
+    $('btn-board-refresh').addEventListener('click', function () { refreshBoard(); });
+    $('btn-board-demo').addEventListener('click', function () { seedDemoRuns(); });
+    $('btn-board-reset').addEventListener('click', function () { resetDemoRuns(); });
+
+    CipherCloud.onStatus(function (status) {
+      renderStatus(status);
+      if (status.status === 'ready') refreshAll();
+    });
+
+    loadConfigForm();
+    renderStatus(CipherCloud.getStatus());
+    refreshAll();
+  }
+
+  wire();
+})();
+</script>
+</body>
+</html>

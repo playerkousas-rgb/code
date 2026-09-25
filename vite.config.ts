@@ -10,8 +10,15 @@ export default defineConfig({
       async writeBundle(options) {
         const outputDirectory = options.dir ?? resolve(process.cwd(), 'dist')
         await cp(resolve(process.cwd(), 'images'), resolve(outputDirectory, 'images'), { recursive: true })
-        await cp(resolve(process.cwd(), 'js/peerjs.min.js'), resolve(outputDirectory, 'js/peerjs.min.js'), { force: true })
-        await cp(resolve(process.cwd(), 'js/qrcode.min.js'), resolve(outputDirectory, 'js/qrcode.min.js'), { force: true })
+        for (const file of [
+          'js/peerjs.min.js',
+          'js/qrcode.min.js',
+          'js/supabase.min.js',
+          'js/cloud-config.js',
+          'js/cloud.js',
+        ]) {
+          await cp(resolve(process.cwd(), file), resolve(outputDirectory, file), { force: true })
+        }
       },
     },
   ],
@@ -28,6 +35,7 @@ export default defineConfig({
       input: {
         main: resolve(process.cwd(), 'index.html'),
         training: resolve(process.cwd(), 'training/index.html'),
+        bank: resolve(process.cwd(), 'training/bank.html'),
       },
     },
   },
