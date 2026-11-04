@@ -23,7 +23,7 @@
   <aside class="sidebar no-print" id="sidebar" aria-label="主要導覽">
     <div class="p-6 h-full flex flex-col">
       <div class="flex items-center gap-3 mb-8">
-        <div class="w-10 h-10 bg-[var(--skw-gold)] rounded-xl flex items-center justify-center text-[var(--skw-navy-dark)] text-xl font-black shadow-lg">⚜</div>
+        <div class="brand-mark" aria-hidden="true">S</div>
         <div>
           <h1 class="text-lg font-black text-white leading-tight">Scout System</h1>
           <p class="text-[9px] text-sky-400 font-extrabold uppercase tracking-[0.1em]">密碼旗號助手</p>
@@ -80,14 +80,15 @@
       <section class="skw-card composer-card" id="messageComposer">
         <div class="composer-heading">
           <div>
-            <p class="section-kicker">即時轉換</p>
-            <h2>輸入你的秘密訊息</h2>
+            <h2>把訊息轉成密碼</h2>
+            <p class="composer-description">輸入文字後，下方 10 種編碼會即時更新。</p>
           </div>
-          <span id="inputCount" class="input-count">0 / 200</span>
+          <span id="inputCount" class="input-count" role="status" aria-live="polite">0 / 200</span>
         </div>
         <label class="sr-only" for="inputText">要轉換的中英文訊息</label>
-        <textarea id="inputText" rows="3" maxlength="200" placeholder="例如：BE PREPARED"></textarea>
-        <div class="sample-row" aria-label="範例訊息">
+        <textarea id="inputText" rows="3" maxlength="200" aria-describedby="inputHelp" placeholder="例如：BE PREPARED"></textarea>
+        <p id="inputHelp" class="sr-only">最多輸入 200 個字元，訊息草稿會保存在此瀏覽器。</p>
+        <div class="sample-row" role="group" aria-label="快速試玩範例訊息">
           <span>快速試玩</span>
           <button type="button" class="sample-chip" data-sample="SOS">SOS</button>
           <button type="button" class="sample-chip" data-sample="BE PREPARED">BE PREPARED</button>
@@ -99,9 +100,14 @@
         </div>
       </section>
 
+      <section class="results-heading" aria-labelledby="resultsTitle">
+        <h2 id="resultsTitle">轉換結果</h2>
+        <p>每種密碼都會依照同一則訊息同步顯示；按右上角按鈕即可複製文字結果。</p>
+      </section>
+
       <!-- Morse -->
       <div id="cardMorse" class="skw-card">
-        <div class="flex justify-between items-center mb-5"><h3>摩斯密碼 (Morse)</h3><button id="btnPlayMorse" class="bg-[var(--skw-gold)] text-black px-4 py-1.5 rounded-lg text-xs font-black">▶ 播放音訊</button></div>
+        <div class="flex justify-between items-center mb-5"><h3>摩斯密碼 (Morse)</h3><button id="btnPlayMorse" class="play-audio-btn">▶ 播放音訊</button></div>
         <div id="outMorse" class="output-box tracking-[0.3em] mb-6"></div>
         <div class="overflow-x-auto bg-black/20 rounded-xl p-4"><table id="morseTable" class="ref-table w-full"></table></div>
       </div>
@@ -139,7 +145,8 @@
         <div class="flex justify-between items-center mb-5">
           <h3>座標密碼 (Grid)</h3>
           <div class="flex items-center gap-2 bg-black/40 p-2 rounded-lg border border-white/5">
-            <span class="text-[10px] text-slate-500 font-bold">KEY:</span>
+            <span class="text-[10px] text-slate-500 font-bold" aria-hidden="true">KEY:</span>
+            <label class="sr-only" for="gridKey">座標密碼關鍵字</label>
             <input type="text" id="gridKey" value="SCOUT" maxlength="5" class="bg-transparent text-[var(--skw-gold)] w-16 text-center font-black outline-none">
           </div>
         </div>
@@ -151,7 +158,8 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div id="cardCaesar" class="skw-card">
           <h3>凱撒位移</h3>
-          <input type="number" id="caesarShift" value="3" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 my-4 text-center text-[var(--skw-gold)] font-bold">
+          <label class="sr-only" for="caesarShift">凱撒位移格數</label>
+          <input type="number" id="caesarShift" value="3" min="-25" max="25" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 my-4 text-center text-[var(--skw-gold)] font-bold">
           <div id="outCaesar" class="output-box text-base"></div>
         </div>
         <div id="cardAtbash" class="skw-card">
