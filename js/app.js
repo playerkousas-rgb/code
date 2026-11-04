@@ -404,7 +404,7 @@ function fallbackCopy(text) {
 function ensureCopyButtons() {
   Object.keys(COPY_OUTPUTS).forEach(function(id){
     var output=$(id);if(!output||output.querySelector('.copy-output-btn'))return;
-    var button=document.createElement('button');button.type='button';button.className='copy-output-btn';button.textContent='⧉';button.setAttribute('aria-label','複製這項密碼結果');
+    var button=document.createElement('button');button.type='button';button.className='copy-output-btn';button.textContent='複製';button.setAttribute('aria-label','複製這項密碼結果');
     button.onclick=function(event){event.stopPropagation();copyText(COPY_OUTPUTS[id]($('inputText').value));};
     output.appendChild(button);
   });
@@ -572,19 +572,26 @@ document.addEventListener('DOMContentLoaded', function() {
   var modeTitles={editor:'編碼工具',testpaper:'試卷生成',game:'互動搶答'};
 
   function closeSidebar(){
+    var wasOpen=$('sidebar').classList.contains('open');
     $('sidebar').classList.remove('open');
     document.body.classList.remove('menu-open');
     $('mobileMenuBtn').setAttribute('aria-expanded','false');
     $('mobileMenuBtn').setAttribute('aria-label','開啟密碼導覽');
+    if(wasOpen && window.innerWidth<=1024) $('mobileMenuBtn').focus();
   }
   function setSidebar(open){
     $('sidebar').classList.toggle('open',open);
     document.body.classList.toggle('menu-open',open);
     $('mobileMenuBtn').setAttribute('aria-expanded',String(open));
     $('mobileMenuBtn').setAttribute('aria-label',open?'關閉密碼導覽':'開啟密碼導覽');
+    if(open){var firstLink=$('sidebar').querySelector('.nav-item');if(firstLink)firstLink.focus();}
   }
   function activateMode(mode){
-    document.querySelectorAll('.mode-btn[data-mode]').forEach(function(button){button.classList.toggle('active',button.dataset.mode===mode);});
+    document.querySelectorAll('.mode-btn[data-mode]').forEach(function(button){
+      var active=button.dataset.mode===mode;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-current',active?'page':'false');
+    });
     $('editorView').classList.toggle('hidden',mode!=='editor');
     $('testPaperView').classList.toggle('hidden',mode!=='testpaper');
     $('gameView').classList.toggle('hidden',mode!=='game');
