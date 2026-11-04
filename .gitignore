@@ -4,3 +4,13 @@ dist/
 *.log
 *.bak
 .DS_Store
+
+# Local-only configuration and credentials
+.env.local
+.env.*.local
+wrangler.toml
+.dev.vars
+.env
+.dev.vars.*
+.wrangler/
+.vercel/

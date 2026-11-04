@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#07152d">
+<title>電子試卷｜Scout System</title>
+<link rel="stylesheet" href="/papers/papers.css">
+<script defer src="/js/qrcode.min.js"></script><script defer src="/js/jsQR.js"></script>
+<script type="module" src="/papers/papers.js"></script>
+</head>
+<body>
+<header><div><a href="/" class="back">← 返回密碼工具</a><p class="eyebrow">SCOUT SYSTEM · 電子試卷</p><h1>不用列印，手機作答</h1><p>領袖建立試卷，成員掃碼或匯入題目，完成後自行核對或交回領袖。</p></div></header>
+<main>
+<nav aria-label="電子試卷角色" class="tabs"><button id="memberTab" class="active" type="button">成員作答</button><button id="leaderTab" type="button">領袖工作區</button></nav>
+<div id="status" role="status" aria-live="polite"></div>
+<section id="memberArea">
+ <div class="panel"><h2>收取試卷</h2><p>掃描領袖的 QR Code、貼上連結，或匯入題目／答案 JSON。連網活動不會自動更新。</p>
+ <div class="row"><button id="scan" type="button">掃描 QR</button><label class="button secondary">選擇 QR 圖片或 JSON<input id="memberFile" type="file" accept="application/json,.json,image/*" hidden></label></div>
+ <div id="scanner" hidden><video id="camera" playsinline muted></video><button id="stopScan" type="button" class="secondary">關閉相機</button><p>使用相機需要 HTTPS 及權限；如不可用，請改選 QR 圖片或貼上連結。</p></div>
+ <label for="shareInput">活動或固定試卷連結</label><div class="row"><input id="shareInput" placeholder="貼上領袖提供的連結"><button id="openShare" type="button">讀取</button></div>
+ <div id="onlineControls" hidden><p>活動 ID：<code id="activityId"></code></p><button id="refreshActivity" type="button">更新題目及答案</button><p>只有按此按鈕才連網讀取；本機保留上次成功讀取的副本。</p></div>
+ </div>
+ <div id="memberPaper" class="panel" hidden><div class="section-head"><div><p class="eyebrow">MEMBER PAPER</p><h2 id="paperTitle"></h2><p id="paperMeta"></p></div></div><label for="memberName">姓名／隊名（選填，會包含在交卷檔）</label><input id="memberName" maxlength="60" placeholder="例如：獅子巡邏隊"><div id="memberQuestions"></div><div class="row"><button id="exportSubmission" type="button">下載作答檔交領袖</button><button id="clearMember" type="button" class="secondary">移除此試卷</button></div><p>答案儲存在此瀏覽器。交卷檔由你自行傳送，系統不會自動上傳。</p></div>
+</section>
+<section id="leaderArea" hidden>
+ <div id="loginPanel" class="panel"><h2>領袖登入</h2><p>連網驗證，登入最多 24 小時；重新整理或關頁後需重新登入。題庫只保存在此瀏覽器。</p><label for="password">領袖密碼</label><div class="row"><input id="password" type="password" autocomplete="current-password"><button id="login" type="button">登入</button></div><p>此登入是教學工作區，不是防作弊或保護機密資料的系統。</p></div>
+ <div id="leaderWorkspace" hidden>
+  <div class="panel"><div class="section-head"><div><p class="eyebrow">LEADER WORKSPACE</p><h2>我的題組</h2><p>先建立題組，再產生固定題目或連網活動。</p></div><button id="logout" class="secondary" type="button">返回成員模式</button></div><div class="row"><button id="newSet" type="button">＋ 建立題組</button><button id="importExisting" class="secondary" type="button">從現有試卷匯入</button><label class="button secondary">還原私人備份<input id="backupFile" type="file" accept=".json,application/json" hidden></label><label class="button secondary">查看成員作答檔<input id="submissionFile" type="file" accept=".json,application/json" hidden></label></div><div id="setList"></div><div id="submissionView"></div></div>
+  <div id="editor" class="panel" hidden><h2>編輯題組</h2><p>訊息只接受英文、數字和空格；預設座標密碼 SCOUT、凱撒位移 3。每套最多 30 題。</p><label for="setTitle">題組名稱</label><input id="setTitle" maxlength="100"><div id="questionEditor"></div><div class="row"><button id="addQuestion" type="button" class="secondary">＋ 新增一題</button><button id="saveSet" type="button">儲存題組</button><button id="cancelEdit" type="button" class="secondary">取消</button></div></div>
+  <div id="manage" class="panel" hidden><h2 id="manageTitle"></h2><p id="manageMeta"></p><div class="row"><button id="editSet" type="button">編輯題組</button><button id="privateBackup" class="secondary" type="button">下載私人備份</button><button id="deleteSet" class="danger" type="button">刪除本機題組</button></div>
+   <h3>固定分享</h3><p>題目不含答案欄位。答案包及私人備份不可提前交給成員；題目修改後要重新分享。</p><div class="row"><button id="fixedQuestions" type="button">題目 QR／檔案</button><button id="fixedAnswers" class="secondary" type="button">答案 QR／檔案</button></div>
+   <h3>連網活動</h3><p>活動 QR 不變；修改後需手動同步。成員只在按「更新」時讀取。完成後可結束活動。</p><div id="activityManage"></div>
+   <div id="shareBox" class="share-box" hidden><h3 id="shareTitle"></h3><div id="qr"></div><p id="shareHelp"></p><label for="shareLink">分享連結</label><textarea id="shareLink" readonly rows="3"></textarea><div class="row"><button id="copyShare" type="button" class="secondary">複製連結</button><button id="downloadShare" type="button" class="secondary">下載 JSON</button></div></div>
+  </div>
+ </div>
+</section>
+<footer>題目與答案可被持有人複製，請勿放入敏感資料。清除瀏覽器資料會移除本機紀錄。</footer>
+</main>
+</body></html>

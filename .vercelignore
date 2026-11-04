@@ -9,3 +9,11 @@ dist
 scripts
 *.bak
 *.log
+
+.env
+.env.*
+wrangler.toml
+.dev.vars*
+tests
+.wrangler
+.vercel
