@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import vm from 'node:vm'
 
 const requiredIds = {
+  'papers/index.html': ['memberArea', 'leaderArea', 'memberQuestions', 'refreshActivity'],
   'index.html': ['editorView', 'testPaperView', 'gameView', 'inputText', 'mobileMenuBtn'],
   'training/index.html': ['gameCanvas', 'screen-start', 'screen-cipher-select', 'training-path-grid', 'mobile-keyboard', 'choice-panel', 'lesson-feedback'],
 }

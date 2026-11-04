@@ -1,0 +1,60 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { JSDOM } from 'jsdom';
+import activityHandler from '../api/activity.js';
+import { createMemoryActivityStore } from '../server/activity-store.js';
+
+const wait = () => new Promise(r=>setTimeout(r,15));
+test('leader makes and publishes paper; member explicitly refreshes and answers', async (t) => {
+  t.after(() => { const btn=globalThis.document?.getElementById('logout'); if(btn)btn.click(); });
+  const html=await readFile(new URL('../papers/index.html',import.meta.url),'utf8');
+  const dom=new JSDOM(html,{url:'https://scout.example/papers/',pretendToBeVisual:true});
+  const w=dom.window;
+  for(const k of ['document','location','history','localStorage','navigator','URL','Blob','TextEncoder','TextDecoder']) {
+    if(k==='TextEncoder'||k==='TextDecoder'||k==='Blob') continue;
+    Object.defineProperty(globalThis,k,{value:w[k],configurable:true,writable:true});
+  }
+  globalThis.confirm=()=>true; globalThis.prompt=()=> '30'; globalThis.requestAnimationFrame=()=>0;globalThis.cancelAnimationFrame=()=>{};
+  globalThis.window=w;w.HTMLElement.prototype.scrollIntoView=()=>{};
+  w.QRCode=function(el,opts){el.dataset.value=opts.text}; w.QRCode.CorrectLevel={M:0};
+  const store=createMemoryActivityStore(), requests=[];
+  globalThis.fetch=async(url,opts={})=>{
+    requests.push({url:String(url),method:opts.method||'GET'});
+    if(url==='/api/leader') return new Response(JSON.stringify({token:'test-token',durationSeconds:86400}));
+    if(url==='/api/config') return new Response(JSON.stringify({activityApiUrl:'https://worker.example/api/activity'}));
+    const response={statusCode:200,headers:{},setHeader(k,v){this.headers[k]=v},end(body){this.body=body}};
+    await activityHandler({method:opts.method||'GET',url:String(url),headers:{'content-type':'application/json'},body:opts.body},response,{store,trustedServerMutation:true});
+    return new Response(response.body,{status:response.statusCode});
+  };
+  await import('../papers/papers.js?ui-test');
+  const $=id=>w.document.getElementById(id), click=id=>$(id).click();
+  click('leaderTab');$('password').value='test';click('login');await wait();
+  assert.equal($('leaderWorkspace').hidden,false);
+  click('newSet');$('setTitle').value='試卷';$('qtext0').value='SOS';click('saveSet');
+  assert.equal($('manage').hidden,false);
+  click('fixedQuestions');const fixed=$('shareLink').value;
+  assert.ok(fixed.includes('#paper='), $('status').textContent);
+  assert.ok(!decodeURIComponent(fixed).includes('SOS'));
+  click('memberTab');$('shareInput').value=fixed;click('openShare');
+  assert.equal($('paperTitle').textContent,'試卷');
+  assert.ok($('memberQuestions').textContent.includes('... --- ...'));
+  $('response0').value='SOS';$('response0').dispatchEvent(new w.Event('input'));
+  click('leaderTab');click('fixedAnswers');const answers=$('shareLink').value;
+  click('memberTab');$('shareInput').value=answers;click('openShare');assert.ok($('memberQuestions').textContent.includes('SOS'));
+  click('leaderTab');w.document.querySelector('[data-action="create"]').click();await wait();
+  assert.ok(w.document.querySelector('[data-action="activityShare"]'));
+  w.document.querySelector('[data-action="activityShare"]').click();const link=$('shareLink').value;
+  const countBefore=requests.filter(r=>r.url.startsWith('https://worker')&&r.method==='GET').length;
+  click('memberTab');$('shareInput').value=link;click('openShare');await wait();
+  assert.equal(requests.filter(r=>r.url.startsWith('https://worker')&&r.method==='GET').length,countBefore,'opening activity does not poll');
+  click('refreshActivity');await wait();
+  assert.equal(requests.filter(r=>r.url.startsWith('https://worker')&&r.method==='GET').length,countBefore+1);
+  assert.ok(!$('memberQuestions').querySelector('.answer'));
+  click('leaderTab');w.document.querySelector('[data-action="release"]').click();await wait();
+  click('memberTab');assert.ok(!$('memberQuestions').querySelector('.answer'));
+  click('refreshActivity');await wait();assert.ok($('memberQuestions').querySelector('.answer'));
+  click('leaderTab'); click('editSet'); $('setTitle').value='試圖覆蓋'; localStorage.setItem('skw_e_paper_sets_v1','[]'); click('saveSet');
+  assert.ok($('status').textContent.includes('另一個分頁')); assert.equal(localStorage.getItem('skw_e_paper_sets_v1'),'[]');
+  click('logout');dom.window.close();
+});
