@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#020a1a">
+<meta name="copyright" content="© SCOUT SYSTEM">
 <meta name="description" content="Scout System 密碼防衛戰：用摩斯、旗號、朱高、點字、座標及電話密碼進行遊戲化訓練。">
 <title>密碼防衛戰｜Scout System 訓練模式</title>
 <style>
@@ -13,8 +14,11 @@
     overflow: hidden;
     font-family: 'Courier New', monospace;
     user-select: none;
+    /* Mobile game shell: no rubber-band scroll, no grey tap flash. */
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
   }
-  canvas { display: block; }
+  canvas { display: block; touch-action: none; }
   #ui-overlay {
     position: fixed;
     top: 0; left: 0;
@@ -142,6 +146,164 @@
     text-shadow: 0 0 8px #ff00ff;
     min-width: 100px;
     text-align: right;
+  }
+  /* Combo meter: transform-only animation (web-motion rule: no width/top/left). */
+  .combo-meter {
+    position: absolute;
+    left: 10px; right: 10px; bottom: 2px;
+    height: 3px;
+    background: rgba(255, 0, 255, .14);
+    border-radius: 2px;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .combo-meter > i {
+    display: block;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, #ff00ff, #ffff00);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform .18s ease-out;
+    box-shadow: 0 0 8px #ff00ff;
+  }
+  /* Pause overlay + portrait hint */
+  #pause-overlay { z-index: 60; background: rgba(0, 5, 20, .94); }
+  #pause-overlay .btn { margin-top: 1.4em; }
+  #rotate-hint {
+    display: none;
+    position: fixed; inset: 0; z-index: 90;
+    align-items: center; justify-content: center;
+    background: #020a1a; color: #00ffff;
+    font: 900 1rem/1.6 'Courier New', monospace;
+    letter-spacing: .08em; text-align: center; padding: 24px;
+  }
+  @media (orientation: landscape) and (pointer: coarse) and (max-height: 520px) {
+    #rotate-hint { display: flex; }
+  }
+  .game-option-row {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    color: #b9c8df; font-size: .68em; letter-spacing: .05em;
+    min-height: 40px;
+  }
+  .game-option-row input[type=checkbox] { accent-color: #00ff88; width: 18px; height: 18px; }
+  .game-option-btn {
+    width: 100%; min-height: 40px;
+    background: rgba(0, 255, 136, .08);
+    border: 1px solid #2b7a63; border-radius: 8px;
+    color: #8effcf; font: 800 .7em/1 'Courier New', monospace;
+    letter-spacing: .08em; cursor: pointer;
+  }
+  .game-option-btn[aria-pressed="true"] { background: rgba(0, 255, 136, .2); border-color: #00ff88; }
+  /* --- Astra-Lab-inspired: daily mission card (solid surfaces, no gradients) --- */
+  .daily-card {
+    width: min(440px, 92vw);
+    margin: 14px 0 4px;
+    padding: 12px 14px;
+    border: 1px solid #2a6b57;
+    border-left: 3px solid #00ff88;
+    border-radius: 10px;
+    background: rgba(0, 20, 16, .72);
+    text-align: left;
+  }
+  .daily-head {
+    display: flex; justify-content: space-between; align-items: center;
+    color: #8effcf; font-size: .72em; font-weight: 900; letter-spacing: .1em;
+  }
+  .daily-head > span:last-child { color: #a8b4c7; font-weight: 700; }
+  .daily-desc { color: #a8b4c7; font-size: .7em; line-height: 1.6; margin: 6px 0 8px; }
+  .daily-stats { display: flex; flex-wrap: wrap; gap: 12px; color: #d8e8f0; font-size: .72em; margin-bottom: 9px; }
+  .daily-stats b { color: #ffdd55; font-size: 1.15em; }
+  .daily-stats em { color: #71809a; font-style: normal; }
+  .daily-note { color: #71809a; font-size: .62em; line-height: 1.5; margin-bottom: 8px; }
+  .daily-btn { width: 100%; min-height: 44px; margin: 0; font-size: .78em; color: #00ff88; border-color: #00ff88; }
+  .howto-btn {
+    margin-top: 10px; padding: 7px 14px; min-height: 40px;
+    background: transparent; border: 1px solid #40516a; border-radius: 8px;
+    color: #b9c8df; font: 700 .72em/1 'Courier New', monospace;
+    letter-spacing: .06em; cursor: pointer;
+  }
+  .daily-hud {
+    position: fixed; top: 86px; left: 50%; transform: translateX(-50%);
+    z-index: 16; pointer-events: none;
+    color: #ffdd55; font: 900 .8rem/1 'Courier New', monospace;
+    letter-spacing: .1em; text-shadow: 0 0 8px rgba(255, 221, 85, .5);
+  }
+  .daily-hud.hidden { display: none; }
+  /* Decode reveal: transform/opacity only (web-motion red line). */
+  #decode-reveal {
+    position: fixed; top: 96px; left: 50%; z-index: 18;
+    transform: translate(-50%, -12px); opacity: 0;
+    pointer-events: none; text-align: center;
+    padding: 8px 16px; border: 1px solid #2a6b57; border-radius: 10px;
+    background: rgba(0, 12, 10, .9); color: #e8fff7;
+    font: 900 1.1rem/1.4 'Courier New', monospace; letter-spacing: .12em;
+    transition: transform .18s ease-out, opacity .18s ease-out;
+  }
+  #decode-reveal.show { opacity: 1; transform: translate(-50%, 0); }
+  .decode-part { display: inline-block; margin: 0 .07em; opacity: 0; transform: translateY(9px) scale(.82); }
+  #decode-reveal.show .decode-part { animation: decodePop .26s ease-out forwards; }
+  .decode-arrow { color: #00ff88; padding: 0 .4em; }
+  .decode-letter { color: #ffdd55; font-size: 1.35em; }
+  @keyframes decodePop { to { opacity: 1; transform: translateY(0) scale(1); } }
+  /* Three-step "How it works" coach marks */
+  .coach-overlay {
+    position: fixed; inset: 0; z-index: 80;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0, 5, 20, .92); padding: 18px;
+  }
+  .coach-overlay.hidden { display: none; }
+  .coach-card {
+    width: min(400px, 94vw); padding: 22px 20px;
+    border: 1px solid #2a3556; border-radius: 14px;
+    background: #050f22; text-align: center;
+  }
+  .coach-kicker { color: #00ffff; font-size: .7em; font-weight: 900; letter-spacing: .18em; }
+  .coach-step .coach-icon { font-size: 2.2rem; margin: 12px 0 6px; }
+  .coach-step h2 { color: #e8fff7; font-size: 1.1rem; letter-spacing: .06em; margin-bottom: 8px; }
+  .coach-step p { color: #a8b4c7; font-size: .78em; line-height: 1.8; }
+  .coach-step.hidden { display: none; }
+  .coach-dots { display: flex; gap: 6px; justify-content: center; margin: 16px 0 12px; }
+  .coach-dots i { width: 7px; height: 7px; border-radius: 50%; background: #2a3556; }
+  .coach-dots i.active { background: #00ff88; }
+  .coach-actions { display: flex; gap: 10px; justify-content: center; }
+  .coach-actions button {
+    min-height: 44px; padding: 0 18px; border-radius: 8px; cursor: pointer;
+    font: 800 .76em/1 'Courier New', monospace; letter-spacing: .06em;
+  }
+  #coach-skip { background: transparent; border: 1px solid #40516a; color: #93a4bc; }
+  #coach-next { background: rgba(0, 255, 136, .12); border: 1px solid #00ff88; color: #8effcf; }
+  /* Daily practice: one cipher per stage + an always-available look-up sheet. */
+  .daily-ref-wrap {
+    position: fixed; left: max(8px, env(safe-area-inset-left));
+    bottom: calc(168px + env(safe-area-inset-bottom)); z-index: 28;
+  }
+  .daily-ref-wrap.hidden { display: none; }
+  .daily-ref-btn {
+    min-height: 40px; padding: 0 12px; border-radius: 8px; cursor: pointer;
+    background: rgba(0, 20, 16, .92); border: 1px solid #2a6b57;
+    color: #8effcf; font: 800 .7em/1 'Courier New', monospace; letter-spacing: .05em;
+  }
+  .daily-ref-panel {
+    margin-top: 6px; width: min(250px, 72vw); max-height: 42vh; overflow-y: auto;
+    padding: 10px; border: 1px solid #2a6b57; border-radius: 10px;
+    background: rgba(0, 16, 12, .96);
+  }
+  .daily-ref-panel.hidden { display: none; }
+  .daily-ref-title { color: #ffdd55; font-size: .68em; font-weight: 900; letter-spacing: .08em; margin-bottom: 6px; }
+  .daily-ref-row { display: flex; align-items: center; gap: 10px; margin: 5px 0; color: #e8fff7; font: 900 .95rem/1 'Courier New', monospace; }
+  .daily-ref-symbol { flex: none; width: 44px; height: 44px; border: 1px solid #2a3556; border-radius: 6px; background: #020a1a; }
+  .daily-ref-note { color: #71809a; font-size: .62em; line-height: 1.5; margin-top: 6px; }
+  .daily-level-banner {
+    position: fixed; top: 160px; left: 50%; z-index: 22;
+    transform: translate(-50%, -12px); opacity: 0; pointer-events: none;
+    padding: 10px 18px; border: 1px solid #2a6b57; border-radius: 10px;
+    background: rgba(0, 20, 16, .94); color: #8effcf;
+    font: 900 .82rem/1.4 'Courier New', monospace; letter-spacing: .08em;
+    transition: transform .2s ease-out, opacity .2s ease-out;
+  }
+  .daily-level-banner.show { opacity: 1; transform: translate(-50%, 0); }
+  @media (min-width: 801px) and (pointer: fine) {
+    .daily-ref-wrap { bottom: 20px; }
   }
   #hud-stage {
     position: fixed;
@@ -456,6 +618,8 @@
   }
   #back-home { left: max(12px, env(safe-area-inset-left)); }
   #sound-toggle { right: max(12px, env(safe-area-inset-right)); cursor: pointer; }
+  #lang-switch { right: calc(max(12px, env(safe-area-inset-right)) + 108px); cursor: pointer; }
+  .copyright-line { position: absolute; bottom: max(10px, env(safe-area-inset-bottom)); width: 100%; text-align: center; padding: 0 12px; color: #5c7390; font: 700 .62rem/1.4 'Courier New', monospace; letter-spacing: .06em; }
   .progress-card {
     width: min(90vw, 440px);
     display: grid;
@@ -684,7 +848,7 @@
   #mobile-keyboard.hidden { display: none !important; }
   .key-btn {
     min-width: 0;
-    min-height: 42px;
+    min-height: 46px;
     border: 1px solid #24506d;
     border-radius: 8px;
     background: linear-gradient(180deg, #102642, #081629);
@@ -751,12 +915,13 @@
 
   @media (max-width: 390px) {
     .top-control { min-height: 40px; padding: 0 11px; font-size: 10px; }
+    #lang-switch { right: calc(max(12px, env(safe-area-inset-right)) + 92px); }
     .progress-card { width: 94vw; }
     .progress-item { padding: 9px 4px; }
     .input-prompt-label { display: none; }
     #input-overlay { bottom: calc(146px + env(safe-area-inset-bottom)); }
     #mobile-keyboard { gap: 4px; padding-left: 5px; padding-right: 5px; }
-    .key-btn { min-height: 40px; font-size: 15px; }
+    .key-btn { min-height: 44px; font-size: 15px; }
   }
 
   @media (pointer: coarse) {
@@ -771,6 +936,7 @@
     .scanlines { display: none; }
   }
 </style>
+<script src="/js/i18n.js"></script>
 <script>
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
 </script>
@@ -780,10 +946,13 @@
 
 <a id="back-home" class="top-control" href="../" aria-label="返回密碼工具箱">← 返回工具箱</a>
 <button id="sound-toggle" class="top-control" type="button" aria-pressed="false" aria-label="關閉音效">🔊 音效</button>
+<button id="lang-switch" class="top-control" type="button" data-lang-switch data-i18n-skip aria-label="Switch to English" title="Switch to English" aria-pressed="false">🌐 <span data-lang-label>EN</span></button>
 <div class="scanlines"></div>
 
 <!-- CANVAS -->
 <canvas id="gameCanvas"></canvas>
+<!-- 「Predict then reveal」: the decoded signal lights up after a correct answer. -->
+<div id="decode-reveal" aria-hidden="true"></div>
 
 <!-- CIPHER INPUT OVERLAY -->
 <div id="input-overlay" class="hidden">
@@ -813,9 +982,21 @@
   <div class="hud-shields" id="hud-shields"></div>
   <div id="hud-score">SCORE: 0</div>
   <div id="hud-combo"></div>
+  <div class="combo-meter" aria-hidden="true"><i id="combo-meter-fill"></i></div>
 </div>
 <div id="hud-stage" class="hidden"></div>
 <div id="hud-learning-progress" class="hidden"></div>
+<div id="daily-hud" class="daily-hud hidden"><span id="daily-hud-text"></span></div>
+<!-- Daily practice: one cipher per stage; a look-up sheet keeps it finishable. -->
+<div id="daily-ref-wrap" class="daily-ref-wrap hidden">
+  <button id="btn-daily-ref" class="daily-ref-btn" type="button" aria-expanded="true">📖 對照表</button>
+  <div id="daily-ref-panel" class="daily-ref-panel">
+    <div id="daily-ref-title" class="daily-ref-title"></div>
+    <div id="daily-ref-body" class="daily-ref-body"></div>
+    <div class="daily-ref-note">練習模式 · 唔扣血、唔限時，可隨時對照</div>
+  </div>
+</div>
+<div id="daily-level-banner" class="daily-level-banner" aria-live="polite"></div>
 
 <!-- START SCREEN -->
 <div id="screen-start" class="screen">
@@ -834,10 +1015,24 @@
   </div>
   <div id="milestone-bar" class="milestone-bar hidden" aria-label="個人里程碑"></div>
   <div id="achievement-bar" class="achievement-bar hidden" aria-label="完美主義徽章"></div>
+  <!-- Astra-Lab-inspired: one fixed daily mission, local stars + streak (no fake leaderboard). -->
+  <div id="daily-card" class="daily-card" aria-label="今日任務">
+    <div class="daily-head"><span>📅 今日任務 / DAILY</span><span id="daily-date">—</span></div>
+    <p class="daily-desc">每日 3 關 · 每關淨係 1 種密碼 · 每關 3 題 · 完成 +20 ★</p>
+    <div class="daily-stats">
+      <span>★ <b id="daily-stars">0</b></span>
+      <span>🔥 <b id="daily-streak">0</b> <em>連續日</em></span>
+      <span>⏱ <b id="daily-best">--</b></span>
+    </div>
+    <div class="daily-note">練習模式：唔扣血、唔限時、可撳「對照表」。本機紀錄 · 題目按日期固定</div>
+    <button class="btn daily-btn" id="btn-daily" type="button">▶ 開始今日任務</button>
+  </div>
+  <button class="howto-btn" id="btn-howto-start" type="button">？玩法</button>
   <button class="btn" id="btn-start">開始任務</button>
   <div class="controls-hint">
     建議先玩<span>新手學習</span>，認得符號後再挑戰 A–Z 實戰
   </div>
+  <div class="copyright-line" data-i18n-skip>© 2026 Scout System · 版權所有 / All rights reserved</div>
 </div>
 
 <!-- CIPHER SELECTION SCREEN -->
@@ -942,6 +1137,9 @@
     <span class="settings-value time-val" id="timeValueGame" style="min-width:50px;">∞</span>
   </div>
   <div style="color:#71809a;font-size:0.65em;letter-spacing:0.05em;margin-top:4px;">速度及限時會即時生效；血量下局生效</div>
+  <label class="game-option-row" for="effectsToggle"><input type="checkbox" id="effectsToggle" checked> 動感效果（粒子／震動／閃光）</label>
+  <button id="btn-fullscreen" class="game-option-btn" type="button" aria-pressed="false">⛶ 全螢幕＋螢幕常亮</button>
+  <button id="btn-howto-game" class="game-option-btn" type="button">？玩法（3 步）</button>
   <button id="btn-end-session" class="settings-preset-btn" type="button" style="min-height:40px;width:100%;margin-top:5px;border-color:#ff6688;color:#ff99aa;">結束本局／更換密碼</button>
 </div>
 
@@ -985,7 +1183,49 @@
   </div>
 </div>
 
+<!-- Three-step "How it works" coach marks, inspired by Astra Lab apps. -->
+<div id="coach-overlay" class="coach-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="coach-title">
+  <div class="coach-card">
+    <div class="coach-kicker" id="coach-title">HOW TO PLAY · 1 / 3</div>
+    <div class="coach-step" data-step="1">
+      <div class="coach-icon">🔍</div>
+      <h2>睇清楚符號</h2>
+      <p>每個敵人身上都有一個密碼符號：摩斯、旗號、朱高、點字、座標或電話 T9。先認出佢代表邊個英文字母。</p>
+    </div>
+    <div class="coach-step hidden" data-step="2">
+      <div class="coach-icon">⌨️</div>
+      <h2>即刻輸入答案</h2>
+      <p>用手機 A–Z 鍵或鍵盤輸入字母，喺敵人掂到防火牆之前破解佢。答中會即刻見到解碼過程。</p>
+    </div>
+    <div class="coach-step hidden" data-step="3">
+      <div class="coach-icon">🔥</div>
+      <h2>連擊同弱項</h2>
+      <p>連續答中倍分會一路升；答錯過嘅字母會更常出現，幫你針對弱項練習。今日任務完成再攞 ★。</p>
+    </div>
+    <div class="coach-dots" aria-hidden="true"><i class="active"></i><i></i><i></i></div>
+    <div class="coach-actions">
+      <button id="coach-skip" type="button">略過</button>
+      <button id="coach-next" type="button">下一步 ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- Auto-pause when the tab/app is hidden, so switching apps never costs a life. -->
+<div id="pause-overlay" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+  <div class="neon-title" id="pause-title" style="font-size:clamp(1.6rem,6vw,2.6rem);">已暫停</div>
+  <div class="neon-subtitle">// PAUSED //</div>
+  <div class="divider"></div>
+  <p style="color:#a8b4c7;font-size:.8em;text-align:center;line-height:1.7;max-width:340px;">切換分頁或應用程式時已自動暫停，返回後按下面的掣繼續。</p>
+  <button class="btn" id="btn-resume" type="button" style="color:#00ff88;border-color:#00ff88;">▶ 繼續遊戲</button>
+</div>
+
+<!-- Portrait hint for small phones held sideways. -->
+<div id="rotate-hint" aria-hidden="true">↻ 請把手機轉回直向<br><small style="font-size:.7em;color:#71809a;">ROTATE TO PORTRAIT</small></div>
+
 <script>
+// Shared zh-Hant / English dictionary loaded by /js/i18n.js.
+const tr = (v) => (window.SKW_I18N ? window.SKW_I18N.t(v) : String(v == null ? '' : v));
+const uiLocale = () => (window.SKW_I18N ? window.SKW_I18N.locale() : 'zh-Hant');
 // ============================================================
 // AUDIO ENGINE
 // ============================================================
@@ -1175,6 +1415,110 @@ function readStoredJSON(key, fallback) {
   catch (_) { return fallback; }
 }
 
+// ============================================================
+// DAILY MISSION — inspired by Astra Lab's "Today's puzzles / +20 Stars".
+// Everything is local and deterministic. No server, no invented leaderboard,
+// no made-up rival names: the readme rules forbid fake data (Scout Clean).
+// ============================================================
+const DAILY_KEY = 'skw_cipher_daily';
+const COACH_KEY = 'skw_cipher_coach_seen';
+const DAILY_LEVELS = 3;                              // three short stages
+const DAILY_PER_LEVEL = 3;                           // three questions each
+const DAILY_COUNT = DAILY_LEVELS * DAILY_PER_LEVEL;  // nine questions total
+const DAILY_STARS = 20;
+
+function todayKey(d = new Date()) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function yesterdayKey() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return todayKey(d);
+}
+
+function seededRandom(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function dateHash(text) {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+// A daily mission is PRACTICE the member can finish, not a mixed-cipher
+// reflex test: three short stages, exactly ONE cipher per stage. Dates are
+// seeded so replaying the same day always gives the same stages and letters.
+function dailyLevelsForDate(dateStr) {
+  const rand = seededRandom(dateHash('skw-daily-v2:' + dateStr));
+  const pool = CIPHER_LIST.slice();
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, DAILY_LEVELS).map(cipher => {
+    const letters = [];
+    while (letters.length < DAILY_PER_LEVEL) {
+      const letter = ALPHABET[Math.floor(rand() * ALPHABET.length)];
+      if (cipher === 'GRID' && letter === 'J') continue;  // SCOUT grid has no J
+      if (letters.includes(letter)) continue;             // no repeats in a stage
+      letters.push(letter);
+    }
+    return { cipher, letters };
+  });
+}
+
+function dailyLevelQueue(index) {
+  const level = dailyLevels[index];
+  if (!level) return [];
+  return level.letters.map(letter => ({ cipher: level.cipher, letter }));
+}
+
+function readDailyRecord() {
+  const fallback = { stars: 0, streak: 0, lastCompleted: '', bestMs: null };
+  const raw = readStoredJSON(DAILY_KEY, fallback);
+  return {
+    stars: Number.isFinite(raw.stars) ? raw.stars : 0,
+    streak: Number.isFinite(raw.streak) ? raw.streak : 0,
+    lastCompleted: typeof raw.lastCompleted === 'string' ? raw.lastCompleted : '',
+    bestMs: Number.isFinite(raw.bestMs) ? raw.bestMs : null,
+  };
+}
+
+function writeDailyRecord(record) {
+  try { localStorage.setItem(DAILY_KEY, JSON.stringify(record)); }
+  catch (_) { /* private mode — record stays in memory */ }
+}
+
+function formatDuration(ms) {
+  if (!Number.isFinite(ms) || ms < 0) return '--';
+  const total = ms / 1000;
+  const m = Math.floor(total / 60);
+  const s = (total % 60).toFixed(1);
+  return m > 0 ? `${m}:${s.padStart(4, '0')}` : s + 's';
+}
+
+let dailyMode = false;
+let dailyLevels = [];
+let dailyLevelIndex = 0;
+let dailyQueue = [];
+let dailyStartMs = 0;
+let dailyAwarded = false;
+let lastDailyHud = '';
+let dailyPrevPath = null;
+
 const storedSettings = readStoredJSON(TRAINING_SETTINGS_KEY, {});
 let selectedCiphers = Array.isArray(storedSettings.ciphers)
   ? storedSettings.ciphers.filter(c => CIPHER_LIST.includes(c))
@@ -1189,19 +1533,28 @@ let gameLives = hadStoredPath && Number.isFinite(storedSettings.lives) ? storedS
 let gameTimeLimit = hadStoredPath && Number.isFinite(storedSettings.time) ? storedSettings.time : initialPath.time;
 let sessionGoal = initialPath.goal;
 let soundEnabled = storedSettings.sound !== false;
+// "Game feel" master switch. Defaults to the OS reduced-motion preference;
+// an explicit saved choice always wins (docs: web-motion static fallback).
+const prefersReducedMotion = typeof window.matchMedia === 'function'
+  && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let effectsEnabled = typeof storedSettings.effects === 'boolean'
+  ? storedSettings.effects : !prefersReducedMotion;
 let sessionSaved = false;
 let learningLocked = false;
 let feedbackTimer = null;
 
 function saveTrainingSettings() {
-  localStorage.setItem(TRAINING_SETTINGS_KEY, JSON.stringify({
-    ciphers: selectedCiphers,
-    path: trainingPath,
-    speed: gameSpeed,
-    lives: gameLives,
-    time: gameTimeLimit,
-    sound: soundEnabled
-  }));
+  try {
+    localStorage.setItem(TRAINING_SETTINGS_KEY, JSON.stringify({
+      ciphers: selectedCiphers,
+      path: trainingPath,
+      speed: gameSpeed,
+      lives: gameLives,
+      time: gameTimeLimit,
+      sound: soundEnabled,
+      effects: effectsEnabled
+    }));
+  } catch (_) { /* private mode / quota — settings stay in memory */ }
 }
 
 function updateProgressSummary() {
@@ -1228,7 +1581,7 @@ function updateMilestoneBar() {
   bar.classList.remove('hidden');
   bar.innerHTML = '<span class="milestone-label">🏆 個人里程碑</span>' + unlocked.map(t => {
     const m = milestones[String(t)];
-    return `<span class="milestone-chip" title="${new Date(m.date).toLocaleString('zh-Hant')} · ${m.ciphers.map(c => CIPHER_LABELS[c] || c).join('+')} · 速度 ${m.speed}">
+    return `<span class="milestone-chip" title="${new Date(m.date).toLocaleString(uiLocale())} · ${m.ciphers.map(c => CIPHER_LABELS[c] || c).join('+')} · 速度 ${m.speed}">
       <strong>${t}</strong>題 · ${m.accuracy}% · ${m.score.toLocaleString()}分
     </span>`;
   }).join('');
@@ -1252,7 +1605,7 @@ function updateAchievementBar() {
     const tiles = PATHS_FOR_ACHIEVEMENT.map(path => {
       const meta = data[achievementId(cipher, path)];
       const label = TRAINING_PATHS[path]?.title || path;
-      return `<span class="ach-tile ${meta ? 'on' : 'off'}" title="${CIPHER_LABELS[cipher]} · ${label}${meta ? ' · ' + new Date(meta.date).toLocaleDateString('zh-Hant') : ' · 未通關'}">${label.slice(0, 2)}</span>`;
+      return `<span class="ach-tile ${meta ? 'on' : 'off'}" title="${CIPHER_LABELS[cipher]} · ${label}${meta ? ' · ' + new Date(meta.date).toLocaleDateString(uiLocale()) : ' · 未通關'}">${label.slice(0, 2)}</span>`;
     }).join('');
     return `<div class="ach-row"><span class="ach-name">${CIPHER_LABELS[cipher]}</span>${tiles}</div>`;
   }).join('');
@@ -1940,7 +2293,7 @@ function toggleSettings() {
 
 function startWithSelectedCiphers() {
   if (selectedCiphers.length === 0) {
-    alert('請至少選一個密碼!');
+    alert(tr('請至少選一個密碼!'));
     return;
   }
   cipherStats = {};
@@ -1979,9 +2332,19 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 let W, H;
+let canvasReady = false;   // codeRain is declared later, so guard re-init on resize
 function resize() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
+  // Retina-aware backing store: crisp Morse dots / pigpen strokes on phones.
+  // Cap DPR at 2 so a 3x phone does not triple the per-frame fill cost.
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = Math.max(1, Math.round(W * dpr));
+  canvas.height = Math.max(1, Math.round(H * dpr));
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (canvasReady) initCodeRain();
 }
 resize();
 window.addEventListener('resize', resize);
@@ -2023,6 +2386,11 @@ let timeRemaining = 0;
 let timerAccum = 0;
 let lastStageProgression = 0;  // Tracks when we last advanced stage
 let threatTrails = [];  // Trail particles behind enemies
+// --- Game-feel layer (all local, no dependencies) ---
+let hitStop = 0;            // brief simulation freeze on a correct answer
+let displayedScore = 0;     // eased HUD counter
+let paused = false;         // auto-paused when the tab/app is hidden
+let wakeLock = null;        // Screen Wake Lock while in fullscreen
 
 // ============================================================
 // MATRIX CODE RAIN
@@ -2080,8 +2448,13 @@ function drawCodeRain() {
 // ============================================================
 // GRID FLOOR
 // ============================================================
+function coarsePointer() {
+  return typeof window.matchMedia === 'function'
+    && window.matchMedia('(pointer: coarse)').matches;
+}
+
 function usesOnScreenKeyboard() {
-  return window.innerWidth <= 800 || window.matchMedia('(pointer: coarse)').matches;
+  return window.innerWidth <= 800 || coarsePointer();
 }
 
 function getFirewallY() {
@@ -2089,7 +2462,7 @@ function getFirewallY() {
   return H - Math.max(controlOffset, trainingPath === 'learn' ? 165 : 0);
 }
 
-function drawGrid() {
+function drawFloorGrid() {
   const floorY = getFirewallY();
   const gridSpacing = 60;
   const vanishY = floorY - 200;
@@ -2528,13 +2901,16 @@ function createThreat(stage) {
   const col = THREAT_COLORS[type];
   const size = trainingPath === 'learn' ? 54 : 32 + Math.random() * 12;
   const x = trainingPath === 'learn' ? W / 2 : 60 + Math.random() * (W - 120);
-  const cipher = pickCipher();
-  const letter = pickWeightedLetter();
+  // A daily mission consumes a fixed, date-seeded question queue so every
+  // replay of today's challenge is identical.
+  const preset = (dailyMode && dailyQueue.length) ? dailyQueue.shift() : null;
+  const cipher = preset ? preset.cipher : pickCipher();
+  const letter = preset ? preset.letter : pickWeightedLetter();
   const speedMult = getSpeedMultiplier();
   return {
     x, y: trainingPath === 'learn' ? Math.max(130, H * .18) : -60,
     type, size,
-    speed: cfg.speed * speedMult * (trainingPath === 'learn' ? .62 : .8 + Math.random() * .4),
+    speed: cfg.speed * speedMult * (dailyMode ? .45 : (trainingPath === 'learn' ? .62 : .8 + Math.random() * .4)),
     fill: col.fill, stroke: col.stroke, glow: col.glow,
     rotation: 0,
     rotSpeed: (Math.random() - 0.5) * 2 * speedMult,
@@ -2646,7 +3022,7 @@ function drawThreat(t) {
   ctx.font = 'bold 10px Courier New';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(CIPHER_LABELS[t.cipher] || '', t.x, t.y - t.size * 1.5);
+  ctx.fillText(tr(CIPHER_LABELS[t.cipher] || ''), t.x, t.y - t.size * 1.5);
 
   ctx.restore();
 }
@@ -2658,6 +3034,7 @@ function drawThreat(t) {
 // PARTICLES & TRAILS
 // ============================================================
 function spawnParticles(x, y, color, count) {
+  if (!effectsEnabled) return;  // reduced-motion / user opt-out
   for (let i = 0; i < count; i++) {
     const angle = (i / count) * Math.PI * 2 + Math.random() * 0.5;
     const speed = 2 + Math.random() * 6;
@@ -2756,6 +3133,7 @@ let flashTimer = 0;
 let flashColor = 'rgba(255,0,255,0.3)';
 
 function triggerFlash(color) {
+  if (!effectsEnabled) return;
   flashTimer = 0.15;
   flashColor = color;
 }
@@ -2789,9 +3167,34 @@ function drawDamageFlash() {
 }
 
 // ============================================================
+// DANGER PROXIMITY — telegraph the enemy closest to the firewall
+// ============================================================
+function drawDangerWarning(proximity, floorY) {
+  if (proximity < 0.72 || !effectsEnabled) return;
+  const urgency = Math.min(1, (proximity - 0.72) / 0.28);
+  const pulse = 0.45 + 0.55 * Math.abs(Math.sin(pulseTime * (6 + urgency * 6)));
+  ctx.save();
+  ctx.globalAlpha = urgency * pulse * 0.7;
+  ctx.strokeStyle = '#ff3355';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = '#ff0033';
+  ctx.shadowBlur = 18;
+  ctx.beginPath();
+  ctx.moveTo(0, floorY - 4);
+  ctx.lineTo(W, floorY - 4);
+  ctx.stroke();
+  ctx.fillStyle = '#ff6688';
+  ctx.font = 'bold 12px Courier New';
+  ctx.textAlign = 'center';
+  ctx.fillText('⚠ INCOMING', W / 2, floorY - 14);
+  ctx.restore();
+}
+
+// ============================================================
 // SCREEN SHAKE
 // ============================================================
 function triggerShake(amount) {
+  if (!effectsEnabled) return;
   shakeAmount = Math.max(shakeAmount, amount);
   shakeTimer = 0.4;
 }
@@ -2859,9 +3262,8 @@ function takeDamage(t) {
     lives--;
   }
   combo = 0;
-  shakeAmount = 12;
-  shakeTimer = 0.5;
-  damageFlash = 1;
+  if (effectsEnabled) { shakeAmount = 12; shakeTimer = 0.5; }
+  damageFlash = effectsEnabled ? 1 : 0.25;  // gentle tint instead of a flash
   playDamage();
   triggerFlash('rgba(255,0,0,0.3)');
   spawnParticles(t.x, getFirewallY(), '#ff0000', 20);
@@ -2890,8 +3292,19 @@ function takeDamage(t) {
 // ============================================================
 // HUD
 // ============================================================
+let lastScoreShown = -1;
+function renderScoreHUD() {
+  const shown = Math.round(displayedScore);
+  if (shown === lastScoreShown) return;  // avoid a DOM write on every frame
+  lastScoreShown = shown;
+  const el = document.getElementById('hud-score');
+  if (el) el.textContent = `SCORE: ${shown.toString().padStart(6, '0')}`;
+}
+
 function updateHUD() {
-  document.getElementById('hud-score').textContent = `SCORE: ${score.toString().padStart(6,'0')}`;
+  // Score is eased in renderScoreHUD() each frame so big combo points "tick up".
+  const meter = document.getElementById('combo-meter-fill');
+  if (meter) meter.style.transform = `scaleX(${Math.min(combo, 10) / 10})`;
 
   const comboEl = document.getElementById('hud-combo');
   if (combo > 1) {
@@ -2904,7 +3317,7 @@ function updateHUD() {
 
   const shieldsEl = document.getElementById('hud-shields');
   shieldsEl.innerHTML = '';
-  if (gameLives === 0) {
+  if (dailyMode || gameLives === 0) {
     const infinite = document.createElement('span');
     infinite.className = 'shield-icon';
     infinite.textContent = '🛡∞';
@@ -2920,9 +3333,11 @@ function updateHUD() {
   }
 
   const pathProfile = TRAINING_PATHS[trainingPath];
-  document.getElementById('hud-stage').textContent = sessionGoal > 0
-    ? `${pathProfile.title} · ${Math.min(totalNeutralized, sessionGoal)} / ${sessionGoal}`
-    : `STAGE ${currentStage + 1} · 無限挑戰`;
+  document.getElementById('hud-stage').textContent = dailyMode
+    ? `DAILY · LV${dailyLevelIndex + 1}/${DAILY_LEVELS} · ${Math.min(totalNeutralized, DAILY_COUNT)}/${DAILY_COUNT}`
+    : (sessionGoal > 0
+      ? `${pathProfile.title} · ${Math.min(totalNeutralized, sessionGoal)} / ${sessionGoal}`
+      : `STAGE ${currentStage + 1} · 無限挑戰`);
   const attempts = Object.values(cipherStats).reduce((sum, stats) => sum + stats.total, 0);
   const correct = Object.values(cipherStats).reduce((sum, stats) => sum + stats.correct, 0);
   const accuracy = attempts ? Math.round(correct / attempts * 100) : 100;
@@ -2967,6 +3382,15 @@ function hideAllScreens() {
   document.getElementById('choice-panel').classList.add('hidden');
   document.getElementById('lesson-feedback').classList.add('hidden');
   document.getElementById('screen-cipher-select').classList.add('hidden');
+  document.getElementById('pause-overlay').classList.add('hidden');
+  const dailyHud = document.getElementById('daily-hud');
+  if (dailyHud) dailyHud.classList.add('hidden');
+  const refWrap = document.getElementById('daily-ref-wrap');
+  if (refWrap) refWrap.classList.add('hidden');
+  const levelBanner = document.getElementById('daily-level-banner');
+  if (levelBanner) levelBanner.classList.remove('show');
+  const decodeEl = document.getElementById('decode-reveal');
+  if (decodeEl) decodeEl.classList.remove('show');
   const stw = document.getElementById('settings-toggle-wrap');
   if (stw) stw.style.display = 'none';
   const so = document.getElementById('settings-overlay');
@@ -2991,6 +3415,13 @@ function showGame() {
   if (stw) stw.style.display = 'block';
   const td = document.getElementById('timer-display');
   if (td) td.style.display = gameTimeLimit > 0 ? 'block' : 'none';
+  const dh = document.getElementById('daily-hud');
+  if (dh) dh.classList.toggle('hidden', !dailyMode);
+  const rw = document.getElementById('daily-ref-wrap');
+  if (rw) {
+    rw.classList.toggle('hidden', !dailyMode);
+    if (dailyMode) { renderDailyReference(); openDailyReference(); }
+  }
   gameState = STATES.PLAY;
   if (trainingPath !== 'learn') setTimeout(() => document.getElementById('cipher-input').focus(), 50);
 }
@@ -3064,7 +3495,7 @@ function renderMilestoneBanner() {
   if (!m) return '';
   return `<div class="milestone-new-banner">
     🎉 解鎖新里程碑：<b>${threshold} 題</b>！<br>
-    準確率 <b>${m.accuracy}%</b> · 得分 <b>${m.score.toLocaleString()}</b> · ${new Date(m.date).toLocaleDateString('zh-Hant')}
+    準確率 <b>${m.accuracy}%</b> · 得分 <b>${m.score.toLocaleString()}</b> · ${new Date(m.date).toLocaleDateString(uiLocale())}
   </div>`;
 }
 
@@ -3126,6 +3557,21 @@ function showWin() {
   const newAchievements = unlockAchievementsIfCleared();
   updateAchievementBar();
   document.getElementById('screen-win').classList.remove('hidden');
+  // Daily mission: award local Stars / streak once per date, no fake leaderboard.
+  const dailyResult = dailyMode ? awardDaily() : null;
+  const winScreen = document.getElementById('screen-win');
+  const winTitle = winScreen.querySelector('.neon-title');
+  const winSub = winScreen.querySelector('.neon-subtitle');
+  if (dailyResult) {
+    if (winTitle) winTitle.textContent = tr('今日任務完成');
+    if (winSub) winSub.textContent = '// DAILY MISSION CLEAR //';
+  } else {
+    if (winTitle) winTitle.textContent = '基地安全';
+    if (winSub) winSub.textContent = '// 威脅已全部解除 //';
+  }
+  const dailyBanner = dailyResult
+    ? `<div style="grid-column:1/-1;color:#ffdd55;background:rgba(255,221,85,.07);border:1px solid rgba(255,221,85,.25);padding:12px;border-radius:10px;font-size:.82em;line-height:1.6;">📅 ${tr('今日任務')} · ${dailyResult.firstToday ? '+' + DAILY_STARS + ' ★' : '✓ ★'} · 🔥 ${dailyResult.streak} ${tr('連續日')} · ⏱ ${formatDuration(dailyResult.elapsed)}</div>`
+    : '';
   // Per-cipher breakdown
   const cipherBreakdown = Object.entries(cipherStats)
     .filter(([c, s]) => s.total > 0)
@@ -3139,6 +3585,7 @@ function showWin() {
   const summary = getSessionSummary();
   const rating = summary.accuracy >= 95 ? 'S' : summary.accuracy >= 85 ? 'A' : summary.accuracy >= 70 ? 'B' : 'C';
   document.getElementById('win-stats').innerHTML = `
+    ${dailyBanner}
     <div><div class="stat-label">本局得分</div><div class="stat-value">${score.toLocaleString()}</div></div>
     <div><div class="stat-label">成功破解</div><div class="stat-value">${totalNeutralized}</div></div>
     <div><div class="stat-label">本局準確率</div><div class="stat-value">${summary.accuracy}%</div></div>
@@ -3158,20 +3605,39 @@ function showWin() {
   `;
 }
 
-function startGame() {
+function startGame(options = {}) {
   initAudio();
+  dailyMode = Boolean(options.daily);
+  dailyLevels = dailyMode ? dailyLevelsForDate(todayKey()) : [];
+  dailyLevelIndex = 0;
+  dailyQueue = dailyMode ? dailyLevelQueue(0) : [];
+  dailyStartMs = Date.now();
+  dailyAwarded = false;
+  lastDailyHud = '';
+  // Daily uses the A–Z reflex mechanic regardless of the saved learning path.
+  if (dailyMode) {
+    if (dailyPrevPath === null) dailyPrevPath = trainingPath;
+    trainingPath = 'endless';
+  } else if (dailyPrevPath !== null) {
+    trainingPath = dailyPrevPath;
+    dailyPrevPath = null;
+  }
   sessionSaved = false;
   cipherStats = {};
-  sessionGoal = TRAINING_PATHS[trainingPath].goal;
+  sessionGoal = dailyMode ? DAILY_COUNT : TRAINING_PATHS[trainingPath].goal;
   learningLocked = false;
   clearTimeout(feedbackTimer);
   document.getElementById('lesson-feedback').classList.add('hidden');
   document.getElementById('choice-buttons').innerHTML = '';
   score = 0;
+  displayedScore = 0;
+  lastScoreShown = -1;
   combo = 0;
   maxCombo = 0;
   totalNeutralized = 0;
   currentStage = 0;
+  hitStop = 0;
+  paused = false;
   threats = [];
   particles = [];
   threatTrails = [];
@@ -3179,7 +3645,8 @@ function startGame() {
   timerAccum = 0;
   inputBuffer = '';
   document.getElementById('cipher-input').value = '';
-  lives = gameLives === 0 ? 9999 : gameLives;  // 0 = infinite
+  // Daily is practice: no lives can be lost and there is no countdown.
+  lives = dailyMode ? 9999 : (gameLives === 0 ? 9999 : gameLives);
   timeRemaining = gameTimeLimit > 0 ? gameTimeLimit : 0;
   startStage();
 }
@@ -3286,7 +3753,12 @@ function commitInput() {
       }
     });
     setFeedback(`✓ ${typed}`, 'hit');
-    if (navigator.vibrate) navigator.vibrate(22);
+    // "Predict, then reveal": the player has committed an answer; now show
+    // the cipher decoding into that letter, one element at a time.
+    showDecodeReveal(matches[0].cipher, matches[0].answer);
+    // Hit-stop: a 70 ms freeze gives the neutralization weight.
+    if (effectsEnabled) hitStop = Math.max(hitStop, 0.07);
+    if (navigator.vibrate) navigator.vibrate(combo >= 5 ? [12, 18, 22] : 18);
     if (learningTarget) {
       learningLocked = true;
       showLessonFeedback(learningTarget, true);
@@ -3295,6 +3767,7 @@ function commitInput() {
       setTimeout(() => { learningLocked = false; }, 520);
     }
     updateHUD();
+    advanceDailyLevelIfNeeded();
     checkStageComplete();
   } else {
     setFeedback(`✕ ${typed}`, 'miss');
@@ -3369,6 +3842,11 @@ canvas.addEventListener('click', () => {
 
 function returnToSelection(saveCurrent = false) {
   if (saveCurrent) saveTrainingProgress();
+  if (dailyPrevPath !== null) { trainingPath = dailyPrevPath; dailyPrevPath = null; }
+  dailyMode = false;
+  dailyLevels = [];
+  dailyLevelIndex = 0;
+  dailyQueue = [];
   threats = [];
   gameState = STATES.START;
   hideAllScreens();
@@ -3395,7 +3873,19 @@ ALPHABET.forEach(letter => {
   button.className = 'key-btn';
   button.textContent = letter;
   button.setAttribute('aria-label', '答案 ' + letter);
-  button.addEventListener('click', () => answerLetter(letter));
+  // Touch answers on pointerdown (no 300 ms click delay); the click handler
+  // stays for keyboard / assistive-tech activation with a short de-dupe window.
+  let lastPointerAnswer = 0;
+  button.addEventListener('pointerdown', event => {
+    if (event.pointerType === 'mouse') return;
+    event.preventDefault();
+    lastPointerAnswer = Date.now();
+    answerLetter(letter);
+  });
+  button.addEventListener('click', () => {
+    if (Date.now() - lastPointerAnswer < 600) return;
+    answerLetter(letter);
+  });
   mobileKeyboard.appendChild(button);
 });
 
@@ -3420,7 +3910,7 @@ document.getElementById('sound-toggle').addEventListener('click', () => {
   if (soundEnabled) initAudio();
 });
 document.getElementById('back-home').addEventListener('click', event => {
-  if (gameState === STATES.PLAY && !window.confirm('本局訓練仍在進行，確定返回工具箱？')) event.preventDefault();
+  if (gameState === STATES.PLAY && !window.confirm(tr('本局訓練仍在進行，確定返回工具箱？'))) event.preventDefault();
 });
 // --- cipher-input hardening ---
 const cipherInput = document.getElementById('cipher-input');
@@ -3481,7 +3971,7 @@ cipherInput.addEventListener('beforeinput', event => {
 // on-screen A–Z virtual keyboard is the only path.
 function lockNativeKeyboard() {
   if (!cipherInput) return;
-  const touch = window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 800;
+  const touch = coarsePointer() || window.innerWidth <= 800;
   if (touch) {
     cipherInput.setAttribute('readonly', 'readonly');
     cipherInput.setAttribute('inputmode', 'none');
@@ -3531,6 +4021,306 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// ============================================================
+// GAME-FEEL + MOBILE SHELL CONTROLS
+// ============================================================
+const pauseOverlay = document.getElementById('pause-overlay');
+
+function releaseWakeLock() {
+  try { if (wakeLock && typeof wakeLock.release === 'function') wakeLock.release(); }
+  catch (_) { /* unsupported or already released */ }
+  wakeLock = null;
+}
+
+async function requestWakeLock() {
+  if (wakeLock || !document.fullscreenElement) return;
+  try {
+    if (navigator.wakeLock && typeof navigator.wakeLock.request === 'function') {
+      const lock = await navigator.wakeLock.request('screen');
+      wakeLock = lock;
+      if (lock && typeof lock.addEventListener === 'function') {
+        lock.addEventListener('release', () => { wakeLock = null; });
+      }
+    }
+  } catch (_) { wakeLock = null; }  // needs HTTPS + user gesture on many browsers
+}
+
+function syncFullscreenButton() {
+  const btn = document.getElementById('btn-fullscreen');
+  if (!btn) return;
+  const on = Boolean(document.fullscreenElement);
+  btn.setAttribute('aria-pressed', String(on));
+  btn.textContent = on ? tr('⛶ 離開全螢幕') : tr('⛶ 全螢幕＋螢幕常亮');
+}
+
+async function toggleFullscreen() {
+  const root = document.documentElement;
+  try {
+    if (!document.fullscreenElement && typeof root.requestFullscreen === 'function') {
+      await root.requestFullscreen();
+    } else if (document.fullscreenElement && typeof document.exitFullscreen === 'function') {
+      await document.exitFullscreen();
+      releaseWakeLock();
+    }
+    await requestWakeLock();
+  } catch (_) { /* iOS Safari does not offer fullscreen on arbitrary elements */ }
+  syncFullscreenButton();
+}
+
+function pauseGame() {
+  if (gameState !== STATES.PLAY || paused) return;
+  paused = true;
+  if (pauseOverlay) pauseOverlay.classList.remove('hidden');
+  releaseWakeLock();
+}
+
+function resumeGame() {
+  if (!paused) return;
+  paused = false;
+  if (pauseOverlay) pauseOverlay.classList.add('hidden');
+  lastTime = (window.performance && typeof performance.now === 'function') ? performance.now() : Date.now();
+  requestWakeLock();
+}
+
+// Switching apps / locking the phone must never cost a life.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) pauseGame();
+  else requestWakeLock();
+});
+document.getElementById('btn-resume').addEventListener('click', () => { initAudio(); resumeGame(); });
+
+const fullscreenBtn = document.getElementById('btn-fullscreen');
+if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreen);
+document.addEventListener('fullscreenchange', syncFullscreenButton);
+window.addEventListener('skw:langchange', syncFullscreenButton);
+syncFullscreenButton();
+
+const effectsToggle = document.getElementById('effectsToggle');
+if (effectsToggle) {
+  effectsToggle.checked = effectsEnabled;
+  effectsToggle.addEventListener('change', () => {
+    effectsEnabled = effectsToggle.checked;
+    saveTrainingSettings();
+  });
+}
+
+// ============================================================
+// DAILY HUD + "DECODE REVEAL" + THREE-STEP COACH MARKS
+// Astra Lab patterns: fixed daily set, visible progress/time, step-by-step
+// onboarding, and a short causal reveal after the player commits an answer.
+// ============================================================
+function renderDailyCard() {
+  const rec = readDailyRecord();
+  const doneToday = rec.lastCompleted === todayKey();
+  const dateEl = document.getElementById('daily-date');
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString(uiLocale(), { month: 'short', day: 'numeric' });
+  const starsEl = document.getElementById('daily-stars');
+  if (starsEl) starsEl.textContent = String(rec.stars);
+  const streakEl = document.getElementById('daily-streak');
+  if (streakEl) streakEl.textContent = String(rec.streak);
+  const bestEl = document.getElementById('daily-best');
+  if (bestEl) bestEl.textContent = formatDuration(rec.bestMs);
+  const btn = document.getElementById('btn-daily');
+  if (btn) {
+    btn.textContent = tr(doneToday ? '✓ 今日已完成 · 再玩一次' : '▶ 開始今日任務');
+    btn.setAttribute('aria-label', btn.textContent);
+  }
+}
+
+function renderDailyHUD() {
+  const el = document.getElementById('daily-hud-text');
+  if (!el || !dailyMode) return;
+  const elapsed = Math.max(0, Date.now() - dailyStartMs);
+  const m = Math.floor(elapsed / 60000);
+  const s = Math.floor((elapsed % 60000) / 1000);
+  // Language-neutral on purpose: no DOM text fighting the i18n observer.
+  const text = `📅 LV${dailyLevelIndex + 1}/${DAILY_LEVELS} · ${Math.min(totalNeutralized, DAILY_COUNT)}/${DAILY_COUNT} · ⏱ ${m}:${String(s).padStart(2, '0')}`;
+  if (text !== lastDailyHud) { lastDailyHud = text; el.textContent = text; }
+}
+
+function awardDaily() {
+  if (!dailyMode || dailyAwarded) return null;
+  dailyAwarded = true;
+  const elapsed = Date.now() - dailyStartMs;
+  const rec = readDailyRecord();
+  const today = todayKey();
+  const firstToday = rec.lastCompleted !== today;
+  if (firstToday) {
+    rec.stars += DAILY_STARS;
+    rec.streak = rec.lastCompleted === yesterdayKey() ? rec.streak + 1 : 1;
+    rec.lastCompleted = today;
+  }
+  if (rec.bestMs === null || elapsed < rec.bestMs) rec.bestMs = elapsed;
+  writeDailyRecord(rec);
+  renderDailyCard();
+  return { firstToday, stars: rec.stars, streak: rec.streak, elapsed, best: rec.bestMs };
+}
+
+function startDaily() {
+  startGame({ daily: true });
+}
+
+// --- Each daily stage uses ONE cipher and offers a look-up sheet, so a
+// --- member who has not memorised the cipher can still finish the mission.
+let dailyBannerTimer = null;
+
+function renderDailyReference() {
+  const wrap = document.getElementById('daily-ref-wrap');
+  if (!wrap || !dailyMode || !dailyLevels.length) return;
+  const level = dailyLevels[dailyLevelIndex];
+  const title = document.getElementById('daily-ref-title');
+  if (title) title.textContent = `LV${dailyLevelIndex + 1}/${DAILY_LEVELS} · ${tr(CIPHER_LABELS[level.cipher])}`;
+  const body = document.getElementById('daily-ref-body');
+  if (!body) return;
+  body.innerHTML = '';
+  level.letters.forEach(letter => {
+    const row = document.createElement('div');
+    row.className = 'daily-ref-row';
+    const cv = document.createElement('canvas');
+    cv.width = 88; cv.height = 88;  // 2x backing store for a 44px symbol
+    cv.className = 'daily-ref-symbol';
+    try {
+      const c = cv.getContext('2d');
+      if (c) { c.scale(2, 2); drawCipherSymbol(c, level.cipher, letter, 22, 22, 30); }
+    } catch (_) { /* embedded webviews may not expose 2D context */ }
+    const label = document.createElement('span');
+    label.textContent = '= ' + letter;
+    row.appendChild(cv);
+    row.appendChild(label);
+    body.appendChild(row);
+  });
+}
+
+function openDailyReference() {
+  const panel = document.getElementById('daily-ref-panel');
+  if (panel) panel.classList.remove('hidden');
+  const btn = document.getElementById('btn-daily-ref');
+  if (btn) btn.setAttribute('aria-expanded', 'true');
+}
+
+function toggleDailyReference() {
+  const panel = document.getElementById('daily-ref-panel');
+  if (!panel) return;
+  const opening = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', !opening);
+  const btn = document.getElementById('btn-daily-ref');
+  if (btn) btn.setAttribute('aria-expanded', String(opening));
+}
+
+function showDailyLevelBanner() {
+  const el = document.getElementById('daily-level-banner');
+  if (!el || !effectsEnabled) return;
+  const level = dailyLevels[dailyLevelIndex];
+  el.textContent = `✓ LV${dailyLevelIndex} → LV${dailyLevelIndex + 1} · ${tr(CIPHER_LABELS[level.cipher])} · 📖`;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  clearTimeout(dailyBannerTimer);
+  dailyBannerTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+function advanceDailyLevelIfNeeded() {
+  if (!dailyMode || !dailyLevels.length) return;
+  const next = Math.floor(totalNeutralized / DAILY_PER_LEVEL);
+  if (next <= dailyLevelIndex || next >= DAILY_LEVELS) return;
+  dailyLevelIndex = next;
+  dailyQueue = dailyLevelQueue(dailyLevelIndex);
+  threats = [];                 // clear the previous stage cleanly
+  spawnTimer = 1.1;             // short breather before the next cipher
+  renderDailyReference();
+  openDailyReference();
+  showDailyLevelBanner();
+  updateHUD();
+}
+
+function cipherParts(cipher, letter) {
+  if (cipher === 'MORSE') return (MORSE[letter] || '').split('');
+  if (cipher === 'PHONET9') return (PHONE_T9[letter] || '').split('');
+  if (cipher === 'GRID') return encodeGrid(letter).split('');
+  if (cipher === 'BRAILLE') return (BRAILLE_DOTS[letter] || []).map(String);
+  if (cipher === 'SEMAPHORE') return (SEM_ANGLES[letter] || []).map(String);
+  const path = PIGPEN_PATHS[letter];
+  return (Array.isArray(path) ? path[0] : path || '').split(' ').slice(0, 6);
+}
+
+let decodeTimer = null;
+function showDecodeReveal(cipher, letter) {
+  const el = document.getElementById('decode-reveal');
+  if (!el || !effectsEnabled) return;
+  const parts = cipherParts(cipher, letter);
+  el.innerHTML = '';
+  parts.forEach((part, i) => {
+    const span = document.createElement('span');
+    span.className = 'decode-part';
+    span.textContent = part;
+    span.style.animationDelay = (i * 70) + 'ms';
+    el.appendChild(span);
+  });
+  const arrow = document.createElement('span');
+  arrow.className = 'decode-arrow decode-part';
+  arrow.textContent = '→';
+  arrow.style.animationDelay = (parts.length * 70) + 'ms';
+  el.appendChild(arrow);
+  const target = document.createElement('span');
+  target.className = 'decode-letter decode-part';
+  target.textContent = letter;
+  target.style.animationDelay = (parts.length * 70 + 90) + 'ms';
+  el.appendChild(target);
+  el.classList.remove('show');
+  void el.offsetWidth;  // restart the staggered animation on rapid hits
+  el.classList.add('show');
+  clearTimeout(decodeTimer);
+  decodeTimer = setTimeout(() => el.classList.remove('show'), 1100);
+}
+
+const COACH_STEPS = 3;
+let coachStep = 1;
+function renderCoach() {
+  const overlay = document.getElementById('coach-overlay');
+  if (!overlay) return;
+  const title = document.getElementById('coach-title');
+  if (title) title.textContent = `HOW TO PLAY · ${coachStep} / ${COACH_STEPS}`;
+  overlay.querySelectorAll('.coach-step').forEach(step => {
+    step.classList.toggle('hidden', Number(step.dataset.step) !== coachStep);
+  });
+  overlay.querySelectorAll('.coach-dots i').forEach((dot, i) => {
+    dot.classList.toggle('active', i === coachStep - 1);
+  });
+  const next = document.getElementById('coach-next');
+  if (next) next.textContent = tr(coachStep === COACH_STEPS ? '開始 ▶' : '下一步 ▶');
+}
+
+function openCoach() {
+  coachStep = 1;
+  renderCoach();
+  const overlay = document.getElementById('coach-overlay');
+  if (overlay) overlay.classList.remove('hidden');
+  if (gameState === STATES.PLAY) pauseGame();
+}
+
+function closeCoach() {
+  const overlay = document.getElementById('coach-overlay');
+  if (overlay) overlay.classList.add('hidden');
+  try { localStorage.setItem(COACH_KEY, '1'); } catch (_) {}
+  if (paused) resumeGame();
+}
+
+document.getElementById('btn-daily').addEventListener('click', startDaily);
+document.getElementById('btn-howto-start').addEventListener('click', openCoach);
+document.getElementById('btn-howto-game').addEventListener('click', openCoach);
+document.getElementById('coach-next').addEventListener('click', () => {
+  if (coachStep < COACH_STEPS) { coachStep++; renderCoach(); }
+  else closeCoach();
+});
+document.getElementById('coach-skip').addEventListener('click', closeCoach);
+document.getElementById('btn-daily-ref').addEventListener('click', toggleDailyReference);
+window.addEventListener('skw:langchange', () => { renderCoach(); renderDailyCard(); renderDailyReference(); });
+renderDailyCard();
+
+let coachSeen = false;
+try { coachSeen = localStorage.getItem(COACH_KEY) === '1'; } catch (_) {}
+if (!coachSeen) openCoach();
+
 // Restore the member's last training setup.
 setSpeed(gameSpeed);
 setLives(gameLives);
@@ -3548,6 +4338,10 @@ function gameLoop(ts) {
   pulseTime += dt;
   flashTimer = Math.max(0, flashTimer - dt);
   damageFlash = Math.max(0, damageFlash - dt * 3);
+  // Hit-stop freezes the simulation, not the presentation: particles and
+  // feedback keep animating while enemies hang for a few frames.
+  hitStop = Math.max(0, hitStop - dt);
+  const simDt = (paused || hitStop > 0) ? 0 : dt;
 
   // Shake
   if (shakeTimer > 0) {
@@ -3573,17 +4367,18 @@ function gameLoop(ts) {
   ctx.fillStyle = vig;
   ctx.fillRect(-20, -20, W+40, H+40);
 
-  // Code rain
-  updateCodeRain(dt);
+  // Code rain (frozen when effects are off or the game is paused)
+  if (effectsEnabled && !paused) updateCodeRain(dt);
   drawCodeRain();
 
-  // Grid
-  drawGrid();
+  // Grid (renamed so the SCOUT-grid cipher symbol is not shadowed)
+  drawFloorGrid();
+  const floorY = getFirewallY();
 
   if (gameState === STATES.PLAY) {
     // Timer countdown
     if (gameTimeLimit > 0 && timeRemaining > 0) {
-      timerAccum += dt;
+      timerAccum += simDt;
       if (timerAccum >= 1) {
         timerAccum -= 1;
         timeRemaining--;
@@ -3599,8 +4394,11 @@ function gameLoop(ts) {
     // allow overlapping threats to create urgency and retrieval practice.
     const cfg = STAGES[Math.min(currentStage, STAGES.length - 1)];
     const speedMult = getSpeedMultiplier();
-    spawnTimer -= dt;
-    const canSpawn = trainingPath === 'learn' ? threats.length === 0 && !learningLocked : true;
+    spawnTimer -= simDt;
+    // Daily practice shows one threat at a time — no overlapping pressure.
+    const canSpawn = dailyMode
+      ? threats.length === 0
+      : (trainingPath === 'learn' ? threats.length === 0 && !learningLocked : true);
     if (spawnTimer <= 0 && canSpawn) {
       const newThreat = createThreat(currentStage);
       threats.push(newThreat);
@@ -3609,11 +4407,10 @@ function gameLoop(ts) {
     }
 
     // Update threats + spawn trails
-    const floorY = getFirewallY();
     for (let i = threats.length - 1; i >= 0; i--) {
       const t = threats[i];
       // Spawn trail particles behind threat
-      if (Math.random() < 0.6) {
+      if (effectsEnabled && simDt > 0 && Math.random() < 0.6) {
         threatTrails.push({
           x: t.x + (Math.random() - 0.5) * t.size * 0.5,
           y: t.y - t.size * 0.3,
@@ -3626,16 +4423,24 @@ function gameLoop(ts) {
       // Briefly freeze guided questions after a mistake so the learner can
       // inspect the symbol and explanation instead of being punished for reading.
       if (!(trainingPath === 'learn' && learningLocked)) {
-        t.y += t.speed * dt * 60;
-        t.rotation += t.rotSpeed * dt;
-        t.wobble += t.wobbleSpeed * dt;
-        t.x += Math.sin(t.wobble) * 0.3 * dt * 60;
+        t.y += t.speed * simDt * 60;
+        t.rotation += t.rotSpeed * simDt;
+        t.wobble += t.wobbleSpeed * simDt;
+        t.x += Math.sin(t.wobble) * 0.3 * simDt * 60;
         t.x = Math.max(t.size + 10, Math.min(W - t.size - 10, t.x));
       }
 
       if (t.y >= floorY - t.size / 2) {
-        takeDamage(t);
-        spawnParticles(t.x, floorY, t.glow, 12);
+        // Daily practice never costs a life: the same question simply comes
+        // back, with a gentle nudge to open the reference sheet.
+        if (dailyMode) {
+          dailyQueue.push({ cipher: t.cipher, letter: t.answer });
+          setFeedback('↻', 'miss');
+          openDailyReference();
+        } else {
+          takeDamage(t);
+          spawnParticles(t.x, floorY, t.glow, 12);
+        }
         threats.splice(i, 1);
         combo = 0;
         updateHUD();
@@ -3647,6 +4452,10 @@ function gameLoop(ts) {
 
     // Draw threats
     threats.forEach(drawThreat);
+
+    // Telegraph the closest incoming threat before it reaches the firewall.
+    const proximity = threats.reduce((max, t) => Math.max(max, t.y / floorY), 0);
+    drawDangerWarning(proximity, floorY);
 
     // ENDLESS stage progression: advance every 15 neutralizations
     if (stageNeutralized > 0 && stageNeutralized % 15 === 0 && stageNeutralized !== lastStageProgression) {
@@ -3671,11 +4480,18 @@ function gameLoop(ts) {
 
   ctx.restore();
 
+  // Ease the HUD score toward the real score so combo points visibly tick up.
+  displayedScore += (score - displayedScore) * Math.min(1, dt * 9);
+  if (Math.abs(score - displayedScore) < 0.5) displayedScore = score;
+  renderScoreHUD();
+  renderDailyHUD();
+
   requestAnimationFrame(gameLoop);
 }
 
 // Init code rain
 initCodeRain();
+canvasReady = true;
 requestAnimationFrame(ts => { lastTime = ts; gameLoop(ts); });
 </script>
 </body>

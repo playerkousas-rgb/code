@@ -67,7 +67,7 @@ for (const [file, expectedIds] of Object.entries(requiredIds)) {
   }
 }
 
-for (const file of ['js/app.js']) {
+for (const file of ['js/app.js', 'js/i18n.js', 'papers/sw.js']) {
   const script = await readFile(file, 'utf8')
   try {
     new vm.Script(script, { filename: file })

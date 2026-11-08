@@ -3,7 +3,7 @@
 > 香港童軍總會 · 筲箕灣區小助手  
 > 集密碼轉換、試卷、電子派卷、互動搶答與遊戲化訓練於一身
 
-這個靜態 Web App 支援 13 種密碼／通訊方式，並內建 Canvas 遊戲化訓練引擎「**密碼防衛戰**」（繁體中文版）。
+這個靜態 Web App 支援 13 種密碼／通訊方式，並內建 Canvas 遊戲化訓練引擎「**密碼防衛戰**」。介面提供**繁體中文／English 雙語切換**，英文版說明見 [README.en.md](README.en.md)。
 
 ## 主要模式
 
@@ -20,7 +20,8 @@
 - 每題可選密碼類型、整條／輪播／聲音模式
 - **每題獨立設定**：旗號列印樣式（火柴人 / 貝登堡公仔）、輪播速度、方向（翻譯 / 倒轉）
 - **倒轉模式**：顯示英文原字，要成員在試卷上自行寫出密碼符號
-- 投影播放及 A4 列印；列印標題為「童軍密碼考核試卷」
+- 投影播放及 A4 列印；中文標題為「童軍密碼考核試卷」，英文標題為「Scout Cipher Examination」
+- **每一頁頁底**固定印出 `© 2026 Scout System · 版權所有 / All rights reserved`；答案紙另加 `CONFIDENTIAL · 領袖專用 / Leaders Only`
 - 題目保存在瀏覽器 `localStorage`
 
 ### 3. 互動搶答
@@ -48,8 +49,24 @@
 - 保存最高分、上次準確率及完成局數
 - 手機提供 A–Z 畫面鍵盤，不會被原生鍵盤遮住遊戲
 - 支援觸控震動回饋、音效開關及鍵盤操作
+- **遊戲手感／手機沉浸**：Retina 清晰度（devicePixelRatio）、轉 App 自動暫停、答中 hit-stop、分數遞增、連擊能量條、敵人逼近防火牆警告、全螢幕＋螢幕常亮（Wake Lock）、橫向提示
+- 設定內可關掉「動感效果」（粒子／震動／閃光），預設跟隨系統 `prefers-reduced-motion`
 
 訓練模式採用內建 Canvas 引擎；遊戲中的旗號以 Canvas 即時繪畫，毋須預載 26 張圖片，減少手機流量。
+- **今日任務（練習，唔係挑戰）**：每日 **3 關**，每關**淨係 1 種密碼**、每關 3 題；唔扣血、唔限時、一次只出一題，仲有「📖 對照表」可隨時睇。題目按日期 seeding，同一日重玩都係同一組；完成 +20 ★、連續日數及最佳時間，全部本機紀錄，冇假造全球排行榜
+- **三步教法**：首次進入有「HOW TO PLAY · 1/3」，可略過，之後用「？玩法」重開
+- **答中解碼揭示**：答啱之後逐個 element 播出 `.- → A` 嘅解碼動畫（可喺設定關掉）
+
+`readme` 知識庫嘅遊戲／動感適用範圍與取捨，見 [`docs/game-feel-reference.md`](docs/game-feel-reference.md)；Astra AI Lab 嘅玩法結構參考見 [`docs/astra-lab-reference.md`](docs/astra-lab-reference.md)；素材與來源見 [`CREDITS.md`](CREDITS.md)。
+
+## 英文版／雙語切換
+
+- 主工具、電子試卷、訓練遊戲三個頁面的右上角都有 **🌐 EN / 🌐 繁** 按鈕；主工具側欄底部亦有一個。
+- 切換後會即時翻譯所有介面文字、標題、輸入提示、`aria-label`、投影畫面、試卷題目指示、解碼紙、答案紙，以及由 JavaScript 動態產生的內容（使用 `MutationObserver`）。
+- 語言選擇保存在瀏覽器 `localStorage` 的 `skw_ui_lang`，跨頁面、重新整理後仍會保留；亦可在網址加上 `?lang=en` 直接分享英文版連結。
+- 譯文集中放在 [`js/i18n.js`](js/i18n.js)。新增介面字串時，把原繁中字串加進 `EN` 對照表即可；含數字／題號的句式用 `PATTERNS` 正則處理。
+- 使用者自行輸入的內容（題組名稱、作答、訊息草稿）以 `data-i18n-skip` 標記，永遠不會被翻譯或改寫。
+- 版權列是中英對照的固定字串，兩種語言都保持原樣。
 
 ## UI 審視與改版
 
@@ -94,6 +111,7 @@ npm run build   # 同時建置主 App 與 training 多頁入口
 ├── index.html              # 主 App
 ├── css/style.css           # 主 App 及響應式樣式
 ├── js/app.js               # 編碼、試卷、投影、搶答邏輯
+├── js/i18n.js              # 繁中／English 對照表與雙語切換引擎
 ├── training/index.html     # 密碼防衛戰（Canvas 單頁遊戲）
 ├── images/                 # 旗號圖片 (a.png - z.png)
 ├── scripts/check-static.mjs
@@ -109,6 +127,7 @@ npm run build   # 同時建置主 App 與 training 多頁入口
 
 以下資料只會保存在成員自己的瀏覽器：
 
+- `skw_ui_lang`：介面語言（`zh-Hant` / `en`）
 - `skw_message_draft`：編碼草稿
 - `skw_test_questions`：試卷題目（含每題的密碼類型、方向、速度、旗號樣式等）
 - `skw_cipher_training_settings`：遊戲設定

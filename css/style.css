@@ -396,7 +396,8 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 /* ===================== PRINT FIXES (FIX #2) ===================== */
 @media print {
   @page {
-    margin: 20mm 15mm;
+    /* Extra bottom margin reserves room for the repeating copyright footer. */
+    margin: 20mm 15mm 26mm;
     size: A4;
   }
 
@@ -512,18 +513,30 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   .decoder-alphabet { display: grid; grid-template-columns: repeat(13, 1fr); gap: 5px; margin-top: 14px; }
   .decoder-alphabet span { border: 1px solid #222; padding: 8px 2px; text-align: center; font: 900 14pt/1 'JetBrains Mono', monospace; }
 
-  /* 頁尾 */
+  /* 頁尾版權：固定於每一頁的頁底，瀏覽器列印時會在每頁重複出現，
+     不會像舊版那樣只出現在整份文件（或最後一張解碼紙）的最尾。 */
   .print-footer {
-    margin-top: 80px;
-    padding-top: 24px;
-    border-top: 1px solid #ccc;
+    position: fixed !important;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0 !important;
+    padding: 7px 0 3px;
+    border-top: 1px solid #bbb;
+    background: #fff;
     text-align: center;
-    font-size: 11pt;
-    color: #666;
+    font-size: 9pt;
+    color: #555;
     font-weight: 700;
-    text-transform: uppercase;
+    letter-spacing: .02em;
+    text-transform: none;
+    break-inside: avoid;
     page-break-after: avoid;
+    z-index: 5;
   }
+
+  /* Reserve breathing space above the fixed footer at the end of a sheet. */
+  #printExamSheet, #printAnswerSheet { padding-bottom: 12mm; }
 
   /* ===== Answer key sheet (領袖專用) ===== */
   /* By default only the exam sheet prints; the answer sheet stays hidden. */
@@ -785,4 +798,38 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
+
+/* ===================== LANGUAGE SWITCH (zh-Hant / English) ===================== */
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(11, 22, 40, .72);
+  color: var(--skw-gold);
+  border: 1px solid #725d37;
+  border-radius: 10px;
+  box-shadow: none;
+  white-space: nowrap;
+}
+.lang-switch:hover { background: #23324a; }
+.lang-switch:focus-visible { outline: 3px solid #6ed9ff; outline-offset: 2px; }
+.lang-switch-label { font-size: 12px; font-weight: 900; letter-spacing: .08em; }
+.sidebar-lang-switch {
+  margin-top: 12px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(242, 189, 85, .45);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .04);
+  color: var(--skw-gold);
+  font: 900 11px/1 system-ui, sans-serif;
+  letter-spacing: .08em;
+  cursor: pointer;
+}
+.sidebar-lang-switch:hover { background: rgba(242, 189, 85, .12); }
+.sidebar-lang-switch:focus-visible { outline: 3px solid #6ed9ff; outline-offset: 2px; }
+@media (max-width: 767px) {
+  .lang-switch { width: auto; height: 46px; min-height: 46px; padding: 0 12px; }
 }
