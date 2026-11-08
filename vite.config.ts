@@ -35,6 +35,7 @@ export default defineConfig({
         await cp(resolve(process.cwd(), 'js/peerjs.min.js'), resolve(outputDirectory, 'js/peerjs.min.js'), { force: true })
         await cp(resolve(process.cwd(), 'js/qrcode.min.js'), resolve(outputDirectory, 'js/qrcode.min.js'), { force: true })
         await cp(resolve(process.cwd(), 'js/jsQR.js'), resolve(outputDirectory, 'js/jsQR.js'), { force: true })
+        await cp(resolve(process.cwd(), 'js/i18n.js'), resolve(outputDirectory, 'js/i18n.js'), { force: true })
       },
     },
   ],

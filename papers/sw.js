@@ -1,5 +1,5 @@
 /* Electronic-paper shell only. Never cache activity responses, answers or API calls. */
-const CACHE = 'scout-paper-shell-v1';
+const CACHE = 'scout-paper-shell-v2';
 const SHELL = '/papers/';
 self.addEventListener('install', event => event.waitUntil((async () => {
   const cache = await caches.open(CACHE);
@@ -8,7 +8,7 @@ self.addEventListener('install', event => event.waitUntil((async () => {
   const html = await response.clone().text();
   await cache.put(SHELL, response);
   // Vite hashes its bundles; the static deployment instead has native modules.
-  const resources = new Set(['/js/qrcode.min.js','/js/jsQR.js']);
+  const resources = new Set(['/js/qrcode.min.js','/js/jsQR.js','/js/i18n.js']);
   for (const match of html.matchAll(/(?:src|href)=["']([^"']+)["']/g)) {
     const url = new URL(match[1], self.location.origin);
     if (url.origin === self.location.origin && (url.pathname.startsWith('/assets/') || url.pathname === '/papers/papers.js' || url.pathname === '/papers/papers.css')) resources.add(url.pathname);
@@ -30,7 +30,7 @@ self.addEventListener('fetch', event => {
     event.respondWith((async()=>{const cache=await caches.open(CACHE);try{const response=await fetch(event.request);if(response.ok)await cache.put(SHELL,response.clone());return response;}catch{return (await cache.match(SHELL)) || Response.error();}})());
     return;
   }
-  const allowed = url.pathname.startsWith('/assets/') || ['/papers/papers.js','/papers/papers.css','/js/paper-codec.js','/shared/question-set.js','/js/qrcode.min.js','/js/jsQR.js'].includes(url.pathname);
+  const allowed = url.pathname.startsWith('/assets/') || ['/papers/papers.js','/papers/papers.css','/js/paper-codec.js','/shared/question-set.js','/js/qrcode.min.js','/js/jsQR.js','/js/i18n.js'].includes(url.pathname);
   if (!allowed || url.search) return;
   event.respondWith((async()=>{const cache=await caches.open(CACHE);if(url.pathname.startsWith('/assets/')){const hit=await cache.match(event.request);if(hit)return hit;}try{const response=await fetch(event.request);if(response.ok)await cache.put(event.request,response.clone());return response;}catch{return (await cache.match(event.request)) || Response.error();}})());
 });

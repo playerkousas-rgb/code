@@ -23,6 +23,11 @@ let currentProjIdx = 0, projTimer = null, audioCtx = null, natoTimer = null, toa
 let peer = null, hostConn = null, connections = [], players = Object.create(null), buzzQueue = [], gameMode = 'idle', myPeerId = null, myPlayerName = '', shakeWatcher = null;
 
 const $ = (id) => document.getElementById(id);
+// Shared zh-Hant / English i18n. Loaded by /js/i18n.js on every page; the
+// fallback keeps this module usable in isolation (e.g. unit tests).
+const tr = (value) => (window.SKW_I18N ? window.SKW_I18N.t(value) : String(value == null ? '' : value));
+const localize = (root) => { if (root && window.SKW_I18N) window.SKW_I18N.applyTranslations(root); };
+const uiLocale = () => (window.SKW_I18N ? window.SKW_I18N.locale() : 'zh-Hant');
 const escapeHTML = (value) => String(value == null ? '' : value).replace(/[&<>'"]/g, function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch];});
 const showToast = (m) => {
   const t = $('toast');
@@ -268,7 +273,7 @@ function playMorse(text, speedMs) {
 // ===================== PLAY NATO (速度可調) =====================
 function playNatoAudio(text, speedMs) {
   speedMs=speedMs||getSpeed();
-  if(!window.speechSynthesis){showToast('瀏覽器不支援語音');return;}
+  if(!window.speechSynthesis){showToast(tr('瀏覽器不支援語音'));return;}
   window.speechSynthesis.cancel();
   var f=1200/speedMs;
   var intervalMs=Math.round(Math.max(100,Math.min(6000,800/f)));
@@ -327,14 +332,14 @@ function decoderSheetMarkup(type) {
   else if(type==='Morse') {
     items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${MORSE_CODE[ch]}</span></div>`;}).join('');
     var alphabet=letters.map(function(ch){return `<span>${ch}</span>`;}).join('');
-    extra=`<h3 style="font-size:14pt;margin:20px 0 8px">英文字母移位列</h3><div class="decoder-alphabet">${alphabet}</div><div class="decoder-alphabet">${alphabet}</div>`;
+    extra=`<h3 style="font-size:14pt;margin:20px 0 8px">${escapeHTML(tr('英文字母移位列'))}</h3><div class="decoder-alphabet">${alphabet}</div><div class="decoder-alphabet">${alphabet}</div>`;
   } else if(type==='Braille') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span>${renderBraille(ch)}</div>`;}).join('');
   else if(type==='Pigpen') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span>${renderPigpenSVG(ch,'#000')}</div>`;}).join('');
   else if(type==='Phone') items=Object.entries(PHONE_GROUPS).map(function(pair){return `<div class="decoder-item"><span class="decoder-letter">${pair[0]}</span><span class="decoder-code">${pair[1].join(' ')}</span></div>`;}).join('');
   else if(type==='Grid') { var key=normalizeGridKey($('gridKey').value); items=letters.filter(function(ch){return ch!=='Z';}).map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${getEncoded(ch,'Grid',key)}</span></div>`;}).join(''); }
   else if(type==='NATO') items=letters.map(function(ch){return `<div class="decoder-item"><span class="decoder-letter">${ch}</span><span class="decoder-code">${NATO_MAP[ch]}</span></div>`;}).join('');
   else { var normal=letters.map(function(ch){return `<span>${ch}</span>`;}).join(''), reversed=letters.slice().reverse().map(function(ch){return `<span>${ch}</span>`;}).join(''); extra=`<div class="decoder-alphabet">${normal}</div><div class="decoder-alphabet">${type==='Atbash'?reversed:normal}</div>`; }
-  return `<section class="print-decoder-sheet"><h2>解碼紙：${titleMap[type]||type}</h2><p class="decoder-note">${noteMap[type]||'密碼解碼參考。'}</p>${items?`<div class="decoder-grid">${items}</div>`:''}${extra}</section>`;
+  return `<section class="print-decoder-sheet"><h2>${escapeHTML(tr('解碼紙：'+(titleMap[type]||type)))}</h2><p class="decoder-note">${escapeHTML(tr(noteMap[type]||'密碼解碼參考。'))}</p>${items?`<div class="decoder-grid">${items}</div>`:''}${extra}</section>`;
 }
 
 function buildDecoderSheets() {
@@ -354,9 +359,9 @@ function projectionDecoderMarkup(q) {
   else if(type==='NATO') content=letters.map(function(ch){return `<span class="projection-decoder-item"><b>${ch}</b><small>${NATO_MAP[ch]}</small></span>`;}).join('');
   else if(type==='Phone') content=Object.entries(PHONE_GROUPS).map(function(pair){return `<span class="projection-decoder-item"><b>${pair[0]}</b><small>${pair[1].join(' ')}</small></span>`;}).join('');
   else if(type==='Grid') { var key=normalizeGridKey($('gridKey').value); content=letters.filter(function(ch){return ch!=='Z';}).map(function(ch){return `<span class="projection-decoder-item"><b>${ch}</b><small>${getEncoded(ch,'Grid',key)}</small></span>`;}).join(''); }
-  else if(type==='Reverse') content='<span class="projection-decoder-message">倒序：將整段文字由最後一個字元開始，逐個向前閱讀。</span>';
-  else { var bottom=(type==='Atbash'?letters.slice().reverse():letters).join(''); content=`<span class="projection-decoder-message"><b>${letters.join('')}</b><br><b>${bottom}</b><br><small>${type==='Caesar'?'將兩列左右移動以找出位移後的字母。':'上、下兩列的相對字母互相對應。'}</small></span>`; }
-  return `<div class="projection-decoder"><p>解碼表 · ${escapeHTML(type)}</p><div class="projection-decoder-grid">${content}</div></div>`;
+  else if(type==='Reverse') content='<span class="projection-decoder-message">'+escapeHTML(tr('倒序：將整段文字由最後一個字元開始，逐個向前閱讀。'))+'</span>';
+  else { var bottom=(type==='Atbash'?letters.slice().reverse():letters).join(''); content=`<span class="projection-decoder-message"><b>${letters.join('')}</b><br><b>${bottom}</b><br><small>${escapeHTML(tr(type==='Caesar'?'將兩列左右移動以找出位移後的字母。':'上、下兩列的相對字母互相對應。'))}</small></span>`; }
+  return `<div class="projection-decoder"><p>${escapeHTML(tr('解碼表 · '+type))}</p><div class="projection-decoder-grid">${content}</div></div>`;
 }
 
 function updateAll() {
@@ -390,15 +395,15 @@ const COPY_OUTPUTS = {
 };
 
 function copyText(text) {
-  if(!text)return showToast('請先輸入訊息');
+  if(!text)return showToast(tr('請先輸入訊息'));
   if(navigator.clipboard&&window.isSecureContext){
-    navigator.clipboard.writeText(text).then(function(){showToast('已複製密碼');}).catch(function(){fallbackCopy(text);});
+    navigator.clipboard.writeText(text).then(function(){showToast(tr('已複製密碼'));}).catch(function(){fallbackCopy(text);});
   } else fallbackCopy(text);
 }
 function fallbackCopy(text) {
   var area=document.createElement('textarea');
   area.value=text;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();
-  try{document.execCommand('copy');showToast('已複製密碼');}catch(e){showToast('無法自動複製');}
+  try{document.execCommand('copy');showToast(tr('已複製密碼'));}catch(e){showToast(tr('無法自動複製'));}
   area.remove();
 }
 function ensureCopyButtons() {
@@ -440,7 +445,7 @@ function renderJoinQr(id) {
         correctLevel: (QRCode.CorrectLevel && typeof QRCode.CorrectLevel.M !== 'undefined') ? QRCode.CorrectLevel.M : 0
       });
       rendered = true;
-      showToast('QR Code 已生成');
+      showToast(tr('QR Code 已生成'));
     } catch(e) {
       console.warn('QRCode Level M generation failed, retrying with Level L:', e);
       try {
@@ -454,7 +459,7 @@ function renderJoinQr(id) {
           correctLevel: (QRCode.CorrectLevel && typeof QRCode.CorrectLevel.L !== 'undefined') ? QRCode.CorrectLevel.L : 1
         });
         rendered = true;
-        showToast('QR Code 已生成');
+        showToast(tr('QR Code 已生成'));
       } catch(e2) {
         console.error('QRCode fallback failed:', e2);
       }
@@ -495,7 +500,7 @@ function initGameHost() {
   if(typeof Peer==='undefined'){
     var qr=$('joinQr');
     if(qr) qr.innerHTML='<div class="p-3 text-center"><p class="text-rose-400 text-xs font-bold">搶答服務未能載入</p><p class="text-[10px] text-slate-500 mt-1">請檢查網絡或重新整理頁面</p></div>';
-    showToast('搶答服務未能載入，請檢查網絡');
+    showToast(tr('搶答服務未能載入，請檢查網絡'));
     return;
   }
   try{
@@ -509,7 +514,7 @@ function initGameHost() {
       console.error('Peer error:', err);
       var qr=$('joinQr');
       if(qr) qr.innerHTML='<div class="p-3 text-center"><p class="text-rose-400 text-xs font-bold">搶答連線異常</p><p class="text-[10px] text-slate-500 mt-1">'+escapeHTML(err.type||err.message||'無法連接伺服器')+'</p></div>';
-      showToast('搶答連線錯誤');
+      showToast(tr('搶答連線錯誤'));
     });
     peer.on('connection',function(conn){
       connections.push(conn);
@@ -522,7 +527,7 @@ function initGameHost() {
       conn.on('close',function(){connections=connections.filter(function(c){return c!==conn;});$('playerCount').textContent=connections.length+' 人連線';});
       conn.send({type:'state',gameMode:gameMode,players:Object.values(players),queue:buzzQueue.map(function(p){return p.name;})});
     });
-  }catch(e){showToast('搶答系統初始化失敗');}
+  }catch(e){showToast(tr('搶答系統初始化失敗'));}
 }
 
 function updatePlayerList() {
@@ -626,12 +631,12 @@ document.addEventListener('DOMContentLoaded', function() {
   $('btnClearInput').onclick=function(){$('inputText').value='';updateAll();$('inputText').focus();};
   $('btnAddToTest').onclick=function(){
     var value=$('inputText').value.trim();
-    if(!value)return showToast('請先輸入訊息');
+    if(!value)return showToast(tr('請先輸入訊息'));
     testQuestions.push({id:Date.now(),text:value,type:'Morse',display:'static'});
     localStorage.setItem('skw_test_questions',JSON.stringify(testQuestions));
-    showToast('已加入試卷');
+    showToast(tr('已加入試卷'));
   };
-  $('btnPlayMorse').onclick=function(){var t=$('inputText').value.toUpperCase();if(t)playMorse(t,getSpeed());else showToast('請先輸入訊息');};
+  $('btnPlayMorse').onclick=function(){var t=$('inputText').value.toUpperCase();if(t)playMorse(t,getSpeed());else showToast(tr('請先輸入訊息'));};
   $('gridKey').oninput=function(){this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,5);buildReferenceTables();updateAll();};
   $('gridKey').onblur=function(){this.value=normalizeGridKey(this.value);buildReferenceTables();updateAll();};
   $('caesarShift').oninput=updateAll;
@@ -651,7 +656,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var rb=$('btnProjReveal'); if(rb) rb.classList.add('hidden');
       renderProjAnswerKey();
     } else {
-      showToast('已是最後一題');
+      showToast(tr('已是最後一題'));
     }
   };
   $('btnProjPrev').onclick=function(){if(currentProjIdx>0){currentProjIdx--;showProjection();}};
@@ -692,7 +697,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ===== PRINT =====
   $('btnExportPDF').onclick=function(){
-    if(!testQuestions.length)return alert('請先加入題目');
+    if(!testQuestions.length)return alert(tr('請先加入題目'));
     var defaultStyle=getSemStyle();
     $('printQuestions').innerHTML=testQuestions.map(function(q,idx){
       var upper=q.text.toUpperCase();
@@ -705,10 +710,10 @@ document.addEventListener('DOMContentLoaded', function() {
       // member to write the cipher symbols down.
       if(dir==='decode') {
         var labelMap={"Morse":"摩斯密碼","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高密碼","Grid":"座標密碼","Phone":"電話密碼","Caesar":"凱撒位移","Atbash":"反射密碼","Reverse":"倒序密碼","NATO":"NATO"};
-        var label=labelMap[q.type]||q.type;
-        encoded=`<span class="text-2xl font-mono">${escapeHTML(upper)}</span>`;
-        promptLine='<div class="text-base text-gray-600 mt-1">↑ 請用 ' + escapeHTML(label) + ' 表示 ↑</div>';
-        var heading='<b>Q' + (idx+1) + '. 將以下文字寫成 ' + escapeHTML(q.type) + '：</b>';
+        var label=tr(labelMap[q.type]||q.type);
+        encoded=`<span class="text-2xl font-mono" data-i18n-skip>${escapeHTML(upper)}</span>`;
+        promptLine='<div class="text-base text-gray-600 mt-1">' + escapeHTML(tr('↑ 請用 ' + label + ' 表示 ↑')) + '</div>';
+        var heading='<b>' + escapeHTML(tr('Q' + (idx+1) + '. 將以下文字寫成 ' + q.type + '：')) + '</b>';
         return `<div class="print-question">${heading}${promptLine}<div class="mt-6 flex items-center justify-center">${encoded}</div><div class="mt-10 border-b border-black w-full h-8"></div></div>`;
       }
       if(q.type==='Semaphore') encoded=`<div class="flex flex-wrap gap-4 justify-center">${upper.split('').map(function(c){return c===' '?'<div class="w-8"></div>':(style==='doll'?`<img src="images/${SEMAPHORE_MAP[c]}" class="w-16 h-16 border border-black p-0.5">`:renderStickFigure(c,"black",60));}).join('')}</div>`;
@@ -716,11 +721,14 @@ document.addEventListener('DOMContentLoaded', function() {
       else if(q.type==='Pigpen') encoded=`<div class="flex flex-wrap gap-4 justify-center">${upper.split('').map(function(c){return c===' '?'<div class="w-8"></div>':renderPigpenSVG(c,"#000");}).join('')}</div>`;
       else if(q.type==='NATO') encoded=q.display==='audio'?'<span class="text-xl italic">（聽力考核項目）</span>':`<div class="text-lg font-bold text-center">${escapeHTML(upper.split('').map(function(c){return c===' '?'  ':NATO_MAP[c]||c;}).join(' '))}</div>`;
       else if(q.type==='Morse'&&q.display==='audio') encoded='<span class="text-xl italic">（聽力考核項目）</span>';
-      else encoded=`<span class="text-2xl font-mono">${escapeHTML(getEncoded(q.text,q.type))}</span>`;
-      return `<div class="print-question"><b>Q${idx+1}. 翻譯以下密碼 (${q.type})：</b><div class="mt-6 flex items-center justify-center">${encoded}</div><div class="mt-10 border-b border-black w-full h-8"></div></div>`;
+      else encoded=`<span class="text-2xl font-mono" data-i18n-skip>${escapeHTML(getEncoded(q.text,q.type))}</span>`;
+      return `<div class="print-question"><b>${escapeHTML(tr('Q'+(idx+1)+'. 翻譯以下密碼 ('+q.type+')：'))}</b><div class="mt-6 flex items-center justify-center">${encoded}</div><div class="mt-10 border-b border-black w-full h-8"></div></div>`;
     }).join('');
     // Include detachable decoder reference pages immediately after the exam.
     buildDecoderSheets();
+    // Translate the freshly built sheets before the print dialog opens, so
+    // the English exam paper is correct even if the queue runs late.
+    localize($('printView'));
     // Print the exam sheet only — the answer sheet is hidden by default
     // and only shown when its own button fires.
     document.body.removeAttribute('data-print-mode');
@@ -731,31 +739,32 @@ document.addEventListener('DOMContentLoaded', function() {
   // print dialog. We tag the body so the print CSS knows to swap which
   // sub-sheet of #printView is shown — the exam sheet stays hidden.
   $('btnPrintAnswers').onclick=function(){
-    if(!testQuestions.length)return alert('請先加入題目');
+    if(!testQuestions.length)return alert(tr('請先加入題目'));
     var labelMap={"Morse":"摩斯密碼","Semaphore":"旗號","Braille":"點字","Pigpen":"朱高密碼","Grid":"座標密碼","Phone":"電話密碼","Caesar":"凱撒位移","Atbash":"反射密碼","Reverse":"倒序密碼","NATO":"NATO"};
     $('printAnswerCount').textContent=testQuestions.length;
-    $('printAnswerDate').textContent=new Date().toLocaleDateString('zh-Hant');
+    $('printAnswerDate').textContent=new Date().toLocaleDateString(uiLocale());
     $('printAnswers').innerHTML=testQuestions.map(function(q,idx){
       var upper=q.text.toUpperCase();
       var dir=qDirection(q);
-      var label=labelMap[q.type]||q.type;
+      var label=tr(labelMap[q.type]||q.type);
       // For decode questions the answer is the original ciphertext; for
       // encode questions the answer is the encoded text the member is
       // expected to write. Either way we show "original text <-> answer".
       var cipherValue;
-      if(q.type==='Morse'&&q.display==='audio') cipherValue='（聲音播放）';
-      else if(q.type==='NATO'&&q.display==='audio') cipherValue='（聲音播放）';
+      if(q.type==='Morse'&&q.display==='audio') cipherValue=tr('（聲音播放）');
+      else if(q.type==='NATO'&&q.display==='audio') cipherValue=tr('（聲音播放）');
       else cipherValue=getEncoded(q.text,q.type);
-      var directionBadge=dir==='decode'?'<span class="answer-direction">倒轉題</span>':'';
+      var directionBadge=dir==='decode'?'<span class="answer-direction">'+escapeHTML(tr('倒轉題'))+'</span>':'';
       return '<div class="print-answer-item">'
         + '<div class="answer-head">'
         + '<span class="answer-q">Q'+(idx+1)+'.'+directionBadge+'</span>'
-        + '<span class="answer-meta">'+escapeHTML(label)+(q.type==='Semaphore'?' · '+(q.semStyle==='doll'?'貝登堡公仔':'火柴人'):'')+'</span>'
+        + '<span class="answer-meta">'+escapeHTML(label)+(q.type==='Semaphore'?' · '+escapeHTML(tr(q.semStyle==='doll'?'貝登堡公仔':'火柴人')):'')+'</span>'
         + '</div>'
-        + '<div class="answer-pair"><span class="answer-label">'+(dir==='decode'?'原文字':'原文字')+'</span><span class="answer-value">'+escapeHTML(upper)+'</span></div>'
-        + '<div class="answer-pair"><span class="answer-label">參考答案</span><span class="answer-value">'+escapeHTML(cipherValue)+'</span></div>'
+        + '<div class="answer-pair"><span class="answer-label">'+escapeHTML(tr('原文字'))+'</span><span class="answer-value" data-i18n-skip>'+escapeHTML(upper)+'</span></div>'
+        + '<div class="answer-pair"><span class="answer-label">'+escapeHTML(tr('參考答案'))+'</span><span class="answer-value" data-i18n-skip>'+escapeHTML(cipherValue)+'</span></div>'
         + '</div>';
     }).join('');
+    localize($('printView'));
     document.body.setAttribute('data-print-mode','answers');
     setTimeout(function(){window.print();},200);
   };
@@ -776,12 +785,12 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   $('btnJoinConfirm').onclick=function(){
-    var name=$('playerName').value.trim().slice(0,24); if(!name)return alert('請輸入姓名');
+    var name=$('playerName').value.trim().slice(0,24); if(!name)return alert(tr('請輸入姓名'));
     var targetId = joinId || ($('joinGameIdInput') ? $('joinGameIdInput').value.trim() : '') || myPeerId;
-    if(!targetId)return alert('請輸入遊戲 ID');
+    if(!targetId)return alert(tr('請輸入遊戲 ID'));
     myPlayerName=name;
     try{
-      if(typeof Peer==='undefined'){alert('PeerJS 未載入，請檢查網絡');return;}
+      if(typeof Peer==='undefined'){alert(tr('PeerJS 未載入，請檢查網絡'));return;}
       var mp=new Peer();
       mp.on('open',function(){
         var conn=mp.connect(targetId); hostConn=conn;
@@ -791,14 +800,14 @@ document.addEventListener('DOMContentLoaded', function() {
           else if(data.type==='game_close'||data.type==='state'){gameMode='idle';$('buzzStatus').textContent='等待領袖開放...';$('btnBuzzer').classList.add('disabled');}
           else if(data.type==='buzz_order'&&Array.isArray(data.queue)){var i=data.queue.indexOf(name);$('buzzStatus').textContent=i===0?'你是第 1 名！':(i>=0?(i+1)+' 名':'等待結果...');}
         });
-        conn.on('error',function(){alert('連接搶答房間失敗，請確認遊戲 ID 是否正確。');});
+        conn.on('error',function(){alert(tr('連接搶答房間失敗，請確認遊戲 ID 是否正確。'));});
       });
-      mp.on('error',function(err){alert('搶答連線失敗: '+(err.type||'請檢查網絡連線'));});
-    }catch(e){alert('連線失敗');}
+      mp.on('error',function(err){alert(tr('搶答連線失敗: '+(err.type||'請檢查網絡連線')));});
+    }catch(e){alert(tr('連線失敗'));}
   };
 
   $('btnBuzzer').onclick=sendBuzz;
-  $('shakeToggle').onchange=function(){if(this.checked){startShakeWatcher();showToast('搖一搖已開啟');}else{stopShakeWatcher();}};
+  $('shakeToggle').onchange=function(){if(this.checked){startShakeWatcher();showToast(tr('搖一搖已開啟'));}else{stopShakeWatcher();}};
   
   var btnGenSample = $('btnGenerateSampleTest');
   if(btnGenSample) btnGenSample.onclick = generateSampleQuestions;
@@ -818,6 +827,20 @@ document.addEventListener('DOMContentLoaded', function() {
   if(joinId){
     openMemberView(joinId);
   }
+
+  // Rebuild JS-generated views when the leader switches language, so the
+  // new text is translated at source rather than relying only on the
+  // MutationObserver that watches the DOM.
+  window.addEventListener('skw:langchange', function(){
+    if(!$('testPaperView').classList.contains('hidden')) renderTestList();
+    if($('projectionOverlay').style.display==='flex' && testQuestions[currentProjIdx]){
+      if(projRevealed) renderProjAnswer(testQuestions[currentProjIdx]);
+      else renderProjStatic(testQuestions[currentProjIdx]);
+    }
+    var activeMode=document.querySelector('.mode-btn.active');
+    if($('currentModeTitle')) $('currentModeTitle').textContent=tr(modeTitles[activeMode?activeMode.dataset.mode:'']||'密碼旗號助手');
+    localize(document.body);
+  });
 });
 
 // ===================== SAMPLE TEST & CLEAR =====================
@@ -835,16 +858,16 @@ function generateSampleQuestions() {
   });
   localStorage.setItem('skw_test_questions', JSON.stringify(testQuestions));
   renderTestList();
-  showToast('已生成 5 題考核試卷');
+  showToast(tr('已生成 5 題考核試卷'));
 }
 
 function clearAllQuestions() {
-  if(!testQuestions.length) return showToast('試卷目前沒有題目');
-  if(confirm('確定要清空試卷上的所有題目嗎？')) {
+  if(!testQuestions.length) return showToast(tr('試卷目前沒有題目'));
+  if(confirm(tr('確定要清空試卷上的所有題目嗎？'))) {
     testQuestions = [];
     localStorage.setItem('skw_test_questions', JSON.stringify(testQuestions));
     renderTestList();
-    showToast('已清空試卷題目');
+    showToast(tr('已清空試卷題目'));
   }
 }
 
@@ -924,7 +947,7 @@ function renderTestList() {
     return `<article class="skw-card flex flex-col gap-3 mb-0 p-5">
       <div class="flex items-center gap-3 flex-wrap min-w-0">
         <span class="text-[var(--skw-gold)] font-black text-lg shrink-0">Q${idx+1}</span>
-        <span class="font-bold break-words flex-1 min-w-[180px] text-base">${escapeHTML(q.text)}</span>
+        <span class="font-bold break-words flex-1 min-w-[180px] text-base" data-i18n-skip>${escapeHTML(q.text)}</span>
         <button type="button" data-delete-question="${idx}" class="text-red-300 border border-red-400/20 bg-red-500/10 rounded-lg px-4 min-h-11 text-xs font-bold ml-auto">刪除</button>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
@@ -971,7 +994,7 @@ function renderTestList() {
     button.onclick=function(){
       testQuestions.splice(parseInt(this.dataset.deleteQuestion),1);
       localStorage.setItem('skw_test_questions',JSON.stringify(testQuestions));
-      renderTestList();showToast('題目已刪除');
+      renderTestList();showToast(tr('題目已刪除'));
     };
   });
 }
